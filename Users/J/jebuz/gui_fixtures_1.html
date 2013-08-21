@@ -1,0 +1,132 @@
+<html>
+<head>
+<script src="http://media.scraperwiki.com/js/raphael-1.5.2.min.js"></script>
+<script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+<script src="http://media.scraperwiki.com/js/json-min.js"></script>
+<style>
+
+    body {
+      background: #c0c0c0;
+      text-align: center;
+      font-family: 'sans-serif', 'Arial';
+    }
+
+    td { 
+      background:#fff;
+      border: thin black solid 
+    }
+
+    th { 
+      background:black; color:white 
+    }
+
+    table { 
+      border-collapse: collapse;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 10px;
+      width: 600px;
+    }
+
+    select {
+      height: 30px; 
+      border: 1px solid black;
+      font-size: 21px;
+
+    }
+
+</style>
+</head>
+
+<body>
+<h2>Upcoming Irish Golf Fixtures</h2>
+
+<div>
+  <select onchange="courseSelect()" id="selectCourse"><option value="select">Select a Club</option></select>
+  <select style="display:none" onchange="performSearch()" id="selectType"></select>
+</div>
+
+<table cellpadding="5" id="t"></table>
+
+<script>
+var sourcescraper = "gui_fixtures"; 
+
+function populateCourses() {
+  var query = "select distinct club from swdata"; 
+  var url = getQueryUrl(query); 
+  $.ajax({
+    url:url, dataType:"jsonp", success: function(result) {
+       for (var i = 0; i < result.length; i++) {
+         $('#selectCourse').append('<option>' + result[i].club + '</option>');
+       }
+    },  
+    error: function(a,b) {alert(b)}
+  });
+}
+
+function courseSelect() {
+  populateTypes();
+}
+
+function populateTypes() {
+  $('#selectType').children().remove();
+  var query = "select distinct type from swdata where club like '" + $('#selectCourse').val() + "'";
+  var url = getQueryUrl(query); 
+  $.ajax({
+    url:url, dataType:"jsonp", success: function(result) {
+       $('#selectType').append('<option value="all">All Events</option>');
+       for (var i = 0; i < result.length; i++) {
+         $('#selectType').append('<option>' + result[i].type + '</option>');
+       }
+       $('#selectType').show();
+       performSearch();
+    },  
+    error: function(a,b) {alert(b)}
+  });
+}
+
+function performSearch() {
+    var type = $('#selectType').val();
+    var club = $('#selectCourse').val();
+
+    if(club != 'select') {
+        var whereType = (type == "all" ? "" : " and type like '" + type + "'");
+        var query = "select start as 'from',end as 'to',club as 'where',type as 'type' from swdata where club like '" + club + "'" + whereType; 
+        var url = getQueryUrl(query); 
+        $.ajax({
+          url:url, dataType:"jsonp", success: function(sdata) {
+            filltable(sdata, $("table#t"));
+            
+          },  
+          error: function(a,b) {alert(b)}
+        });
+    }
+    else {
+      $('#selectType').hide();
+      $('#t').children().remove();
+    }
+}
+
+function filltable(results, tel) { 
+    var keys = ['From', 'To', 'Where', 'Type']
+    tel.html(''); 
+    tel.append($("<tr><th>"+keys.join("</th><th>")+"</th></tr>")); 
+    for (var i = 0; i < results.length; i++) {
+        var result = results[i];
+        var data = [result.from, result.to, result.where, result.type]
+        tel.append($('<tr><td class="col1">'+data.join("</td><td>")+"</td></tr>")); 
+    }
+}
+
+$(document).ready(function() {
+  populateCourses();
+})
+
+function getQueryUrl(query) {
+  return "http://api.scraperwiki.com/api/1.0/datastore/sqlite?name="+escape(sourcescraper)+ "&query="+escape(query); 
+}
+
+</script>
+
+</body>
+</html>

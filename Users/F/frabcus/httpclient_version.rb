@@ -1,0 +1,2 @@
+puts HTTPClient::VERSION
+

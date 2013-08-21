@@ -1,0 +1,129 @@
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+
+<script type="text/javascript" src="http://www.datatables.net/download/build/jquery.dataTables.min.js"></script>
+
+<style type="text/css">
+
+* {
+
+font-family: Arial, Helvetica;
+
+}
+
+table {
+
+    font-size: 12px;
+    width: 100%;
+    
+}
+
+td {
+    padding: 4px;
+}
+h1 {
+
+    
+    font-size: 16px;
+
+}
+
+p.info {
+    
+    color: grey;
+    font-size: 10px;
+
+}
+    
+
+#results {
+
+    width: 90%;
+    margin-top: 20px;
+
+}
+
+</style>
+
+<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/ui-lightness/jquery-ui.css" />
+
+<h1>Søk Vegdirektoratets journal</h1>
+
+<p class="info">Du kan søke på sakstittel, dokumenttittel og avsender/mottaker.<br /> Søker kun i Vegdirektoratets journal (ikke regionene) og kun fra 1. april 2011. <br />
+Dataene oppdateres hver gang direktoratet oppdaterer sin journaler (og dersom Scraperwiki gjør som den skal). </p>
+
+<input type="text" id="searchstring" value="Søkeord">
+<input type="button" value="Søk" id="searchbutton">
+
+<div id="results">
+<table cellpadding="0" cellspacing="0" border="0" class="display" id="resultstable"></table>
+</div>
+
+<p class="info">Kildekode og info om scraperen som henter dataene finner du her: <a href="http://scraperwiki.com/scrapers/statens_vegvesen_offentlig_journal/">http://scraperwiki.com/scrapers/statens_vegvesen_offentlig_journal</a> </p>
+
+<script type="text/javascript">
+
+
+function maketable(tabledata) {
+
+$('#resultstable').dataTable( {
+        "aaData": tabledata,
+        "aoColumns": [
+            { "sTitle": "Sak/doknr",
+              "sWidth": "100px", 
+            },
+            { "sTitle": "Dokdato/Journaldato" },
+            { "sTitle": "Tittel/Sak" },
+            { "sTitle": "Fra/til" },
+            { "sTitle": "Type dok" },
+            
+        ],
+        "bJQueryUI": true,
+        "bDestroy": true,
+        "bPaginate": false,
+        "bLengthChange": false,
+        "bFilter": false,
+        "aaSorting": [[1,'desc']]
+        }
+ );    
+
+}
+
+function searchjournal() {
+
+    var searchstring = $('#searchstring').val() + "";
+
+url = "http://api.scraperwiki.com/api/1.0/datastore/sqlite?"+
+      "format=jsondict&name=statens_vegvesen_offentlig_journal&query="+ 
+      "select%20*%20from%20swdata%20where%20tittel%20like%20%27%25" + searchstring + 
+      "%25%27%20or%20sak%20like%20%27%25" + searchstring + "%25%27" + 
+      "%20or%20fratil%20like%20%27%25" + searchstring + "%25%27%20order%20by%20%27Dokumenttdato%20desc%27" + "&callback=?"
+
+    $.getJSON(url, function(data) {
+      var items = [];
+
+      $.each(data, function(key, val) {
+        items.push([val.doknr, val.Dokumenttdato + "<br><i>" + val.Journaldato + "</i>",val.tittel + "<br><i>" + val.sak + "</i>",val.fratil ,val.innut]);
+      });
+
+/*    
+      $('<ul/>', {
+        'class': 'my-new-list',
+        html: items.join('')
+      }).appendTo('#results');
+*/
+    maketable(items);
+    });
+}
+
+$(document).ready(function() {
+
+    $('#searchbutton').click(function() {
+        
+        $("#results").find("ul").remove()
+        searchjournal();
+    });
+
+});
+
+</script>
+

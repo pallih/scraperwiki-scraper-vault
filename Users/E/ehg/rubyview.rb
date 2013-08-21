@@ -1,0 +1,2 @@
+require 'cgi'
+p ENV   

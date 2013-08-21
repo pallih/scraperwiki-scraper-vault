@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Cellphone brand</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            $(function(){
+                retrieveBrand();
+
+                $('#brand').on('change',function(){
+                    $('#currentModel').html('');
+                    retrieveModels($(this).val(),$(this).html());
+                });
+
+            });            
+
+            var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";  
+            
+            function retrieveBrand(){           
+                $.ajax({
+                    url: apiurl, 
+                    dataType: "jsonp", 
+                    data:{
+                        name: "test_357", 
+                        query: "select * from cell_brand", 
+                        format: "jsondict"
+                    }, 
+                    success: function(data){
+                        var options = [];
+                        $(data).each(function(i,e){
+                            options.push('<option value="'+e.id+'">'+e.name+'</option>');
+                        });
+                        $('#brand').append(options.join(''));
+                    }
+                }); 
+            
+            }
+
+            function retrieveModels(brandId,brandName){           
+                $.ajax({
+                    url: apiurl, 
+                    dataType: "jsonp", 
+                    data:{
+                        name: "test_357", 
+                        query: "select * from cell_model where brand_id = "+brandId, 
+                        format: "jsondict"
+                    }, 
+                    success: function(data){
+                        var images = [];
+                        $(data).each(function(i,e){
+                            images.push('<a class="model" href="javascript:;" rel="'+' '+e.name+'"><img src="'+e.img+'" /></a>');
+                        });
+                        $('#count').html(images.length +' models');
+                        $('#images').html(images.join(''));
+                        
+                        $('.model').on('click',function(){
+                            $('.model').find('img').css('border-color','#FFF');
+                            $(this).find('img').css('border-color','#CCC');
+                            $('#currentModel').html($(this).attr('rel'));
+                        });
+                    }
+                });
+            }
+
+        </script>
+        <style>
+            .model img {
+                border: 1px solid #FFF;
+            }            
+        </style>
+    </head>
+    <body>
+        <div id="selector">
+            <select id="brand">
+                <option>Choose a brand</option>
+            </select>
+        <br/>
+        <div id="selected">
+            <span id="logo"></span>             
+            <span id="count"></span>
+             - Selected Model: <span id="currentModel"></span>
+        </div>
+        
+        <div id="images">
+        </div>
+    </body>
+<html>
+
+

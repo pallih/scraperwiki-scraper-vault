@@ -1,0 +1,53 @@
+<?php
+print "Starting!  Waiting for scrape...\n";
+$html = scraperWiki::scrape("https://rakendused.vm.ee/akta/andmed_vaata.php?id=2063&lang=eng");
+//print $html . "\n";
+
+require 'scraperwiki/simple_html_dom.php';
+$dom = new simple_html_dom(); 
+$dom->load($html);
+$temprecord=array();
+$innertabledata=$dom->find("div#sisuAla");
+$allrecords=getTableElements($innertabledata[0]);
+print json_encode($allrecords) . "\n";
+
+
+
+function getTableElements($dom){
+    //print $dom[0]."this is dom \n";
+    $record = array(); 
+    $numtoskip=0;
+    foreach($dom->find("tr") as $data){ 
+        if($numtoskip>0) {
+            $numtoskip--;
+            continue;
+        }
+        $tds = $data->find("td"); 
+        //print "||1||".$tds[0]->plaintext."|| ||2||".$tds[1]->plaintext."||\n";
+        $counter=0;
+        // Special Case
+        if(count($tds) > 1 and count($tds[1]->find("td"))>1){ 
+            $newrecord=getTableElements($tds[1]);
+            $numtoskip=count($newrecord);
+            print "made it here!".count($newrecord). "\n";
+            foreach($newrecord as $key=> $value){
+                $record[$tds[0]->plaintext . "_".$key] = $value;
+                print "adding ".$tds[0]->plaintext . "_".$key." with value ". $value. "\n";
+            }
+        }
+        
+        else {
+            if(count($tds) > 1) { 
+                $record[$tds[0]->plaintext] = $tds[1]->plaintext;
+            }
+        }
+        
+    }
+    print "the size of the record is " . count($record); 
+    return $record;
+}
+
+print "\n\nFinished.  Moving on...\n";
+
+
+?>

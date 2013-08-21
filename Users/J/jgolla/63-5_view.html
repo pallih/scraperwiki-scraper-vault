@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Stuff</title>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            $(function(){
+                $.ajax({ 
+                    url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=election_results&query=select%20*%20from%20%60swdata%60%20where%20ward%3D'63'%20and%20division%3D'5'", 
+                    dataType: 'json', 
+                    success: function(data){ process_data(data); } 
+                }); 
+    
+                function process_data(data){ 
+                    var $wrap = $('<div>').attr('id', 'tableWrap');
+                    var $tbl = $('<table>').attr('id', 'basicTable');
+                    for(i = 0; i < data.length; i++){ 
+                        $tbl.append($('<tr>').append(
+                            $('<td>').text(data[i].name), 
+                            $('<td>').text(data[i].office),
+                            $('<td>').text(data[i].votes)));
+                    }
+                    $wrap.append($tbl);
+                    $('body').append($wrap);                    
+                }
+            });
+        </script>
+    </head>
+    <body>
+       
+    </body>
+<html>

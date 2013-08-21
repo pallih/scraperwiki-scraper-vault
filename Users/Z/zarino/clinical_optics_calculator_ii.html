@@ -1,0 +1,199 @@
+<!doctype html>
+<html>
+<head>
+    <title>Clinical Optics Calculator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=500">
+    <style type="text/css">
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, 
+cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, 
+ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, 
+embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video { 
+margin: 0; padding: 0; border: 0; font-size: 100%; font: inherit; vertical-align: baseline; }
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 18px; line-height: 24px; }
+ol, ul { list-style: none; }
+table { border-collapse: collapse; border-spacing: 0; }
+b, strong { font-weight: bold; }
+i, em { font-style: italic; }
+abbr { border-bottom: 1px dotted; cursor: help; }
+
+body {
+    background: #eee;
+    margin: 30px auto;
+    width: 400px;
+    -webkit-text-size-adjust: none;
+}
+
+input {
+    width: 60px;
+    padding: 5px;
+    font-size: 24px;
+    text-align: center;
+    margin: 0 10px;
+}
+
+#diagram {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    background: #f3f3f3;
+}
+
+#horizontal_bar {
+    position: absolute;
+    top: 200px;
+    left: 50px;
+    width: 200px;
+    height: 2px;
+    margin-top: -1px;
+    background: #000;
+    display: block;
+}
+
+#vertical_bar {
+    position: absolute;
+    left: 150px;
+    top: 100px;
+    height: 200px;
+    width: 2px;
+    margin-left: -1px;
+    background: #000;
+    display: block;
+}
+
+#diagram p {
+    font-size: 24px;
+}
+
+#top, #axis {
+    position: absolute;
+    top: 40px;
+    left: 60px;
+    width: 200px;
+    text-align: center;
+}
+
+#axis {
+    left: 50px;
+}
+
+#right {
+    position: absolute;
+    top: 50%;
+    right: 30px;
+    left: auto;
+    margin-top: -20px;
+}
+
+#axis {
+    top: 80%;
+}
+
+h1 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-shadow: 0 1px 0 #fff;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #999;
+    text-shadow: 0 1px 0 #fff;
+}
+
+#positive, #negative {
+    display: none;
+    margin-top: 20px;
+    text-align: center;
+    font-size: 30px;
+    line-height: 42px;
+    color: #999;
+    text-shadow: 0 1px 0 #fff;
+    background: #f3f3f3;
+    padding: 5px;
+}
+
+#positive span, #negative span {
+    color: #000;
+}
+
+footer {
+    margin-top: 40px;
+    color: #bbb;
+    font-size: 14px;
+    line-height: 21px;
+    text-align: center;
+    text-shadow: 0 1px 0 #fff;
+}
+
+footer a, footer a:link, footer a:visited {
+    color: #aaa;
+}
+
+footer a:hover {
+    color: #666;
+}
+
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+    <script type="text/javascript">
+
+function recalculate(){
+    $('#negative:hidden, #positive:hidden').slideDown();
+    var top = parseInt( $('#top input').val() );
+    var right = parseInt( $('#right input').val() );
+    var axis = parseInt( $('#axis input').val() );
+    $('#positive span').eq(0).text(top);
+    $('#positive span').eq(1).text(right - top);
+    $('#positive span').eq(2).text(axis);
+    $('#negative span').eq(0).text( top + (right - top) );
+    $('#negative span').eq(1).text( (right - top) * -1 );
+    if( axis < 90){
+        $('#negative span').eq(2).text( axis + 90 );
+    } else {
+        $('#negative span').eq(2).text( axis - 90 );
+    }
+}
+
+$(function(){
+    $('input').on('keyup', function(){
+        if($('#top input').val() != '' && $('#right input').val() != '' && $('#axis input').val() != ''){
+            recalculate();
+        }
+    });
+    $('#scraperwikipane').remove();
+});
+
+    </script>
+</head>
+<body>
+
+    <h1>I don&rsquo;t speak Optician!!</h1>
+
+    <h2>Transpose positive and negative cylinder notations from a standard optical cross.</h2>
+
+    <section id="diagram">
+        <p id="top"><input type="number" />D</p>
+        <p id="right"><input type="number" />D</p>
+        <p id="axis">x<input type="number" />&deg;</p>
+        <span id="vertical_bar"></span>
+        <span id="horizontal_bar"></span>
+    </section>
+
+    <section id="positive" title="Plus-cylinder notation, used by Ophthalmologists">
+        <span></span> / <span></span> x <span></span>
+    </section>
+
+    <section id="negative" title="Minus-cylinder notation, used by Optometrists">
+        <span></span> / <span></span> x <span></span>
+    </section>
+
+    <footer>Made by Paul, Alex and Zarino<br/>at <a href="http://nhshackday.com">#nhshackday</a>, using <a href="https://scraperwiki.com/views/clinical_optics_calculator_ii/">ScraperWiki</a>.</footer>
+
+</body>
+</html>

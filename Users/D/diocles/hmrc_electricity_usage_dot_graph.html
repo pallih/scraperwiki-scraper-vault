@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd"> 
+<html lang="en"> 
+<head> 
+<title>HMRC Electricity Usage</title> 
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<script src="http://media.scraperwiki.com/js/raphael-1.5.2.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="http://media.scraperwiki.com/js/g.raphael-0.4.1.min.js" type="text/javascript" charset="utf-8"></script> 
+<script src="https://raw.github.com/DmitryBaranovskiy/g.raphael/master/g.dot-min.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript" charset="utf-8">
+$(document).ready(function() {
+    var max_x = 48;
+    var max_y = 7;
+
+    var xs = [], ys = [];
+
+    for (i=0;i<(max_x * max_y);i++) {
+        xs.push(i % max_x);
+        ys.push(max_y - Math.floor(i / max_x));
+    }
+
+    //var date = '2011-01-01';
+
+    $.getJSON("http://api.scraperwiki.com/api/1.0/datastore/sqlite",
+              "format=jsonlist&name=hmrc_electricity_usage&query=select%20usage%20from%20swdata%20where%20date(datetime)%20between%20'2011-06-06'%20and%20'2011-06-12'%20order%20by%20datetime&callback=?",
+              function(data, textStatus, jqXHR){
+
+    var usage = [];
+    for (i=0;i<data.data.length;i++) {
+        usage[i] = data.data[i][0];
+    }
+
+    var r = Raphael("holder", 1050, 800);
+    
+    var axisy = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].reverse(),
+    axisx = ["12am", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12pm", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "."];
+    //axisx = ["12am", "00:30", "1", "1:30", "2", "2:30", "3", "3:30", "4", "4:30", "5", "5:30", "6", "6:30", "7", "7:30", "8", "8:30", "9", "9:30", "10", "10:30", "11", "11:30", "12pm", "12:30", "1", "1:30", "2", "2:30", "3", "3:30", "4", "4:30", "5", "5:30", "6", "6:30", "7", "7:30", "8", "8:30", "9", "9:30", "10", "10:30", "11", "11:30"];
+
+
+    r.g.txtattr.font = "11px 'Fontin Sans', Fontin-Sans, sans-serif";
+    
+    r.g.dotchart(10, 10, 1050, 300, xs, ys, usage, {symbol: "o", max: 10, heat: true, axis: "0 0 1 1", axisxstep: 23.5, axisystep: 6, axisxlabels: axisx, axisxtype: " ", axisytype: " ", axisylabels: axisy}).hover(function () {
+        this.tag = this.tag || r.g.tag(this.x, this.y, this.value, 0, this.r + 2).insertBefore(this);
+        this.tag.show();
+    }, function () {
+        this.tag && this.tag.hide();
+    });
+
+    });
+});
+
+</script>
+</head> 
+<body>
+<h1>HMRC Electricity Usage</h1>
+<div id="holder"></div> 
+</body> 
+</html>

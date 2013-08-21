@@ -1,0 +1,72 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Default HTML View</title>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script type="text/javascript" src="http://www.jqplot.com/src/jquery.jqplot.min.js"></script>
+    <script type="text/javascript" src="http://www.jqplot.com/src/plugins/jqplot.barRenderer.min.js"></script>
+
+</head>
+
+<!-- JSON.stringify(json) - transforma um JSON em uma string -->
+<!-- $("#id").html(conteudo) - insere conteudo no elemento com #id -->
+
+<body>
+
+<h2>Template com Códigos HTML</h2>
+<div id="results" style="height:300px;width:960px;"></div>
+
+
+<div id="wholejson">Whole JSON!</div>
+
+<script>
+function puttable(idd, result)
+{
+    var keys = result["keys"];
+    var data = result["data"];
+    $(idd).html('<table class="out"></table>');
+    $(idd+" table").append($("<tr><th>"+keys.join("</th><th>")+"</th></tr>"));
+    for (var i = 0; i < data.length; i++) //percorre lista
+    {
+        //data[i][1] = addCommas(data[i][1]); 
+        $(idd+" table").append($('<tr><td class="col1">'+data[i].join("</td><td>")+"</td></tr>"));
+    }
+}
+
+    var src = "thacker-arquivofolha-contadordepalavras"; //fonte dos dados
+
+    var sqlselect1 = "select * from swdata"; //query sql
+    var url1 = "http://scraperwikiviews.com/run/general_sqlite_interrogator/?src="+src+"&sqlselect="+escape(sqlselect1);
+    var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite";            
+    $.ajax({url:apiurl, dataType:"jsonp", data:{name:src, query:sqlselect1, format:"jsonlist"}, success:function(tdata) //chamada em ajax. json fica na var tdata
+    {
+        $("#wholejson").html(JSON.stringify(tdata));
+        var resultados = {}
+        for (i in tdata.data)
+        {
+            resultados[tdata.data[i][1]] =+ parseInt(tdata.data[i][2]);
+        }
+        s1 = []
+        ticks = []
+        for (x in resultados)
+        {
+            s1.push(resultados[x]);
+            ticks.push(x);
+        }
+        var plot1 = $.jqplot('results', [s1]);
+
+
+        for (x in resultados)
+        {
+            $("#raesults").append(x+" "+resultados[x])
+        }
+        //puttable("#results", resultados);
+
+    }}); 
+
+
+
+</script>
+
+</body>
+</html>

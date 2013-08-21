@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1');
+      google.setOnLoadCallback(drawVisualization);
+
+
+
+function drawVisualization() {
+  // To see the data that this visualization uses, browse to
+  // http://spreadsheets.google.com/ccc?key=pCQbetd-CptGXxxQIG7VFIQ
+  var query = new google.visualization.Query(
+      'csv?url=https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=csv&name=autoscout_golf&query=select%20description%2C%20cv%2C%20price%2C%20mileage%20from%20%60swdata%60%20limit%2010');
+
+  // Send the query with a callback function.
+  query.send(handleQueryResponse);
+}
+
+function handleQueryResponse(response) {
+  if (response.isError()) {
+    alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+    return;
+  }
+
+  var data = response.getDataTable();
+  visualization = new google.visualization.Table(document.getElementById('visualization'));
+  visualization.draw(data, null);
+}
+
+
+    </script>
+  </head>
+  <body style="font-family: Arial;border: 0 none;">
+    <div id="visualization" zstyle="width: 600px; height: 400px;"></div>
+  </body>
+
+
+
+
+
+</html>

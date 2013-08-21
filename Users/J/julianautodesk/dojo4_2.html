@@ -1,0 +1,164 @@
+<html>
+<head>
+<script src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<style>
+
+table 
+{
+
+table-layout: fixed;
+border:5px white solid;
+border-collapse: collapse;
+
+}
+td
+{
+text-align:center;
+font-size:30px;
+border:thin black solid;
+height:140px;
+width:140px;
+
+}
+
+#status
+{
+font-size:30px;
+}
+
+h2
+{
+font-size:40px;
+}
+
+</style>
+
+<script>
+var currentplayer = 1;
+
+var game = [0,0,0,0,0,0,0,0,0];
+
+var nclicks = 0;
+
+function haswon()
+    {
+    if( game[0] != 0 && game[0] == game[4] && game[0] == game[8] )
+        return true;
+    else if( game[2] != 0 && game[2] == game[4] && game[2] == game[6] )
+        return true;
+    for( var i = 0; i < 3; i++ )
+        {
+        if( game[i*3] != 0 && game[i*3] == game[i*3+1] && game[i*3] == game[i*3+2] )
+             return true;
+        if( game[i] != 0 && game[i] == game[i + 3] && game[i] == game[i+6] )
+             return true;
+        }
+    
+    }
+
+function playertype (player){
+      if (player == -1) 
+          return "O";
+      else
+          return "X";
+
+}
+
+function disablegrid()
+    {
+    $("td").unbind('click');
+    }
+
+function resetgame(e)
+{
+$("td").click( clickaction);
+nclicks = 0;
+$("#status").text("It is X to play.");
+$("#status").unbind('click');
+for ( var i = 0; i< 9; ++i)
+    {
+    game[i] = 0;
+    var cellid = "#"+i.toString();
+    $(cellid).text(" ");
+    }
+currentplayer = 1;
+}
+
+function clickaction(e)
+{
+//console.log(e);
+//alert($(this).attr('id'));
+//alert("Clicked");
+var array_id = parseInt($(this).attr('id'));
+if (game[array_id] != 0)
+    {
+    alert("Illegal move.");
+    }
+else
+    {
+    nclicks++;
+    game[array_id] = currentplayer;
+    $(this).text(playertype(currentplayer));
+    if( haswon() ) 
+        {
+        var winner = playertype(currentplayer);
+        alert( winner + " has won" );
+        $("#status").text( winner + " has won. Please click here to restart");
+        $("#status").click( resetgame );
+        disablegrid();
+        }
+    else if (nclicks == 9)
+        {
+        alert("Its a draw.");
+        $("#status").text( "It's a draw. Please click here to restart");
+        $("#status").click( resetgame );
+        disablegrid();
+        }
+    else
+        {
+        currentplayer= -currentplayer;
+        $("#status").text( "It is " + playertype(currentplayer) + " to play.");
+        }
+
+    }
+}
+
+function main() {
+    resetgame();
+    
+    
+
+}
+$(window).ready(main); 
+
+</script>
+</head>
+
+<body>
+
+<h2>Play Tic-Tac-Toe</h2>
+
+<p>
+<span id="status">It is X to play.</span>
+<p>
+
+<table >
+<tr> 
+<td id="0"> </td>
+<td id="1"> </td>
+<td id="2"> </td>
+</tr>
+<tr> 
+<td id="3"> </td>
+<td id="4"> </td>
+<td id="5"> </td>
+</tr>
+<tr> 
+<td id="6"> </td>
+<td id="7"> </td>
+<td id="8"> </td>
+</tr>
+
+</body>
+</html>
+

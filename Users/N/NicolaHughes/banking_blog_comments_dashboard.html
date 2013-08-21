@@ -1,0 +1,91 @@
+<html dir="ltr" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Banking Blog Comments Analysis</title>
+    <style type="text/css" media="screen">
+        p{padding:1px;}
+        table.out { border-collapse: collapse; border: 1 }
+        table.out th { background-color :black; color:white; border-left: thin white solid; border-right: thin white solid }
+        table.out td { border: thin black solid }
+        #qidout, #qidrec { background:#eef; }
+    </style>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script type="text/javascript" src="http://media.scraperwiki.com/js/json-min.js"></script>
+</head>
+
+<body>
+
+<p>This feeds off the scraper of <a href="https://scraperwiki.com/scrapers/banking_blog_comments/">The Guardian Banking Blog comments</a>.
+This data is originally sourced from <a href="http://www.guardian.co.uk/commentisfree/joris-luyendijk-banking-blog">this page</a></p>
+
+<h2>Top 10 Commentors by Number of Comments</h2>
+<div id="idrec1"></div>
+
+<h2>Top 10 Commentors by Length of Comments</h2>
+<div id="idrec2"></div>
+
+<h2>Top 10 Commentors by Recommendations</h2>
+<div id="idrec3"></div>
+
+<h2>Top 10 Commentors by Responses</h2>
+<div id="idrec4"></div>
+
+<script>
+function addCommas(el)
+{
+    if (typeof el != 'number')
+        return el;
+    var nStr = el.toFixed(0);
+    nStr += '';
+    x = nStr.split('.');
+    x1 = x[0];
+    x2 = x.length > 1 ? '.' + x[1] : '';
+    var rgx = /(\d+)(\d{3})/;
+    while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + ',' + '$2');
+    }
+    return x1 + x2;
+}
+
+function puttable(idd, result)
+{
+    var keys = result.keys;
+    var data = result.data;
+    $(idd).html('<table class="out"></table>');
+    $(idd+" table").append($("<tr><th>"+keys.join("</th><th>")+"</th></tr>"));
+    for (var i = 0; i < data.length; i++)
+    {
+        data[i][1] = addCommas(data[i][1]);
+        $(idd+" table").append($('<tr><td class="col1">'+data[i].join("</td><td>")+"</td></tr>"));
+    }
+}
+
+
+function build_table(src, sql_query, output_id)
+{
+    var src = "banking_blog_comments";
+    var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    $.ajax({url:apiurl, dataType:"jsonp", data:{name:src, query:sql_query, format:"jsonlist"}, success:function(tdata)
+    {
+        puttable(output_id, tdata);
+    }});
+}
+
+
+$(document).ready(function()
+{
+    build_table('banking_blog_comments', "SELECT commentor, COUNT(commentor) as `Number of comments` FROM blog GROUP BY commentor ORDER BY `Number of comments` desc LIMIT 10", "#idrec1");
+
+    build_table('banking_blog_comments',  "SELECT commentor, LENGTH(body) as `Length of comments` FROM blog GROUP BY commentor ORDER BY `Length of comments` desc LIMIT 10", "#idrec2");
+
+    build_table('banking_blog_comments',  "SELECT commentor, SUM(recommendations) as `Total recommendations` FROM blog GROUP BY commentor ORDER BY `Total recommendations` desc LIMIT 10", "#idrec3");
+
+    build_table('banking_blog_comments',  "SELECT commentor, SUM(responses) as `No of Responses`, LENGTH(body) as `No of characters used`, COUNT(body) as`No of comments` FROM blog GROUP BY commentor ORDER BY `No of Responses` desc LIMIT 10", "#idrec4");
+
+});
+</script>
+
+</body>
+</html>
+

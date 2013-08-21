@@ -1,0 +1,137 @@
+<html>
+<head>
+    <script src="http://media.scraperwiki.com/js/raphael-1.5.2.min.js"></script>
+    <script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+    <script src="http://media.scraperwiki.com/js/json-min.js"></script>
+    <style>
+        td, th { background:#eee }
+        td.col1 { color:blue }
+        ul.sqlcomps li { width:80%; text-align:right; list-style: none; }
+        ul.sqlcomps label { width:400px; font-family:Courier; font-size:120%;  }
+        ul.sqlcomps input { font-size:120%; width:70%; }
+        #bquery { font-size:150% }
+        #sqlall { width:80%; }
+        span.egdatabase { background:#efe; }
+    </style>
+</head>
+
+<body>
+    <h2>General sqlite view</h2>
+    <p>
+        Use this interactive page to find all scrapers for a user, 
+        sqlite tables for a scraper, and general queries on those tables.
+    </p>
+    <p>
+        <input type="text" id="src" value="uk_party_political_donations_parsecollector"/>
+        eg <span class="egdatabase">northsea_oilwell_parse</span>, 
+        <span class="egdatabase">outer_space_objects_parsecollector</span>, 
+        <span class="egdatabase">uk_party_political_donations_parsecollector</span>
+    </p>
+    <input type="button" id="bquery" value="Query"/>
+    <input type="text" id="sqlall" value="" readonly="yes"/>
+    <ul class="sqlcomps">
+        <li><label for="sqlselect">SELECT</label>
+            <input type="text" id="sqlselect" value="rowid, *"/>
+        </li>
+        <li><label for="sqlfrom">FROM</label>
+            <input type="text" id="sqlfrom" value="swdata"/>
+        </li>
+        <li><label for="sqlwhere">WHERE</label>
+            <input type="text" id="sqlwhere" value=""/>
+        </li>
+        <li><label for="sqlgroupby">GROUP BY</label>
+            <input type="text" id="sqlgroupby" value=""/>
+        </li>
+        <li><label for="sqlhaving">HAVING</label>
+            <input type="text" id="sqlhaving" value=""/>
+        </li>
+        <li><label for="sqlorder">ORDER BY</label>
+            <input type="text" id="sqlorder" value=""/>
+        </li>
+        <li><label for="sqllimit">LIMIT</label>
+            <input type="text" id="sqllimit" value="10"/>
+        </li>
+    </ul>
+
+    <div id="output" style="background:#eee">
+    </div>
+    <div id="useroutput" style="border: thin black solid">
+    </div>
+<script>
+
+var sourcescraper = "special_advisers_gifts_and_hospitality"; 
+function filltable(result, idout)
+{
+    var keys = result["keys"]; 
+    var data = result["data"]; 
+
+    $("#"+idout).html('<table border="1"></table>'); 
+    $("#"+idout+" table").append($("<tr><th>"+keys.join("</th><th>")+"</th></tr>")); 
+    for (var i = 0; i < data.length; i++)
+        $("#"+idout+" table").append($('<tr><td class="col1">'+data[i].join("</td><td>")+"</td></tr>")); 
+}
+
+
+function trim(stringToTrim) {  return stringToTrim.replace(/^\s+|\s+$/g,"") }
+function makesqlval()
+{
+    var sqlselect = trim($("#sqlselect").val()); 
+    var sqlfrom = trim($("#sqlfrom").val()); 
+    var sqlwhere= trim($("#sqlwhere").val()); 
+    var sqlgroupby= trim($("#sqlgroupby").val()); 
+    var sqlhaving= trim($("#sqlhaving").val()); 
+    var sqlorder= trim($("#sqlorder").val()); 
+    var sqllimit= trim($("#sqllimit").val()); 
+
+    sqlval = [ sqlselect ]; 
+    if (sqlfrom)
+        { sqlval.push("FROM"); sqlval.push(sqlfrom); }
+    if (sqlwhere)
+        { sqlval.push("WHERE"); sqlval.push(sqlwhere); }
+    if (sqlgroupby)
+        { sqlval.push("GROUP BY"); sqlval.push(sqlgroupby); }
+    if (sqlhaving)
+        { sqlval.push("HAVING"); sqlval.push(sqlhaving); }
+    if (sqlorder)
+        { sqlval.push("ORDER BY"); sqlval.push(sqlorder); }
+    if (sqllimit)
+        { sqlval.push("LIMIT"); sqlval.push(sqllimit); }
+    return sqlval.join(" "); 
+}
+
+
+$(document).ready(function()
+{
+    $("#bquery").click(function()
+    {
+        $("#output").html('<h1>Loading...</h1>'); 
+        var surl = ["http://api.scraperwiki.com/api/1.0/datastore/sqlite?name="]; 
+        surl.push(escape($("#src").val())); 
+        surl.push("&format=jsonlist"); 
+        surl.push("&query=select+"); 
+
+        var sqlall = makesqlval(); 
+        $("#sqlall").val(sqlall); 
+        surl.push(escape(sqlall)); 
+
+        var target = surl.join("");
+
+        $.ajax({url:target, dataType:"jsonp", success: function(sdata)
+        {
+            filltable(sdata, "output"); 
+        },  error: function(a,b) {alert(a + " " + b);} 
+        }); 
+    })
+
+    $("#src").val(sourcescraper); 
+    $("span.egdatabase").click(function()
+    {
+        $("#src").val($(this).text()); 
+    }); 
+
+})
+
+</script>
+
+</body>
+</html>

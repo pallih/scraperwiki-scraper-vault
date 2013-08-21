@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Oil Refineries Synthesis Map</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 99%;
+            }
+            body {
+                font-family: sans-serif;
+                font-size: 12px;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3&sensor=false&language=en"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+
+        <script type="text/javascript">
+        var map;
+        var infowindow = new google.maps.InfoWindow({maxWidth: 450});
+            
+        var geocoder = new google.maps.Geocoder();
+
+        var queryString = {};
+
+        $(document).ready(function(){
+            
+            var params = location.search.split(/[?&]/);
+            for (param in params) {
+                queryString[params[param].split("=")[0]] = params[param].split("=")[1];
+            }
+
+            // initialize google maps display
+                
+            var myOptions = {
+                zoom: 3,
+                center: new google.maps.LatLng(20, 0),
+                mapTypeId: google.maps.MapTypeId.HYBRID,
+                mapTypeControlOptions: { 
+                    mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.TERRAIN, google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID, 'OSM'],
+                    position: google.maps.ControlPosition.RIGHT_TOP
+                }
+            };
+                
+            map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+               
+            // initialize OpenStreetMap layer
+
+            var myOSMOptions = {
+                getTileUrl: function(coord, zoom) {
+                    return "http://" + String.fromCharCode(0x61+Math.floor(Math.random()*3)) + ".tile.openstreetmap.org/" 
+                        + zoom + "/" + coord.x + "/" + coord.y + ".png";
+                },
+                tileSize: new google.maps.Size(256, 256),
+                maxZoom: 18,
+                isPng: true,
+                opacity: 1,
+                alt: "OpenStreetMap",
+                name: "OSM"
+            };
+
+            map.mapTypes.set('OSM', new google.maps.ImageMapType(myOSMOptions));
+            map.setMapTypeId('OSM');
+            
+            map.controls[google.maps.ControlPosition.TOP_RIGHT].push(document.getElementById("scraperwiki_placeholder"));
+
+            load_ppl_enipedia();
+
+            // load data from different scrapers
+            load_ppl_scraper("wikipedia_oil_refineries", "select plant as name, province, city, owner, operator, longitude, latitude, wikipediaPage from swdata where latitude <> ''");
+            load_ppl_scraper("europetrole", "select name, location, owner, description, longitude, latitude from swdata where latitude is not null and type like '%Raffinerie%'");
+            load_ppl_scraper("power_plants_from_industryabout", "select name, area, address, type, owner, shareholders, activity_since, installed_capacity, production, longitude, latitude, web, wikipedia, other_name, notes from refineries where latitude is not null");
+            
+                
+            function load_ppl_scraper(source, sql_query) {
+                $.ajax({
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite',
+                    data: {
+                        name: source,
+                        query: sql_query,
+                        format: "jsondict"
+                    },
+                    dataType: 'json',
+                    success: function(data){ drop_markers_scraper(data, source); }
+                });
+            }
+
+            function load_ppl_enipedia() {
+                $.ajax({
+                    url: 'http://enipedia.tudelft.nl/sparql',
+                    data: {
+                        query:  "BASE <http://enipedia.tudelft.nl/wiki/>\n" +
+                            "PREFIX a: <http://enipedia.tudelft.nl/wiki/>\n" +
+                            "PREFIX prop: <http://enipedia.tudelft.nl/wiki/Property:>\n" +
+                            "PREFIX cat: <http://enipedia.tudelft.nl/wiki/Category:>\n" +
+                            "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                            "PREFIX fn: <http://www.w3.org/2005/xpath-functions#>\n" +
+                            "select (substr(str(?ppl), 33) as ?wiki) ?name (substr(str(?own), 33) as ?ownerenc) ?owner \n" +
+                            "(substr(str(?town), 33) as ?city) (substr(str(?stat), 33) as ?state) \n" +
+                            "(substr(str(?cnty), 33) as ?county) ?zip ?point where {\n" +
+                            "  ?ppl rdf:type cat:Powerplant .\n" +
+                            "  ?ppl rdfs:label ?name .\n" +
+                            "  ?ppl prop:Ownercompany ?own .\n" +
+                            "  ?ppl prop:City ?town .\n" +
+                            "  ?ppl prop:Point ?point .\n" +
+                            "  OPTIONAL{?ppl prop:State ?stat} .\n" +
+                            "  OPTIONAL{?ppl prop:County ?cnty} .\n" +
+                            "  OPTIONAL{?ppl prop:City ?town} .\n" +
+                            "  OPTIONAL{?ppl prop:Zipcode ?zip} .\n" +
+                            "  OPTIONAL{?own rdfs:label ?owner} .\n" + 
+                            "  FILTER ( REGEX(?name, \"Refinery\") ) . " +
+                            "} order by ?ppl",
+                        output: "json"
+                    },
+                    dataType: 'jsonp',
+                    success: function(data){ drop_markers_enipedia(data); }
+                });
+            }
+
+        });
+
+        function drop_markers_scraper(data, source){
+            var reEncode = /((?:%[0-9A-F]{2}){1,2})/ig;
+            for (var i = 0; i < data.length; i++) {
+                var markerImage;
+                if (source.indexOf("wikipedia") >= 0) {
+                    if (data[i].name.indexOf("%") > 0)
+                        data[i].name = data[i].name.replace(reEncode, function(match, p1) { return decodeURIComponent(p1) } );
+                    markerImage = {url: "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=W|FFFFFF|000000"};
+                } else if (source.indexOf("europetrole") >= 0)
+                    markerImage = {url: "http://chart.apis.google.com/chart?chst=d_map_xpin_letter&chld=pin_sleft||00FF00|000000", anchor: {x:21, y:33}};
+                else if (source.indexOf("industryabout") >= 0)
+                    markerImage = {url: "http://chart.apis.google.com/chart?chst=d_map_xpin_letter&chld=pin_sright||00FFFF|000000", anchor: {x:1, y:33}};
+                var myLatLng = new google.maps.LatLng(data[i].latitude, data[i].longitude);
+                var markerOptions = {position: myLatLng, map: map, title: data[i].name, icon: markerImage};
+                var marker = new google.maps.Marker(markerOptions);
+                marker.data = data[i];
+                google.maps.event.addListener(marker, 'click', function() { open_info_scraper(this)} );
+            }
+        }
+
+        function drop_markers_enipedia(data) {
+            var list = data.results.bindings;
+            for (var i = 0; i < list.length; i++) {
+                var coords = list[i].point.value.split(',');
+                var myLatLng = new google.maps.LatLng(coords[0], coords[1]);
+                var markerOptions = {position: myLatLng, map: map, title: list[i].name.value, icon: "http://chart.apis.google.com/chart?chst=d_map_xpin_letter&chld=pin_star||0000FF|000000|FF00FF"};
+                if (queryString["editable"] && queryString["editable"] == 1)
+                    markerOptions.draggable = true;
+                var marker = new google.maps.Marker(markerOptions);
+                marker.data = list[i];
+                google.maps.event.addListener(marker, 'click', function() { open_info_enipedia(this)} );
+                google.maps.event.addListener(marker, 'dragend', function() { move_marker(this)} );
+            }
+        }
+
+        function open_info_scraper(marker) {
+            var reEncode = /(%[0-9A-F]{2})/g;
+            var content = "<span style='font-size: 12pt'>" + marker.data.name + "</span><ul style='font-size: 9pt; font-family: Arial'>";
+            for (var p in marker.data) {
+                if (p != "name" && p != "longitude" && p != "latitude" && marker.data[p] != null) {
+                    if (marker.data[p].indexOf("http") == 0)
+                        content += "<li>" + p.replace("_"," ") + ": " + "<a href='" + marker.data[p] + "' target='scrapedsite'>" + marker.data[p] + "</a></li>";
+                    else
+                        content += "<li>" + p.replace("_"," ") + ": " + marker.data[p].replace(reEncode, function(match, p1) { return decodeURIComponent(p1) } ) +"</li>";
+                }
+            }
+            content += "</ul>";
+            infowindow.setContent(content);
+            infowindow.open(map, marker);
+        }
+
+        function open_info_enipedia(marker) {
+            var reEncode = /-([0-9A-F]{2})/g;
+            var content = "<div style='font-size: 9pt; font-family: Arial'><span style='font-size: 12pt'>" + marker.data.name.value + "</span><ul>";
+            for (var p in marker.data) {
+                if (p != "wiki" && p != "name" && p != "point" && p.indexOf("new_") < 0 && !(p == "ownerenc" && marker.data.owner)) {
+                    if (marker.data[p].value && marker.data[p].value.indexOf("-") > 0)
+                        marker.data[p].value = marker.data[p].value.replace(reEncode, function(match, p1) { return decodeURIComponent("%"+p1) } );
+                    content += "<li>" + p.replace("_"," ").replace("enc","") + ": ";
+                    if (marker.data["new_"+p]) { content += "<del>" }
+                    if (marker.data[p].value)
+                        content += marker.data[p].value.replace(/_/g," ");
+                    if (marker.data["new_"+p] && marker.data["new_"+p].value)
+                        content += "</del> <font color='red'>" + marker.data["new_"+p].value.replace("_"," ") + "</font>";
+                    content += "</li>";
+                }
+            }
+            content += "</ul><a href='http://enipedia.tudelft.nl/wiki/" + encodeURIComponent(marker.data.wiki.value).replace(/'/g,"%27") + "' target='EnipView'>view</a> | ";
+            content += "<a href='http://enipedia.tudelft.nl/enipedia/index.php?title=" + encodeURIComponent(marker.data.wiki.value).replace(/'/g,"%27") + "&action=formedit' target='EnipEdit'>edit</a> in Enipedia &nbsp; &nbsp; &nbsp; ";
+            if (marker.data.new_point) {
+                var coords = marker.data.new_point.value.replace(/[()]/g, '').split(/, ?/);
+                content += " <a href='http://enipedia.tudelft.nl/enipedia/api.php?action=sfautoedit&form=Powerplant&target=" + encodeURIComponent(marker.data.wiki.value).replace(/'/g,"%27");
+                content += "&PowerplantTest[point]=" + coords.join(', ') + "&PowerplantTest[latitude]=" + coords[0] + "&PowerplantTest[longitude]=" + coords[1];
+                if (marker.data.new_state != null)
+                    content += "&PowerplantTest[state]=" + marker.data.new_state.value.replace("_"," ").replace("'","%27");
+                if (marker.data.new_county != null)
+                    content += "&PowerplantTest[county]=" + marker.data.new_county.value.replace("_"," ").replace("'","%27");
+                if (marker.data.new_zip != null)
+                    content += "&PowerplantTest[zipcode]=" + marker.data.new_zip.value;
+                if (marker.data.new_city != null)
+                    content += "&PowerplantTest[city]=" + marker.data.new_city.value.replace("_"," ").replace("'","%27");
+                content += "' target='EnipUpdate'>Save changes</a> (<font color='red'>in red</font>)</div>";
+            }
+            infowindow.setContent(content);
+            infowindow.open(map, marker);
+        }
+            
+        function move_marker(marker) {
+            marker.data.new_point = {value: marker.getPosition().toString()};
+            geocoder.geocode({latLng: marker.getPosition()}, function(results, status) {
+                if (status == google.maps.GeocoderStatus.OK) {
+                    var new_state, new_county, new_zip, new_city;
+                    for (var j=0; j<2; j++) {
+                        if (results[j]) {
+                            var admLayers = results[j].address_components;
+                            for (var i in admLayers) {
+                                if (admLayers[i].types[0] == "locality")
+                                    new_city = admLayers[i].long_name;
+                                else if (admLayers[i].types[0] == "administrative_area_level_1")
+                                    new_state = admLayers[i].long_name.replace(/[éè]/g,'e').replace(/ô/g,'o');
+                                else if (admLayers[i].types[0] == "administrative_area_level_2")
+                                    new_county = admLayers[i].long_name.replace(/[éè]/g,'e').replace(/ô/g,'o');
+                                else if (admLayers[i].types[0] == "postal_code")
+                                    new_zip = admLayers[i].long_name;
+                            }
+                            if (j == 1) {
+                                marker.data.new_state = (new_state && (!marker.data.state || new_state != marker.data.state.value) ? {value: new_state} : null);
+                                marker.data.new_county = (new_county && (!marker.data.county || new_county != marker.data.county.value) ? {value: new_county} : null);
+                                marker.data.new_zip = (new_zip && (!marker.data.zip || new_zip != marker.data.zip.value) ? {value: new_zip} : null);
+                                marker.data.new_city = (new_city && (!marker.data.city || new_city != marker.data.city.value) ? {value: new_city} : null);
+                                if (marker.data.new_state && !marker.data.state)
+                                    marker.data.state = {value: ""};
+                                if (marker.data.new_county && !marker.data.county)
+                                    marker.data.county = {value: ""};
+                                if (marker.data.new_zip && !marker.data.zip)
+                                    marker.data.zip = {value: ""};
+                                if (marker.data.new_city && !marker.data.city)
+                                    marker.data.city = {value: ""};
+                                if (marker.data.new_state || marker.data.new_county || marker.data.new_zip || marker.data.new_city)
+                                    open_info_enipedia(marker);
+                            }
+                        }
+                    }
+                }
+            });
+            open_info_enipedia(marker);
+        }
+
+        </script>
+    </head>
+    <body>
+        <div id="scraperwiki_placeholder" style="width: 183px; height: 37px;"></div>
+        <div id="map_canvas"></div>
+        <div id ="map_legend">Scrapers: 
+            <img src="http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=W|FFFFFF|000000" height="16"/> <a href="/scrapers/wikipedia_oil_refinerie/" target="scraper">Wikipedia </a>
+            <img src="http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=|00FF00|000000" height="16"/> <a href="/scrapers/europetrole/" target="scraper">Europetrole</a>
+            <img src="http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=|00FFFF|000000" height="16"/> <a href="/scrapers/power_plants_from_industryabout/" target="scraper">IndustryAbout</a>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <img src="http://chart.apis.google.com/chart?chst=d_map_xpin_letter&chld=pin_star||0000FF|000000|FF00FF" height="16"/> already on Enipedia as a Powerplant
+        </div>
+    </body>
+</html>

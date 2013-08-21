@@ -1,0 +1,287 @@
+<html>
+<head>
+    <script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+    <script src="http://media.scraperwiki.com/js/json-min.js"></script>
+    <script src="http://media.scraperwiki.com/js/jquery.simplemodal.1.4.js"></script>
+
+    <style>
+        .bottom { position: absolute; bottom: 10px; right: 10px; }
+        body { font-family: Helvetica Neue, Helvetica, Arial; }
+        div.deffs input {font-weight:bold;  
+                         font-size:1em; padding:0 0 0 0; color:#000; 
+                         border:solid 2px transparent; background:none; width:50%;margin-left:2px;}
+        div.deffs input:focus {background:#fff; border:inset 2px;outline:none; color:#000;}
+        div.deffs input:hover {background:#ffffd3;color:#000;}
+        ul#tablist { list-style: none; margin-left: -35px;  }
+        ul#tablist li { padding: 8px;  }
+        ul#tablist li.selected { background:#ffc }
+        ul#tablist b, ul#tablist i { cursor:pointer }
+        ul#tablist b:hover, ul#tablist i:hover { background:#fdc }
+        #bquery { font-size:150%; float:left }
+        ul#sqlcomps li { width:85%; text-align:right; list-style: none; font-size:110%; font-family:Courier }
+        ul#sqlcomps li.selected { background:#ffd }
+        ul#sqlcomps label { width:370px; }
+        ul#sqlcomps input { width:70%; }
+        ul#sqlcomps li.fullquery { font-size:100%!important;  }
+        table#toutput { table-layout: auto; width:100%; }
+        table#toutput th { background: #333; color: white; border: thin #333 solid;   padding: 4px;}
+        table#toutput td { border: thin black solid; background:#eee; padding: 4px; }
+        table#toutput { border-collapse:collapse; background:#eee; }
+        table#toutput td { vertical-align: top; width: 200px; }
+       #scraperwikipane { display: none }
+    </style>
+</head>
+<body>
+
+<div class="deffs">
+    <label>Run live SQL queries on scraper: </label> <input type="text" id="src" value="rksdiscovery_1"/>
+</div>
+
+<br/>
+<table width='100%' class='plain'>
+<tr>
+<td width='50%'>
+<ul id="sqlcomps">
+    <li class="selected"><label for="sqlselect">SELECT</label>&nbsp;<input type="text" id="sqlselect" value="*"/> <a href='#' onclick='showHelp("select");return false;'><img src='http://media.scraperwiki.com/images/icons/help.png'/></a></li>
+    <li><label for="sqlfrom">FROM</label>&nbsp;<input type="text" id="sqlfrom" value="swdata"/> <a href='#' onclick='showHelp("from");return false;'><img src='http://media.scraperwiki.com/images/icons/help.png'/></a></li>
+    <li><label for="sqlwhere">WHERE</label>&nbsp;<input type="text" id="sqlwhere" value=""/> <a href='#' onclick='showHelp("where");return false;'><img src='http://media.scraperwiki.com/images/icons/help.png'/></a></li>
+    <li><label for="sqlgroupby">GROUP BY</label>&nbsp;<input type="text" id="sqlgroupby" value=""/> <a href='#' onclick='showHelp("group");return false;'><img src='http://media.scraperwiki.com/images/icons/help.png'/></a></li>
+    <li><label for="sqlhaving">HAVING</label>&nbsp;<input type="text" id="sqlhaving" value=""/> <a href='#' onclick='showHelp("having");return false;'><img src='http://media.scraperwiki.com/images/icons/help.png'/></a></li>
+    <li><label for="sqlorder">ORDER BY</label>&nbsp;<input type="text" id="sqlorder" value="rowid desc"/> <a href='#' onclick='showHelp("order");return false;'><img src='http://media.scraperwiki.com/images/icons/help.png'/></a></li>
+    <li><label for="sqllimit">LIMIT</label>&nbsp;<input type="text" id="sqllimit" value="10"/> <a href='#' onclick='showHelp("limit");return false;'><img src='http://media.scraperwiki.com/images/icons/help.png'/></a></li>
+    <li class="fullquery"><label for="sqlall">full query</label>&nbsp;<input type="text" id="sqlall" value="" readonly/>
+</li>
+</ul>
+<input type="button" id="bquery" value="Run SQL query!" style="width:180px;"></input>
+<div style='clear:both;'></div>
+</td>
+<td width="50%" valign='top'>
+<ul id="tablist"></ul>
+</td>
+</tr>
+</table>
+<table id="toutput"></table>
+
+<script>
+var sourcescraper = "rksdiscovery_1"; 
+$.ajaxSetup({type:"GET", dataType: "jsonp", error:function(jq, status) { alert(status); }}); 
+
+
+function encodeText( content ) {
+    return content.replace('<', '&lt;').replace('>','&gt;').replace("'", "&apos;").replace("\"", "&quot;").replace('/n','<br/><br/>');
+}
+
+function showHelp( bit ) {
+    $('div#help_' + bit).modal(
+    {
+        overlayClose: true,
+        containerCss: { border:"solid 2px #333", padding: "20px", width:"80%", height: "200px", backgroundColor: "#eee"}, 
+        overlayCss: { cursor:"auto" }, 
+        onShow: function() 
+        {
+            $('#outer').height($('#inner').height()-2); 
+        }
+    }); 
+}
+
+
+var messages = new Array();
+function showMsg( pos ) {
+    $.modal('<div id="outer"><div id="inner">' + messages[pos] + '<button style="position:absolute; bottom:10;right:10;" onclick="$.modal.close();">Close</button></div></div>', 
+    {
+        overlayClose: true,
+        containerCss: { border:"solid 2px #333", padding: "20px", width:"80%", height: "200px", backgroundColor: "#eee"}, 
+        overlayCss: { cursor:"auto" }, 
+        onShow: function() 
+        {
+            $('#outer').height($('#inner').height()-2); 
+        }
+    }); 
+}
+
+function checkCell(cell) {
+    // match URL
+    val = linkify( cell );
+    if ( val.length > 100 && val.indexOf('://') < 0 ) {
+        messages.push( encodeText(val) );
+        var more = "&nbsp;&nbsp;<a style='font-size:smaller;' href='#' onclick='showMsg(" + (messages.length-1) + ");return false;'>More</a>";
+        d = val.substring(0, 100) + '...' + more
+        return d;
+    }
+    return val;
+}
+
+function linkify(inputText) {
+    var replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
+    return inputText.replace(replacePattern1, '<a href="$1" target="_blank">$1</a>');
+}
+
+function makerow(row, tag)
+{
+    var res = [ ];
+    res.push("<tr>"); 
+    for (var i = 0; i < row.length; i++)
+        res.push("<"+tag+">"+(row[i] == null ? "" : checkCell(String(row[i]).replace(/</g, "&lt;"))) +"</"+tag+">"); 
+    res.push("</tr>"); 
+    return res.join(""); 
+}
+
+function filltable(result)
+{ 
+    if (result.error)
+    {
+        $("table#toutput").html("<tr><th>error</th></tr><tr><td>"+result.error+"</td></tr>"); 
+        return; 
+    }
+    $("table#toutput").empty(); 
+    $("table#toutput").append($(makerow(result.keys, "th"))); 
+    for (var i = 0; i < result.data.length; i++)
+        $("table#toutput").append($(makerow(result.data[i], "td"))); 
+}
+
+function selectli(th)
+{
+    $(th).parents("ul:first").find("li").removeClass("selected"); 
+    $(th).parents("li").addClass("selected"); 
+}
+
+function filltablist()
+{
+    $("ul#tablist").empty().append("<li>Getting information about the <strong>" + $("#src").val() + "</strong> scraper...</li>"); 
+    $.ajax({data:{name:$("#src").val(), quietfields:"code|userroles|runevents", format:"json"}, error:function(jq, status) { alert(status); }, 
+            url:"http://api.scraperwiki.com/api/1.0/scraper/getinfo", success: function(tdata)
+    {
+        $("ul#tablist").empty(); 
+        if (tdata[0].datasummary && tdata[0].datasummary.tables)
+        {
+            for (var tablename in tdata[0].datasummary.tables)
+            {
+                var table = tdata[0].datasummary.tables[tablename]; 
+                var lsql = table.sql.replace(/`([^`]*)`/g, "<i>$1</i>");
+                var lsql = lsql.replace("/<i>(\w*[^\w<][^<]*)</i>/g", "<i>`$1`</i>");
+                lsql = lsql.replace('(', '( ').replace(')', ' )');
+
+                $("ul#tablist").append("<li><b>"+tablename+"</b> ("+table.count+" rows)<br/> "+lsql+"</li>"); 
+            }
+            $("ul#tablist b").click(function()
+            {
+                selectli(this); 
+                $("#sqlfrom").val($(this).text())
+            }); 
+            $("ul#tablist i").click(function()
+            {
+                var txt = $(this).text();
+                var v = $("ul#sqlcomps li.selected input").val(); 
+                if (v.match("^\\*$"))
+                    v = ""
+                if ( $(this).text().indexOf(' ') >= 0 ) { 
+                    txt = "`" + $(this).text() + "`"; 
+                }
+                v = v + (v.length != 0 ? ", " : "") + txt; 
+                $("ul#sqlcomps li.selected input").val(v); 
+            }); 
+        }
+
+        if ($("ul#tablist b").length != 0) 
+        {
+            $("ul#tablist b:first").click(); 
+            $("#bquery").click();      
+        }
+        else
+            $("ul#tablist").append("<li>No tables</li>"); 
+    }});  
+}
+
+
+function psqlval(sqlval, sid, comm)
+{
+    var v = $("#"+sid).val().replace(/^\s+|\s+$/g, ""); 
+    if (v.length)
+    {
+        sqlval.push(comm); 
+        sqlval.push(v); 
+    }
+}
+
+function makesqlval()
+{
+    var sqlval = [ ]; 
+    psqlval(sqlval, "sqlselect", "SELECT"); 
+    psqlval(sqlval, "sqlfrom", "FROM"); 
+    psqlval(sqlval, "sqlwhere", "WHERE"); 
+    psqlval(sqlval, "sqlgroupby", "GROUP BY"); 
+    psqlval(sqlval, "sqlhaving", "HAVING"); 
+    psqlval(sqlval, "sqlorder", "ORDER BY"); 
+    psqlval(sqlval, "sqllimit", "LIMIT"); 
+    return sqlval.join(" "); 
+}
+
+
+$(document).ready(function()
+{
+    $("ul#sqlcomps input").focus(function() { selectli(this); }); 
+    $("#src").val(sourcescraper); 
+
+    $('#src').change(function() {
+        $("table#toutput").empty();
+        filltablist(); 
+        messages = new Array();
+    });
+
+    $("#bquery").click(function()
+    {
+        $("table#toutput").html("<tr><th>Loading...</th></tr>"); 
+        var sqlall = makesqlval(); 
+        messages = new Array();
+        $("#sqlall").val(sqlall); 
+        $.ajax({data:{ name:$("#src").val(), query:sqlall, format:"jsonlist" }, error:function(jq, status) { alert(status); }, 
+                url:"http://api.scraperwiki.com/api/1.0/datastore/sqlite", success: function(tdata)
+        {
+            filltable(tdata, "output"); 
+        }}); 
+    })
+
+    filltablist(); 
+})
+
+</script>
+
+<div id='help_select' style='display:none;'>
+Help for SELECT
+<button class='bottom' onclick='$.modal.close();return false;'>Close</button>
+</div>
+
+<div id='help_from' style='display:none;'>
+Help for FROM
+<button class='bottom' onclick='$.modal.close();return false;'>Close</button>
+</div>
+
+<div id='help_where' style='display:none;'>
+Help for WHERE
+<button class='bottom' onclick='$.modal.close();return false;'>Close</button>
+</div>
+
+<div id='help_group' style='display:none;'>
+Help for GROUP_BY
+<button class='bottom' onclick='$.modal.close();return false;'>Close</button>
+</div>
+
+<div id='help_having' style='display:none;'>
+Help for HAVING
+<button class='bottom' onclick='$.modal.close();return false;'>Close</button>
+</div>
+
+<div id='help_order' style='display:none;'>
+Help for ORDER
+<button class='bottom' onclick='$.modal.close();return false;'>Close</button>
+</div>
+
+<div id='help_limit' style='display:none;'>
+Help for LIMIT
+
+<button class='bottom' onclick='$.modal.close();return false;'>Close</button>
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Liverpool Culture Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <style type="text/css">
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video { margin: 0; padding: 0; border: 0; font-size: 100%; font: inherit; vertical-align: baseline; }
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 18px; line-height: 24px; }
+ol, ul { list-style: none; }
+table { border-collapse: collapse; border-spacing: 0; }
+b, strong { font-weight: bold; }
+i, em { font-style: italic; }
+
+html, body, #map_canvas, #options {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+#map_canvas {
+    margin-left: 200px;
+    line-height: normal;
+    font-size: normal;
+}
+
+#options {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 9999;
+    width: 160px;
+    padding: 0 20px;
+    background-color: #eee;
+    -webkit-box-shadow: 1px 0px 4px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: 1px 0px 4px rgba(0, 0, 0, 0.4);
+    box-shadow: 1px 0px 4px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    font-size: 13px;
+    line-height: 16px;
+}
+
+body {
+    position: relative;
+}
+
+#scraperwikitag {
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 122px;
+    width: 188px;
+    height: 30px;
+    padding: 0;
+    background: #f6f6f6 url('https://media.scraperwiki.com/images/powered.png') 50% 50% no-repeat;
+    text-indent: -9000px;
+    cursor: pointer;
+    -webkit-box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.4);
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.4);
+    -webkit-border-bottom-right-radius: 2px;
+    -webkit-border-bottom-left-radius: 2px;
+    -moz-border-radius-bottomright: 2px;
+    -moz-border-radius-bottomleft: 2px;
+    border-bottom-right-radius: 2px;
+    border-bottom-left-radius: 2px;
+}
+
+#scraperwikitag:hover {
+    background-color: #fff;
+    -webkit-box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.3);
+    -moz-box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.3);
+}
+
+#options h2 {
+    font-size: 20px;
+    line-height: 26px;
+    color: #999;
+    font-weight: bold;
+    margin: 15px 0 10px 0;
+    text-shadow: 0 1px 0 #fff;
+}
+
+#options p.help {
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 15px;
+    font-size: 15px;
+    line-height: 20px;
+    margin-bottom: 0;
+    color: #888;
+    text-shadow: 0 1px 0 #fff;
+}
+
+#options form {
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #ccc;
+    padding-top: 15px;
+}
+
+#options p {
+    margin-bottom: 15px;
+}
+
+#options label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+#options p.last {
+    padding-top: 15px;
+    border-top: 1px solid #fff;
+}
+
+#moreinfo {
+    position: absolute;
+    bottom: 20px;
+    width: 160px;
+    text-align: center;
+    display: block;
+    color: #999;
+    text-shadow: 0 1px 0 #fff;
+    text-decoration: none;
+    padding: 10px 0;
+}
+
+#moreinfo:hover {
+    color: #666;
+}
+
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript">
+
+        var map;
+        var markers = [];
+        var colourOptions = ['none', 'red', 'orange', 'green', 'blue', 'pink', 'grey', 'white'];
+        var layers = [{
+            'name': 'Tate: Alice', 
+            'shortname': 'tate_alice', 
+            'sourcescraper': 'tate_liverpool_exhibitions_data', 
+            'sql': "select full_show_name, lat, long, postcode from swdata where full_show_name like '%Magritte%' and lat is not null and lat between 53.06 and 53.7 and long between -3.64 and -1.86",
+            'z':1
+        }, {
+            'name': 'Tate: Magritte', 
+            'shortname': 'tate_magritte', 
+            'sourcescraper': 'tate_liverpool_exhibitions_data',
+            'sql': "select full_show_name, lat, long, postcode from swdata where full_show_name like '%Alice%' and lat is not null and lat between 53.06 and 53.7 and long between -3.64 and -1.86",
+            'z':1
+        }, {
+            'name': 'Philharmonic', 
+            'shortname': 'philharmonic', 
+            'sourcescraper': 'liverpool_philharmonic_visitor_data',
+            'sql': "select lat, long, postcode from swdata where lat is not null and lat between 53.06 and 53.7 and long between -3.64 and -1.86",
+            'z':1
+        }, {
+            'name': 'VAiL Hostpots', 
+            'shortname': 'vail', 
+            'sourcescraper': 'vail_hotspots',
+            'sql': "select lat, long, postcode from swdata where lat is not null",
+            'z':100
+        }];
+
+        function image(icon, size){
+            return new google.maps.MarkerImage(
+                'http://files.zarino.co.uk/scraperwiki/' + icon,
+                new google.maps.Size(size,size),
+                new google.maps.Point(0,0),
+                new google.maps.Point(size/2,size/2)
+            );
+        }
+
+        function create_marker(lat, lng, icon, category, z){
+            if(typeof(category) === 'undefined'){ category = 'general'; }
+            if(typeof(z) === 'undefined'){ z = '1'; }
+            myLatLng = new google.maps.LatLng(lat, lng);
+            markerOptions = {
+                position: myLatLng,
+                icon: image(icon,8),
+                map: map, 
+                title: category,
+                visible: false,
+                zIndex: z
+            };
+            var m = new google.maps.Marker(markerOptions);
+            m.category = category;
+            markers.push(m);
+        }
+
+        function load_layer(layer, z){
+            $.ajax({
+                url: encodeURI("https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=" + layer.sourcescraper + "&query=" + layer.sql),
+                dataType: 'json',
+                success: function(data){
+                    for(i = 0; i < data.length; i++){
+                        create_marker(data[i].lat, data[i].long, 'smalldot-white.png', layer.shortname, layer.z);
+                    }
+                }, 
+                error: function(jqXHR, textStatus){
+                    alert('Error loading ' + layer.name + ' data from ScraperWiki API: ' + textStatus);
+                }
+            });
+        }
+
+        $(function(){
+
+            // Make pretty ScraperWiki tag
+            $('<a>').attr('id', 'scraperwikitag').attr('href', $('#scraperwikipane a').attr('href')).appendTo('body');
+
+            // Initialise Google Map
+            map = new google.maps.Map(
+                document.getElementById('map_canvas'), 
+                {zoom: 12, center: new google.maps.LatLng(53.4, -2.983333), mapTypeId: google.maps.MapTypeId.TERRAIN}
+            );
+
+            // Create colour options for settings panel
+            var selectOptionsHTML = '';
+            $.each(colourOptions, function(i,colour){
+                selectOptionsHTML += '<option value="' + colour + '">' + colour.charAt(0).toUpperCase() + colour.substr(1) + '</option>';
+            });
+            var formHTML = '';
+
+            // Create settings panel
+            $.each(layers, function(i, layer){
+                formHTML += '<p><label for="' + layer.shortname + '">' + layer.name + '</label><select id="' + layer.shortname + '" name="' + layer.shortname + '">' + selectOptionsHTML + '</select></p>';
+                load_layer(layer);
+            });
+            $('form').append(formHTML);
+
+            $('<a>').html('&larr; About this map').attr('href', $('#scraperwikipane a').attr('href')).attr('id','moreinfo').appendTo('#options');
+
+
+            $('#render').bind('click', function(){
+
+                $(this).val('Mapping\u2026');
+                setTimeout(function(){ $('#render').val('Map it!'); }, 5000);
+
+                $.each(layers, function(i, layer){
+
+                   if($('#' + layer.shortname).val() == 'none'){
+                        for (var i=0; i<markers.length; i++) {
+                            if (markers[i].category == layer.shortname) {
+                                markers[i].setVisible(false);
+                            }
+                        }
+                    } else {
+                        if(layer.shortname == 'vail'){ 
+                            iconsize = 24;
+                            iconsizehuman = 'big';
+                        } else {
+                            iconsize = 8;
+                            iconsizehuman = 'small';
+                        }
+                        for (var i=0; i<markers.length; i++) {
+                            if (markers[i].category == layer.shortname) {
+                                markers[i].setIcon(image(iconsizehuman + 'dot-' + $('#' + layer.shortname).val() + '.png', iconsize));
+                                markers[i].setVisible(true);
+                            }
+                        }
+                    }
+                    
+                });
+
+            });
+
+
+        });
+
+    </script>
+  </head>
+  <body>
+    <!-- Ignore me --><span style="display:none"><div id="scraperwikipane"></div></span>
+    <div id="options">
+        <h2>Settings</h2>
+        <p class="help">Which layers would<br/>you like to show?</p>
+        <form></form>
+        <p class="last">
+            <input type="button" value="Map it!" id="render" />
+        </p>
+    </div>
+    <div id="map_canvas"></div>
+  </body>
+</html>

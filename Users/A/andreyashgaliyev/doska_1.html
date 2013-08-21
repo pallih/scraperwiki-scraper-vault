@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <title>UBoard</title>
+        <meta charset="utf-8"/>
+        <link rel="stylesheet" type="text/css" href="https://dl.dropbox.com/u/8303051/board/bootstrap.min.css">
+        <style>
+        .a-navbar {
+             clear: both;
+             display: block;
+             margin-bottom: 10px;
+        }
+        .a-navbar-inner {
+         box-shadow: 0 1px 3px
+        }
+
+        header {
+            padding:10px;
+        }
+        header .a-container {
+            position: relative;
+            background-color:red;
+        }
+        .a-btn-post {
+          margin:10px 0px 10px 20px;
+        }
+        header h1 {
+            
+        }
+        .a-bs-docs {
+         position: relative;
+          padding:14px;
+          *padding-top: 19px;
+          background-color: #fff;
+          border: 1px solid #ddd;
+          -webkit-border-radius: 9px;
+             -moz-border-radius: 9px;
+                  border-radius: 9px;
+        }
+
+        #pagination {
+             border-radius: 7px 7px 7px 7px;
+             border: 1px solid #EEEEEE;
+             box-shadow: -2px 2px 5px #DDDDDD;
+             display: block;
+             float: left;
+            padding-top:10px;
+            height:30px;
+        }
+
+        #pagination li {
+             display: inline;
+            margin-left:-4px;
+        }
+
+        #pagination li a {
+            padding: 12px;    
+            background: rgb(245,246,246); /* Old browsers */
+            background: -moz-linear-gradient(top, rgba(245,246,246,1) 0%, rgba(221,221,221,1) 100%); /* FF3.6+ */
+            background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(245,246,246,1)), color-stop(100%,rgba(221,221,221,1))); /* Chrome,Safari4+ */
+            background: -webkit-linear-gradient(top, rgba(245,246,246,1) 0%,rgba(221,221,221,1) 100%); /* Chrome10+,Safari5.1+ */
+            background: -o-linear-gradient(top, rgba(245,246,246,1) 0%,rgba(221,221,221,1) 100%); /* Opera 11.10+ */
+            background: -ms-linear-gradient(top, rgba(245,246,246,1) 0%,rgba(221,221,221,1) 100%); /* IE10+ */
+            background: linear-gradient(to bottom, rgba(245,246,246,1) 0%,rgba(221,221,221,1) 100%); /* W3C */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f5f6f6', endColorstr='#dddddd',GradientType=0 ); /* IE6-9 */
+            margin:0;
+            
+        }
+        #pagination li a:hover {
+            background:#ddd;
+            text-decoration:none;
+            color:white;
+        }
+        #pagination li.active a {
+            background:#ddd;
+            color:white;
+        }
+        #pagination li:first-child a
+        {
+            border-radius:7px 0px 0px 7px;
+        }
+        #pagination li:last-child a {
+             border-radius:0px 7px 7px 0px;
+             
+        }
+
+        #adv_table #date {
+            width:90px;
+        }
+        #adv_table #phones {
+             width: 100px;
+        }
+        #adv_table #title {
+            width: 150px;
+        }
+        #adv_table #price {
+            width:80px;
+        }
+        #adv_table #url {
+            width: 100px;
+        }
+
+        #menu .active {
+            font-weight: bold;
+        }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="container-fluid">
+            <h1>Объявления в Уральске</h1>
+             </div>
+        </header>
+        
+    <div class="row-fluid">
+        <div class="container-fluid">     
+              <div class="span2">
+
+                <ul id="menu" class="nav nav-list a-bs-docs">
+                  <li><a id="menu_job" href="#"><i class="icon-chevron-right"></i>Работа</a></li>
+                  <li><a id="menu_comp" href="#"><i class="icon-chevron-right"></i>Компьютеры</a></li>
+                </ul>
+
+                   <!--a href="/post" class="btn btn-primary a-btn-post">Разместить</a-->
+                
+                <!--div class="well">        
+                  <form class="form">
+                    <div class="control-group">
+                        <label class="control-label" for="inputManufacturer">Марка</label>
+                        <select class="span11" id="inputManufacturer">
+                          <option>Audi</option>
+                          <option>BMW</option>
+                          <option>ГАЗ</option>
+                          <option>КАМАЗ</option>
+                          <option>Citroen</option>
+                          <option>Volkswagen</option>
+                        </select>
+                        <label class="control-label" for="inputModel">Модель</label>
+                        <select class="span11" id="inputModel">
+                          <option>80</option>
+                          <option>100</option>
+                          <option>A4</option>
+                          <option>A6</option>
+                          <option>V12</option>
+                          <option>A100</option>
+                        </select>
+                        <label class="control-label" for="priceControls">
+                        Цена
+                        <div>
+                           От <input class="input-mini" type="text"><br />
+                           До <input class="input-mini" type="text"> USD
+                        </div>
+                        </label>
+                    </div>
+                  </form>
+              </div-->
+
+              </div>
+              <div class="span10">
+                    <ul id="pagination" style="display:none;">
+                    </ul>
+                  <table id="adv_table" class="table">
+                  
+                  </table>
+              </div>
+        </div>
+    </div>
+        <script src="https://dl.dropbox.com/u/8303051/board/jquery-1.8.2.min.js"></script>
+        <script src="https://dl.dropbox.com/u/8303051/board/bootstrap.min.js"></script>
+
+        <script>
+            var pages_count = 0;
+            var current_type = undefined;
+            var header_row = '<tr><th id="date"></th><th id="title">Заголовок</th><th id="desc">Описание</th><th id="phones">Контакты</th><th id="price">Цена</th><th id="url">Ссылка</th></tr>';
+            var selected_category = '';
+            var categories = [{'title':"Компьютеры",'cat':"COMP"},{'title':"Работа",'cat':"JOB"},{'title':"1-ком квартиры",'cat':"FLAT1"},{'title':"2-ком квартиры",'cat':"FLAT2"},{'title':"3-ком квартиры",'cat':"FLAT3"},{'title':"Автосервис",'cat':"AUTOSERVICE"},{'title':"Компьютерные услуги",'cat':"COMPSERVICE"},{'title':"Строительные услуги",'cat':"STROISERVICE"}];
+
+            function getXmlHttp() {
+              var xmlhttp;
+              try {
+                xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
+              } catch (e) {
+                try {
+                  xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+                } catch (E) {
+                  xmlhttp = false;
+                }
+              }
+              if (!xmlhttp && typeof XMLHttpRequest!='undefined') {
+                xmlhttp = new XMLHttpRequest();
+              }
+              return xmlhttp;
+            }
+            
+            function init_category(type) {
+            
+                for (var i = categories.length - 1; i >= 0; i--) {
+                    if(type===categories[i].cat) {
+
+                            current_type = type;
+                            var req = getXmlHttp();      
+
+
+                            req.onreadystatechange = function() {  
+                                if (req.readyState == 4) { 
+                                    console.log(req.statusText);
+                                    if(req.status == 200) { 
+
+                                        var ads = JSON.parse(req.responseText);
+                                        
+                                        console.log(ads[0].rec_count);
+                                        
+                                        pages_count = Math.ceil(ads[0].rec_count / 10);
+                                        build_pagination(1);
+                                        
+                                        load_ads(1);
+                                    }
+                                }
+                            }
+
+
+                            req.open('GET',get_count_pages_url(type), true);  
+                            req.send(null); 
+                            console.log('Подсчет страниц для категории '+type+' ...'); 
+
+                            
+                            selected_category = type;
+                            build_menu();
+
+                            return;
+                    }
+                }
+    
+                throw 'Type was not specified.';
+                return;
+            }
+            
+            function load_ads(page) {
+            
+                var req = getXmlHttp();  
+            
+                req.onreadystatechange = function() {  
+                    if (req.readyState == 4) { 
+                        console.log(req.statusText);
+                        if(req.status == 200) { 
+                            var ads_table = document.getElementById('adv_table');
+                            var ads = JSON.parse(req.responseText);
+                            
+                            var ads_html = header_row;
+                            
+                            for(var i=0;i<ads.length;i++) {
+                                ads_html += format_row(ads[i]);
+                            }
+                            
+                            ads_table.innerHTML =  ads_html;
+                        }
+                    }
+
+                }
+                
+                //calculate page
+                p = (page-1)*10;
+                
+                req.open('GET',get_url(current_type,p), true);  
+
+                req.send(null); 
+              
+                console.log('Ожидаю ответа сервера...'); 
+            }
+            
+            
+            function format_row(ad) {
+                var dateStr = String(ad.date);
+
+
+                return '<tr><td>'+dateStr.substr(0,dateStr.indexOf('T'))+'</td><td>'+ad.title+'</td><td>'+ad.desc+'</td><td>'+ad.phones+'</td><td>'+ad.price+'</td><td><a href="'+ad.url+'">'+ad.url+'</a></td></tr>';
+            }
+            
+            function get_url(type,page) {
+                return "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=u_scraper&query=select%20*%20from%20%60swdata%60%20where%20category_name%3D'"+type+"'%20order%20by%20date('date')%20asc%20limit%20"+page+"%2C10";
+            }
+        
+
+            function build_menu_row(category_item) {
+                if(selected_category===category_item.cat) {
+                    return '<li class="active"><i class="icon-chevron-right"></i>'+category_item.title+'</li>';
+                } else {
+                    return '<li><a class="menu_item" onclick="init_category(\''+category_item.cat+'\')" href="#"><i class="icon-chevron-right"></i>'+category_item.title+'</a></li>';
+                }
+            }
+
+            function build_menu() {
+                var menu_html = "";
+
+                for (var i = categories.length - 1; i >= 0; i--) {
+                    menu_html += build_menu_row(categories[i]);
+                }
+
+                document.getElementById('menu').innerHTML = menu_html;
+            }
+
+            
+            /* Paging */
+            
+                    
+            function get_count_pages_url(type) {
+                return "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=u_scraper&query=select%20COUNT(*)%20as%20rec_count%20from%20%60swdata%60%20where%20category_name%3D'"+type+"'";
+            }
+        
+            function build_pagination(active_page) {
+                
+                var pagination_html = "";
+                
+                for(var i=0;i<pages_count;i++) {
+                    pagination_html += build_page_row(i+1,active_page===i+1);
+                }
+                
+                document.getElementById('pagination').innerHTML = pagination_html;
+                document.getElementById('pagination').style.display = "block";
+            }
+            
+            function build_page_row(page,is_active) {
+                if(is_active) {
+                    return '<li class="active"><a href="#">'+page+'</a></li>';
+                } else {
+                    return '<li><a onclick="onPageSelect('+page+')" href="#">'+page+'</a></li>';
+                }
+            }
+            
+            function onPageSelect(page) {
+                build_pagination(page);
+                load_ads(page);
+            }
+            
+            build_menu();
+        </script></body>
+</html>

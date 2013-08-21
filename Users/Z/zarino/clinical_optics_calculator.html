@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+<head>
+    <title>Clinical Optics Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <style type="text/css">
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, 
+cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, 
+ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, 
+embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video { 
+margin: 0; padding: 0; border: 0; font-size: 100%; font: inherit; vertical-align: baseline; }
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 18px; line-height: 24px; }
+ol, ul { list-style: none; }
+table { border-collapse: collapse; border-spacing: 0; }
+b, strong { font-weight: bold; }
+i, em { font-style: italic; }
+abbr { border-bottom: 1px dotted; cursor: help; }
+
+body {
+    background: #eee;
+    width: 680px;
+    margin: 40px auto;
+}
+
+div {
+    float: left;
+    margin: 20px;
+}
+
+p {
+    color: #999;
+    text-align: center;
+    line-height: 24px;
+}
+
+label {
+    display: block;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+section {
+    overflow: auto;
+}
+
+input {
+    width: 160px;
+    padding: 10px;
+    font-size: 24px;
+    text-align: center;
+}
+
+h1 {
+    text-align: center;
+    font-size: 24px;
+    color: #999;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+    <script type="text/javascript">
+
+function recalculate(){
+
+    var optician_a = parseInt( $('#from_a').val() );
+    var optician_b = parseInt( $('#from_b').val() );
+    var optician_c = parseInt( $('#from_c').val() );
+
+    $('#to_a').val( optician_a + optician_b );
+
+    $('#to_b').val( optician_b * -1 );
+    
+    if( optician_c < 90){
+        $('#to_c').val( optician_c + 90);
+    } else {
+        $('#to_c').val( optician_c - 90);
+    }
+    
+}
+
+$(function(){
+    $('input').on('keyup', function(){
+        recalculate();
+    });
+});
+
+    </script>
+</head>
+<body>
+    <h1>I don&rsquo;t speak Optician!!</h1>
+
+    <p>Type your numbers into the top row of boxes,<br/>to see them translated into the other format.</p>
+    
+    <section id="from">
+        <div><label for="from_a">Spherical Power</label><input id="from_a" /></div>
+        <div><label for="from_b">Cylinder Power</label><input id="from_b" /></div>
+        <div><label for="from_c">Axis</label><input id="from_c" /></div>
+    </section>
+
+    <section id="to">
+        <div><label for="from_a">Spherical Power</label><input id="to_a" disabled="disabled" /></div>
+        <div><label for="from_b">Cylinder Power</label><input id="to_b" disabled="disabled" /></div>
+        <div><label for="from_c">Axis</label><input id="to_c" disabled="disabled" /></div>
+    </section>
+    
+    
+</body>
+</html>

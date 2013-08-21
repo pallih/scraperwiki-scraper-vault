@@ -1,0 +1,24 @@
+<style>
+.section { width: 48%; }
+iframe { border: 0px; }
+
+#iframes { float: left;}
+#iframes iframe {float: right; margin-left:auto;}
+
+#status { float: right; padding-top: 100px;}
+#status iframe { width:100%;}
+</style>
+<div id="iframes" class="section"></div>
+<div id="status"  class="section"><iframe name="status" src="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=htmltable&name=new_york_law&query=select%20*%20from%20%60swvariables%60"></iframe></div>
+<script>
+for (table in {"dir_0":true,"dir_1":true,"dir_2":true,"dir_3":true,"lawtext":true}){
+  iframe=document.createElement("iframe");
+  iframe.name=table;
+  iframe.src='https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=htmltable&name=new_york_law&query=select%20count(distinct%20js)%2C%20count(js)%20from%20%60'+table+'%60';
+  document.getElementById('iframes').appendChild(iframe);
+}
+//Reload every so often
+setTimeout(function(){
+  window.location.reload();
+},15000);
+</script>

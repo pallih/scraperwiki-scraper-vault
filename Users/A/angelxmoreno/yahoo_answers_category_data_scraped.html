@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>Yahoo Answers Categories</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Yahoo Answers Categories scraped using Scraperwiki">
+    <meta name="author" content="Angel S. Moreno - @angelxmoreno">
+
+    <meta charset="UTF-8">
+    <style type="text/css">
+        body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+        }
+        .page_section { display: none;}
+    </style>
+
+    </head>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </a>
+        <a class="brand" href="/">Yahoo Answers Categories</a>
+        <nav class="nav-collapse collapse">
+            <ul class="nav">
+            <li class="active"><a href="#" data-target="home">Home</a></li>
+            <li><a href="#" data-target="about">About</a></li>
+            <li><a href="#" data-target="contact">Contact</a></li>
+            </ul>
+        </nav>
+        </div>
+    </div>
+    </div>
+
+    <div class="container">
+    <div id="home" class="container page_section">
+        <h1>Yahoo Answers Categories Data with ScraperWiki</h1>
+        <p>Welcome to the ScraperWiki view page for my first ScraperWiki Script; a Yahoo Answers Categories scraper</p>
+
+        <div id="paging-demo1" class="pagination pagination-large">
+        <ul>
+            <li class="disabled"><a href="javascript:go_to_prev();">Prev</a></li>
+            <li class="active"><a href="javascript:go_to_page(1);">1</a></li>
+            <li class="disabled"><a href="javascript:go_to_next();">Next</a></li>
+        </ul>
+        </div>
+        <div id="demo1" class="accordion"></div>
+    </div>
+    
+    <div id="about" class="container page_section">
+        <h1>About Me</h1>
+        <p>Web Application Developer and Open Source contributor</p>
+    </div>
+    
+    <div id="contact" class="container page_section">
+        <h1>Contact Me</h1>
+        <p>Follow me on Facebook, Twitter, Google+, GitHub or LinkedIn</p>
+    </div>
+    <footer>
+        <p>&copy; PHPMine 2012 - Under Construction</p>
+    </footer>
+
+    </div>
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+    var show_per_page = 5; 
+    var number_of_items = 0;
+    var number_of_pages = 0;
+    var current_page = 1;
+    
+    $(document).ready(function(){
+        $('.page_section:first').show();
+        var navLinks = $('nav ul li a');
+        navLinks.click(function(){
+        target = $(this).attr('data-target');
+        targetDiv = $('div#'+target);
+        if(targetDiv.is(':visible')) return;
+        navLinks.parent().removeClass('active');
+        $(this).parent().addClass('active');
+        $('.page_section:visible').slideUp('fast');
+        targetDiv.slideDown('fast');
+
+        
+        });
+        var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";            
+        var srcname = "yahoo_answers_categories"; 
+        var sqlselect = "select * from yahoo_answers_categories"; 
+        $.ajax({
+        url: apiurl, 
+        dataType: "jsonp", 
+        data:{
+            name: srcname, 
+            query: sqlselect, 
+            format: "jsonlist"
+        }, 
+        success: function(response){
+            var keys = response.keys; 
+            var CategoriesFlat = response.data;
+            var CategoriesTreed = new Object();
+            $.each(CategoriesFlat, function(i,v){
+            id = v[0];
+            name = v[1];
+            parent_id = v[2];
+            if(parent_id == 0){
+                category = {id:id,name:name,parent_id:parent_id,children:[]};
+                CategoriesTreed[id] = category;
+            }
+            });
+            $.each(CategoriesFlat, function(i,v){
+            id = v[0];
+            name = v[1];
+            parent_id = v[2];
+            if(parent_id != 0){
+                category = {id:id,name:name,parent_id:parent_id};
+                CategoriesTreed[parent_id].children.push(category);
+            }
+            });
+            create_collapsible(CategoriesTreed);
+        }
+        }); 
+    });
+
+    function go_to_prev(){
+        if(window.current_page == 1) return;
+        new_page = window.current_page - 1;
+        go_to_page(new_page);
+    }
+
+    function go_to_next(){
+        if(window.current_page >= window.number_of_pages) return;
+        new_page = window.current_page + 1;
+        go_to_page(new_page);
+
+    }
+
+    function go_to_page(page_num){
+        if(page_num == window.current_page) return;
+        $('#paging-demo1 ul li').addClass('disabled').removeClass('active');
+        start_from = (page_num - 1) * window.show_per_page;
+        end_on = start_from +  window.show_per_page;
+        $('#demo1').children().fadeOut('slow').hide().slice(start_from, end_on).fadeIn('slow');
+        $('#paging-demo1 ul li:not(:eq('+page_num+'))').removeClass('disabled');
+        if(start_from == 0) $('#paging-demo1 ul li:first').addClass('disabled');
+        if(end_on >= window.number_of_items) $('#paging-demo1 ul li:last').addClass('disabled');
+        window.current_page = page_num;
+    }
+    
+    function create_collapsible(CategoriesTreed){
+        $.each(CategoriesTreed, function(i,v){
+        //console.log(v);
+        root = $('<div class="accordion-group"><div class="accordion-heading"><a class="accordion-toggle" data-toggle="collapse" data-parent="#demo1" href="#demo1_'+v.id+'">'+v.name+'</a></div><div id="demo1_'+v.id+'" class="accordion-body collapse"><div class="accordion-inner"></div></div></div>');
+        $.each(v.children, function(ii, vv){
+            root.find('div.accordion-inner').append('<p>'+vv.name+' <a target="_otro" href="http://answers.yahoo.com/dir/index?sid='+vv.id+'"><i class="icon-arrow-right"></i></a></p>');
+        });
+        root.hide().appendTo('#demo1').slideDown('slow');
+        });
+        window.number_of_items = $('#demo1').children().size();
+        window.number_of_pages = Math.ceil(number_of_items/show_per_page);
+        if(window.number_of_pages > 1){
+        $('#paging-demo1 ul li:last').removeClass('disabled');
+        }
+        
+        for(current_link = 2; window.number_of_pages >= current_link; current_link++){
+        li = $('<li><a href="javascript:go_to_page('+current_link+');">'+current_link+'</a></li>');
+        li.hide().insertBefore('#paging-demo1 ul li:last').fadeIn('fast').css({display:'inline'});
+        }
+       
+        //hide all the elements inside content div
+        $('#demo1').children().css('display', 'none');
+
+        //and show the first n (show_per_page) elements
+        $('#demo1').children().slice(0, window.show_per_page).css('display', 'block');
+    }
+    </script>
+</body>
+</html>

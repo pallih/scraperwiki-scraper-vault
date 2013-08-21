@@ -1,0 +1,438 @@
+<!doctype html>
+<html>
+<head>
+    <title>NOTAM: Presidents and VIPs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <style type="text/css">
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, 
+cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, 
+ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, 
+embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video { 
+margin: 0; padding: 0; border: 0; font-size: 100%; font: inherit; vertical-align: baseline; }
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 18px; line-height: 24px; }
+ol, ul { list-style: none; }
+table { border-collapse: collapse; border-spacing: 0; }
+b, strong { font-weight: bold; }
+i, em { font-style: italic; }
+abbr { border-bottom: 1px dotted; cursor: help; }
+
+* html, html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+header {
+    position: relative;
+    z-index: 10;
+    height: 40px;
+    background-color: #f6f6f6;
+    -webkit-box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+#map {
+    position: absolute;
+    top: 40px;
+    right: 450px;
+    bottom: 0;
+    left: 0;
+    line-height: normal;
+    font-size: normal;
+}
+
+#sidebar {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    width: 450px;
+    background-color: #f6f6f6;
+    border-top: 1px solid #ccc;
+    -webkit-box-shadow: -1px 2px 4px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: -1px 2px 4px rgba(0, 0, 0, 0.4);
+    box-shadow: -1px 2px 4px rgba(0, 0, 0, 0.4);
+    font-size: 13px;
+    line-height: 16px;
+}
+
+header h1 {
+    line-height: 40px;
+    padding-left: 20px;
+    text-shadow: 0 1px 0 #fff;
+}
+
+header h1 em {
+    padding: 1px 5px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    background: #fff;
+    font-style: normal;
+    border: 1px solid;
+}
+
+header h1 em.usss {
+    background-color: #F1C2C9;
+    border-color: #DB8F9A;
+    margin-right: 2px;
+}
+
+header h1 em.usss.hover {
+    background-color: #fbecee;
+}
+
+header h1 em.vp {
+    background-color: #f0deba;
+    border-color: #deb666;
+}
+
+header h1 em.vp.hover {
+    background-color: #f9f2e4;
+}
+
+header h1 em.vip {
+    background-color: #e3ecc9;
+    border-color: #a8c458;
+}
+
+header h1 em.vip.hover {
+    background-color: #f7faef;
+}
+
+#scraperwikitag {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: block;
+    width: 200px;
+    height: 40px;
+    padding: 0;
+    background: transparent url('https://media.scraperwiki.com/images/powered.png') 50% 50% no-repeat;
+    text-indent: -9000px;
+    cursor: pointer;
+}
+
+#list {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+
+#sidebar table {
+    width: 100%;
+}
+
+#sidebar td, #sidebar th {
+    padding: 4px 5px;
+    line-height: 20px;
+    vertical-align: top;
+}
+
+#sidebar th {
+    line-height: 21px;
+    vertical-align: middle;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+}
+
+#sidebar th.info {
+    font-family: Georgia, serif;
+    font-style: italic;
+}
+
+#sidebar th.state {
+    text-align: left;
+}
+
+#sidebar .info {
+    padding-left: 10px;
+}
+
+#sidebar tr.usss td {
+    background-color: #f6d7db;
+    border-bottom: 1px solid #F1C2C9;
+    color: #460A13;
+    cursor: pointer;
+}
+
+#sidebar tr.usss:hover td,
+#sidebar tr.usss.hover td {
+    background-color: #fbecee;
+}
+
+#sidebar tr.vp td {
+    background-color: #f5e8cf;
+    border-bottom: 1px solid #ECD4A5;
+    color: #392A0C;
+    cursor: pointer;
+}
+
+#sidebar tr.vp:hover td,
+#sidebar tr.vp.hover td {
+    background-color: #f9f2e4;
+}
+
+#sidebar tr.vip td {
+    background-color: #edf3dc;
+    border-bottom: 1px solid #C6D890;
+    color: #313B15;
+    cursor: pointer;
+}
+
+#sidebar tr.vip:hover td,
+#sidebar tr.vip.hover td {
+    background-color: #f7faef;
+}
+
+#sidebar td.info img {
+    vertical-align: -3px;
+}
+
+#sidebar .loading td {
+    width: 450px;
+    text-align: center;
+    padding: 20px;
+}
+
+#sidebar .notam {
+    display: none;
+}
+
+#sidebar .exclusion, #sidebar .date, #sidebar .time, #sidebar .hours, #sidebar .warning {
+    text-align: center;
+}
+
+#sidebar .date {
+    white-space: nowrap;
+}
+
+.infowindow {
+    font-size: 16px;
+    line-height: 24px;
+    padding-right: 20px;
+}
+
+.infowindow h1 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.infowindow .details a {
+    color: #2C4193;
+    display: block;
+    margin-top: 5px;
+    text-decoration: none;
+}
+
+.infowindow .details a:hover {
+    text-decoration: underline;
+}
+
+.infowindow .details a img {
+    margin-right: 5px;
+    vertical-align: -2px;
+}
+
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript">
+
+// neat little wrapper around the ScraperWiki API
+function scraperwiki_sqlite(scrapername, sql, apikey, success, error){
+    success = success || function(){};
+    error = error || function(){ console.log('sqlite api error'); };
+    data = {
+        format: 'jsondict',
+        name: scrapername,
+        query: sql
+    }
+    if(typeof(apikey) !== 'undefined' && apikey !== null){
+        data['apikey'] = apikey;
+    }
+    return $.ajax({
+        url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite",
+        data: data, 
+        dataType: 'jsonp',
+        timeout : 5000,
+        success: success,
+        error: error
+    });
+}
+
+function ProcessDate(pnot, key){
+    // does the given key contain a datetime?
+    var mbdt = /(\d\d\d\d-\d\d-\d\d)T(\d\d:\d\d)/.exec(pnot[key]);
+    if (mbdt == null)
+        return false;
+    // yes!
+    pnot["d"+key] = mbdt[1];
+    pnot["t"+key] = mbdt[2];
+    // checking again, for some reason, using a harder regexp??
+    var mbd = /(\d\d\d\d)-0?(\d+)-0?(\d+)T0?(\d+):0?(\d+)/.exec(pnot[key]);
+    pnot["dd"+key] = new Date(parseInt(mbd[1]), parseInt(mbd[2])-1, parseInt(mbd[3]), parseInt(mbd[4]), parseInt(mbd[5]));
+    return true;
+}
+
+var important_names = {
+    'VP':'the Vice-President',
+    'VIP':'a VIP',
+    'USSS':'the President'
+}
+
+var icons = {
+    'VP':'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=V|deb666|000', 
+    'VIP':'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=O|a8c458|000', 
+    'USSS':'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=P|e64f65|000' 
+}
+
+var hover_icons = {
+    'VP':'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=V|f5e8cf|000', 
+    'VIP':'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=O|edf3dc|000', 
+    'USSS':'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=P|f6d7db|000' 
+}
+
+$(function(){
+
+    // creates the Google Map
+    map = new google.maps.Map(
+        document.getElementById('map'), 
+        {"zoom": 4, "center": new google.maps.LatLng(39.5, -95.4), mapTypeId: google.maps.MapTypeId.TERRAIN}
+    );
+
+    // creates a google maps popup (we'll use it later)
+    infowindow = new google.maps.InfoWindow({
+        content: 'Click a marker to show NOTAM details here'
+    });
+
+    // we'll store the markers in here
+    markers = [];
+
+    // creates a prettier scraperwiki tag
+    $('<a>').attr('id', 'scraperwikitag').attr('href', $('#scraperwikipane a').attr('href')).appendTo('header');
+
+    var sqlcols = [
+        "pnotam.NOTAM as NOTAM", 
+        "Type", 
+        "Issue_Date", 
+        "Beginning_Date_and_Time", 
+        "Ending_Date_and_Time",
+        "(strftime('%s', Ending_Date_and_Time) - strftime('%s', Beginning_Date_and_Time))/3600.0 as stopoverhours",
+        "(strftime('%s', Beginning_Date_and_Time) - strftime('%s', Issue_Date))/3600.0/24 as dayswarning",
+        "avg(center_lat) as lat", "avg(center_lng) as lng", "max(Radius_NM) as Radius",
+        "state"
+    ];
+    var sqlselect = [
+        "SELECT",
+        sqlcols.join(", "),
+        "FROM pnotam LEFT JOIN pnotamareas ON pnotamareas.NOTAM=pnotam.NOTAM",
+        "WHERE Type='USSS' or Type='VP' or Type='VIP'",
+        "GROUP BY pnotam.NOTAM",
+        "ORDER BY Beginning_Date_and_Time DESC",
+        "LIMIT 2000"
+    ]
+
+    // get notices out of the API
+    scraperwiki_sqlite('notam_parse', sqlselect.join(" "), null, function(results){
+        var $table = $('#sidebar table');
+        $table.html('<tr><th class="info">i</th><th class="notam">NOTAM</th><th class="exclusion"><abbr title="Exclusion Radius (miles)">&#0248;</abbr></th><th class="date">Date</th><th class="time">Time</th><th class="hours">Hours</th><th class="warning"><abbr title="Days&rsquo; notice given">Notice</abbr></th><th class="state">State</th></tr>');
+        // loop through the results, populating the results list and creating markers
+        $.each(results, function(i, result){
+            result['i'] = i;
+            ProcessDate(result, "Issue_Date");
+            ProcessDate(result, "Beginning_Date_and_Time");
+            ProcessDate(result, "Ending_Date_and_Time");
+
+            // create and populate a new row for the results list 
+            var $tr = $('<tr>').addClass(result['Type'].toLowerCase()).attr('id', 'n' + i);
+            var api_link_params = {
+                format: "htmltable_unescaped",
+                name: "notam_parse",
+                query: "select rawhtml from pnotam where NOTAM='" + result['NOTAM'] + "'"
+            }
+            result['source'] = 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?' + $.param(api_link_params);
+            $tr.append('<td class="info"><a target="_blank" href="' + result['source'] + '"><img src="https://media.scraperwiki.com/images/icons/help.png" width="16" height="16" alt="Info" title="Show details" /></a></td>');
+            $tr.append('<td class="notam">' + result['NOTAM'] + '</td>');
+            $tr.append('<td class="exclusion">' + result['Radius'] + '</td>');
+            $tr.append('<td class="date">' + result['dBeginning_Date_and_Time'] + '</td>');
+            $tr.append('<td class="time">' + result['tBeginning_Date_and_Time'] + '</td>');
+            $tr.append('<td class="hours">' + (result['stopoverhours'] != null ? result['stopoverhours'].toFixed(2) : "-") + '</td>');
+            $tr.append('<td class="warning">' + (result['dayswarning'] != null ? result['dayswarning'].toFixed(2) : "-") + '</td>');
+            $tr.append('<td class="state">' + result['state'] + '</td>');
+            $tr.on('click mouseover mouseout', function(e){
+                var i = $(this).attr('id').replace(/n/, '');
+                if(e.type=='click' && e.target.nodeName == 'IMG'){
+                    return true;
+                } else {
+                    google.maps.event.trigger(markers[i], e.type);
+                }
+            });
+            $table.append($tr);
+
+            // create a new marker, and assign click/mouse handlers
+            var latlng = new google.maps.LatLng(result['lat'], result['lng']);
+            var marker = new google.maps.Marker({position:latlng, icon: icons[result["Type"]], visible:true, map:map});
+            google.maps.event.addListener(marker, 'click', function(){
+                // console.log(this['details']);
+                popuphtml = '<h1>' + this['details']['stopoverhours'] + ' hour exclusion zone<br/>for ' + important_names[ this['details']['Type'] ] + '</h1>';
+                popuphtml += '<p>Begins: ' + this['details']['dBeginning_Date_and_Time'] + ' ' + this['details']['tBeginning_Date_and_Time'] + '</p>';
+                popuphtml += '<p>Ends: ' + this['details']['dEnding_Date_and_Time'] + ' ' + this['details']['tEnding_Date_and_Time'] + '</p>';
+                popuphtml += '<p class="details"><a href="' + this['details']['source'] + '" target="_blank"><img src="https://media.scraperwiki.com/images/icons/help.png" width="16" height="16" alt="Info" title="Show details" />Show details</a></h2>';
+                infowindow.setContent('<div class="infowindow">' + popuphtml + '</div>');
+                infowindow.open(map, this);
+            });
+            google.maps.event.addListener(marker, 'mouseover', function(){
+                var type = this['details']['Type'];
+                this.setIcon(hover_icons[type]);
+                this.setZIndex(google.maps.Marker.MAX_ZINDEX + 1);
+                $('#n' + this['details']['i']).addClass('hover');
+                //$('header h1 em.' + this['details']['Type'].toLowerCase()).addClass('hover');
+            });
+            google.maps.event.addListener(marker, 'mouseout', function(){
+                var type = this['details']['Type'];
+                this.setIcon(icons[type]);
+                this.setZIndex(google.maps.Marker.MAX_ZINDEX);
+                $('#n' + this['details']['i']).removeClass('hover');
+                //$('header h1 em.' + this['details']['Type'].toLowerCase()).removeClass('hover');
+            });
+            marker['details'] = result;
+            markers.push(marker);
+        });
+    });
+
+});
+    </script>
+</head>
+<body>
+    <!-- Ignore me --><span style="display:none"><div id="scraperwikipane"></div></span>
+    <header>
+        <h1>Air exclusion zones for the <em class="usss">US President</em>, <em class="vp">Vice-President</em> and <em class="vip">other VIPs</em></h1>
+    </header>
+    <div id="map"></div>
+    <div id="sidebar">
+        <div id="list">
+            <table cellspacing="0" cellpadding="0">
+                <tr class="loading">
+                    <td>Loading&hellip;</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

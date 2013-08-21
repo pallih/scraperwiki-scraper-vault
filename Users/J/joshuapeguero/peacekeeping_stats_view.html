@@ -1,0 +1,42 @@
+
+<head>
+<script src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<script type="text/javascript" src="http://autobahn.tablesorter.com/jquery.tablesorter.min.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+$(window).ready(function()
+{
+    $("#go").click(function()
+    {
+        $("div#output").html("<p>Working...</p>");
+        var sqlcode = "select country, people, men, women, month, year, mission, desc from swdata limit 1000";
+        var qdata = {name:'un_peacekeeping_statistics', query:sqlcode, format:"jsonlist"};
+        $.ajax({url:apiurl, data:qdata, dataType:"jsonp", success:function(tdata)
+        {
+            $("div#output").html("<table id=\"myTable\" class=\"tablesorter\"><thead><tr><th>#</th><th>"+tdata["keys"].join("</th><th>")+"</th></tr></thead>");
+            $("div#output table").append("<tbody>");
+            for (var i = 0; i < tdata["data"].length; i++)
+            {
+                var escrow = [ ];
+                for (var j = 0; j < tdata["data"][i].length; j++)
+                    escrow.push(String(tdata["data"][i][j]).substring(0, 100).replace(/</g, "&lt;"));
+                $("div#output table").append("<tr><th>"+(i+1)+"</th><td>"+escrow.join("</td><td>")+"</td></tr>");
+            }
+            $("div#output table").append("</tbody></table>");
+            $("#myTable").tablesorter(); 
+        }});
+
+    });
+});
+</script>
+</head>
+
+<body>
+<div class="project">
+<div class="header">UN graph</div>
+
+<p>Click <span id="go"><b>GO</b></span> to make the table</p>
+<div style="background:#ffdddd" id="output"></div>
+</div>
+</body>

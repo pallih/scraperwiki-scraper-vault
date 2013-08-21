@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <title>Facebook Likes</title>
+    <head>
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script type="text/javascript" src="http://dygraphs.com/dygraph-combined.js"></script>
+
+    </head>
+    <body>
+        <h2>Dunkin' Donuts Facebook Likes</h2>
+        <h4>Aggregated Daily Facebook Likes</h4>
+        <div id="graphdiv1" style="width:500px; height:300px;"></div>
+        <script type="text/javascript">
+            g1 = new Dygraph(
+            document.getElementById("graphdiv1"),
+            "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=csv&name=facebook_likes_scraper&query=select%20accessTime%2CdailyLikes%20from%20%60storage%60", // path to CSV file
+            {}          // options
+            );
+        </script>
+        <a href ="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=csv&name=facebook_likes_scraper&query=select%20accessTime%2CdailyLikes%20from%20%60storage%60"><p>Download this data here. (CSV)</p></a>
+        <h4>Daily Facebook Talking About</h4>
+        <div id="graphdiv2" style="width:500px; height:300px;"></div>
+        <script type="text/javascript">
+            g2 = new Dygraph(
+            document.getElementById("graphdiv2"),
+            "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=csv&name=facebook_likes_scraper&query=select%20accessTime%2Ctalking_about_count%20from%20%60storage%60", // path to CSV file
+            {}          // options
+            );
+        </script>
+
+        <a href ="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=csv&name=facebook_likes_scraper&query=select%20accessTime%2Ctalking_about_count%20from%20%60storage%60"><p>Download this data here. (CSV)</p></a>
+
+        <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7; IE=EmulateIE9"> 
+        <!--[if IE]><script src="path/to/excanvas.js"></script><![endif]-->
+       
+    </body>
+</html>

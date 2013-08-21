@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tate Liverpool Exhibition Attendees</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <style type="text/css">
+      html, body, #map_canvas {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      body {
+        position: relative;
+      }
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript">
+
+        var map;
+
+        function drop_pin(lat, lng, icon, title){
+            myLatLng = new google.maps.LatLng(lat, lng);
+            var image = new google.maps.MarkerImage(
+                'http://files.zarino.co.uk/scraperwiki/' + icon,
+                new google.maps.Size(8,8),
+                new google.maps.Point(0,0),
+                new google.maps.Point(4,4)
+            );
+            markerOptions = {
+                position: myLatLng,
+                icon: image,
+                map: map, 
+                title: title
+            };
+            new google.maps.Marker(markerOptions);
+        }
+
+        $(function(){
+            map = new google.maps.Map(
+                document.getElementById('map_canvas'), 
+                    {zoom: 12, center: new google.maps.LatLng(53.4, -2.983333), mapTypeId: google.maps.MapTypeId.TERRAIN}
+                );
+            $.ajax({
+                url: encodeURI("https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=tate_liverpool_exhibitions_data&query=select full_show_name, lat, long, postcode from swdata where lat is not null and lat between 53.06 and 53.7 and long between -3.64 and -1.86"),
+                dataType: 'json',
+                success: function(data){
+                    for(i = 0; i < data.length; i++){
+                        var icon = 'smalldot-grey.png';
+                        if(data[i].full_show_name.match(/Magritte/)){
+                            var icon = 'smalldot-blue.png';
+                        } else if(data[i].full_show_name.match(/Alice/)){
+                            var icon = 'smalldot-green.png';
+                        }
+                        drop_pin(data[i].lat, data[i].long, icon, data[i].full_show_name);
+                    }
+                }, 
+                error: function(jqXHR, textStatus){
+                    alert('Error loading ScraperWiki API: ' + textStatus);
+                }
+            });
+        });
+
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

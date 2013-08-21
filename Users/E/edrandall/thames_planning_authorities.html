@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Hydro planning applications</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 10px;
+                padding: 10px;
+                height: 95%;
+            }
+            #message {
+                height: 5%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+
+            var jsonURL = 'https://api.scraperwiki.com/api/1.0/datastore/sqlite';
+            var schemas = ['london_planning_applications', 
+                           'south_east_planning_applications',
+                           'south_west_planning_applications',
+                           'east_england_planning_applications',
+                           'west_midlands_planning_applications',
+                           'east_midlands_planning_applications',
+                           'north_east_planning_applications',
+                           'north_west_planning_applications',
+                           'scotland_planning_applications',
+                           'wales_planning_applications'];
+            var query = 'select * from applications WHERE (description LIKE "%hydro%") OR (description LIKE "%turbine%")';
+
+            $(function(){
+                var mapOptions = {
+                    zoom: 7,
+                    center: new google.maps.LatLng(52.000000, -1.000000),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById('map_canvas'), mapOptions);
+            });
+
+            for (var r=0; r<schemas.length; r++) {
+                var schema = schemas[r];
+            $.ajax({ url: jsonURL,
+                     dataType: 'jsonp',
+                     data: {
+                         name:   schema,
+                         query:  query,
+                         format: 'jsondict'
+                     }, 
+                     success: function(data){ 
+                         for (var i=0; i<data.length; i++) {
+                             addMarker(data[i]); 
+                         }
+                     },
+                     error: function(object, status) {
+                         var msg = 'Failed to retrieve any results ('+status+'), try again';
+                         $('#message').text(msg);
+                     } 
+            });
+            }
+
+            function addMarker(data){ 
+                if (!data.lat || !data.lng)
+                    return;
+                if (data.description.search(/therapy|hydrology|hydrological|hydrolysis|hydrogen|hydroxide|hydrocarbon|wind.?turbine|wind.?farm|gas.?turbine/i) != -1)
+                    return;
+                var dt = "Received:";
+                var date = data.received_date;
+                if (!date) {
+                    dt = "Validated:";
+                    date = data.validate_date;
+                }
+                if (!date) {
+                    dt = "Scraped:";
+                    date = data.scrape_date;
+                }
+                if (!date) {
+                    dt="Date:";
+                    date="UNKNOWN";
+                }
+                var title= data.authority+" "+data.reference+" "+dt+date+" "+data.description+" "+data.info_url;
+                var markerPos = new google.maps.LatLng(data.lat, data.lng); 
+                var markerOptions = {
+                    position: markerPos, 
+                    map: map, 
+                    title: title
+                }; 
+                new google.maps.Marker(markerOptions); 
+            } 
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+        <p id="message"></p>
+    </body>
+<html>

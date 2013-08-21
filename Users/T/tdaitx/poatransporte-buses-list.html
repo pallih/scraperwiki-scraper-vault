@@ -1,0 +1,162 @@
+<!DOCTYPE html>           
+<html>
+    <head>
+        <title>POA Transporte - Lista de Ônibus</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body {
+                margin: auto;
+                padding: 20px;
+                height: 100%;
+            }
+            
+            /* from http://www.textfixer.com/resources/css-tables.php */
+            table.gridtable {
+                font-family: verdana,arial,sans-serif;
+                font-size:11px;
+                color:#333333;
+                border-width: 1px;
+                border-color: #666666;
+                border-collapse: collapse;
+            }
+            table.gridtable th {
+                border-width: 1px;
+                padding: 8px;
+                border-style: solid;
+                border-color: #666666;
+                background-color: #dedede;
+            }
+            table.gridtable td {
+                border-width: 1px;
+                padding: 8px;
+                border-style: solid;
+                border-color: #666666;
+                background-color: #ffffff;
+            }
+    
+            /* from http://www.webdesignerwall.com/demo/css3-search-form.html */
+            .searchform {
+                display: inline-block;
+                zoom: 1; /* ie7 hack for display:inline-block */
+                *display: inline;
+                border: solid 1px #d2d2d2;
+                padding: 3px 5px;
+                
+                -webkit-border-radius: 2em;
+                -moz-border-radius: 2em;
+                border-radius: 2em;
+            
+                -webkit-box-shadow: 0 1px 0px rgba(0,0,0,.1);
+                -moz-box-shadow: 0 1px 0px rgba(0,0,0,.1);
+                box-shadow: 0 1px 0px rgba(0,0,0,.1);
+            
+                background: #f1f1f1;
+                background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#ededed));
+                background: -moz-linear-gradient(top,  #fff,  #ededed);
+                filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#ededed'); /* ie7 */
+                -ms-filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#ededed'); /* ie8 */
+            }
+            .searchform input {
+                font: normal 12px/100% Arial, Helvetica, sans-serif;
+            }
+            .searchform .searchfield {
+                background: #fff;
+                padding: 6px 6px 6px 8px;
+                width: 202px;
+                border: solid 1px #bcbbbb;
+                outline: none;
+            
+                -webkit-border-radius: 2em;
+                -moz-border-radius: 2em;
+                border-radius: 2em;
+            
+                -moz-box-shadow: inset 0 1px 2px rgba(0,0,0,.2);
+                -webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,.2);
+                box-shadow: inset 0 1px 2px rgba(0,0,0,.2);
+            }
+            .searchform .searchbutton {
+                color: #fff;
+                border: solid 1px #494949;
+                font-size: 11px;
+                height: 27px;
+                width: 27px;
+                text-shadow: 0 1px 1px rgba(0,0,0,.6);
+            
+                -webkit-border-radius: 2em;
+                -moz-border-radius: 2em;
+                border-radius: 2em;
+            
+                background: #5f5f5f;
+                background: -webkit-gradient(linear, left top, left bottom, from(#9e9e9e), to(#454545));
+                background: -moz-linear-gradient(top,  #9e9e9e,  #454545);
+                filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#9e9e9e', endColorstr='#454545'); /* ie7 */
+                -ms-filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#9e9e9e', endColorstr='#454545'); /* ie8 */
+            }
+        </style>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+        <script type="text/javascript">
+var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+var srcname = "poatransporte-buses";
+var sqlselect = "select * from buses"; // "select * from swdata limit 10"
+
+$.ajax({
+    url: apiurl, 
+    dataType: "jsonp", 
+    data:{
+        name: srcname, 
+        query: sqlselect, 
+        format: "jsonlist"
+    }, 
+    success: function(data){
+        populate_table(data);
+    }
+});
+
+function populate_table(tdata)
+{
+    var keys = tdata["keys"];
+    var data = tdata["data"];
+    var tab = $('#buses');
+    tab.append($("<thead><tr><th>" + keys.join("</th><th>") + "</th></tr></thead><tbody>"));
+    for (var i = 0; i < data.length; i++)
+        tab.append($('<tr><td>' + data[i].join("</td><td>") + "</td></tr>"));
+    tab.append($("</tbody>"));
+}
+
+// modified from: http://blogs.digitss.com/javascript/jquery-javascript/implementing-quick-table-search-using-jquery-filter/
+// When document is ready: this gets fired before body onload :) 
+$(document).ready(function(){
+    // Write on keyup event of keyword input element
+    $("#kwd_search").keyup(function(){
+        // When value of the input is not blank
+        if( $(this).val() != "")
+        {
+            // Show only matching TR, hide rest of them
+            $("#buses tbody>tr").hide();
+            $("#buses td:contains-ci('" + $(this).val() + "')").parent("tr").show();
+        }
+        else
+        {
+            // When there is no input or clean again, show everything back
+            $("#buses tbody>tr").show();
+        }
+    });
+});
+// jQuery expression for case-insensitive filter
+$.extend($.expr[":"], 
+{
+    "contains-ci": function(elem, i, match, array) 
+    {
+        return (elem.textContent || elem.innerText || $(elem).text() || "").toLowerCase().indexOf((match[3] || "").toLowerCase()) >= 0;
+    }
+});
+        </script>
+    </head>
+    <body>
+        <div id="main">
+            <input type="text" id="kwd_search" class="searchfield" type="text" value="Filtrar por..." onfocus="if (this.value == 'Filtrar por...') {this.value = '';}" onblur="if (this.value == '') {this.value = 'Filtrar por...';}" />
+            <table id="buses" class="gridtable"></table>
+        </div>
+</body>
+<html>

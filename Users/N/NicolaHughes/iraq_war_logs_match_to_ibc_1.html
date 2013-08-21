@@ -1,0 +1,125 @@
+<html>
+<head>
+  <script src="https://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+  <script src="https://media.scraperwiki.com/js/json-min.js"></script>
+  <style>
+     tr.even {background: #ff9 }
+   </style>
+</head>
+<body>
+<h2>Iraq war logs joined to Iraq body count</h2>
+
+<input type="button" value="IBC" id="IBC"/>
+<input type="button" value="Logs" id="Logs"/>
+
+<input type="text" value="2004-03-01" id="startdate"/>
+<input type="text" value="2004-07-01" id="enddate"/>
+<input type="button" value="Dateline" id="Dateline"/>
+
+<table id="tab1"></table>
+
+<script>
+function consumedata(tdata)
+{
+    if ( tdata.error ) {
+        alert( tdata.error + " " + tdata.short_name );
+        console.log( tdata );
+        return;
+    }
+    console.log( tdata );
+    var keys = tdata["keys"]; 
+    var data = tdata["data"]; 
+    var tab = $("table#tab1").empty(); 
+    tab.append($("<tr><th>"+keys.join("</th><th>")+"</th></tr>")); 
+    for (var i = 0; i < data.length; i++)
+        tab.append($('<tr><td>'+data[i].join("</td><td>")+"</td></tr>")); 
+}
+
+function onError(jqXHR, textStatus, errorThrown) {
+    alert( textStatus + " " + errorThrown );
+}
+
+var name = 'iraq_war_logs_match_to_ibc_1';
+
+$(window).ready(function() 
+{
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+    $.ajaxSetup({type:"GET", dataType: "jsonp", url:apiurl, error:onError}); 
+}); 
+
+$("#IBC").click(function()
+{
+   var sqlselect = "select `Start Date` as SD, `Reported Minimum`, `Location` from swdata order by SD limit 10 offset 100"; 
+   $.ajax({data:{name:"iraq_war_civilan_body_count", query:sqlselect, format: 'jsonlist'}, success:consumedata }); 
+}); 
+
+$("#Logs").click(function()
+{
+   var sqlselect = "select Date, Title, Region, `Total deaths`, Type, Category, `Attack on` from swdata where Date is not null limit 10"; 
+   $.ajax({data:{name:"iraq_war_logs", query:sqlselect, format: 'jsonlist'}, success:consumedata }); 
+}); 
+
+
+var dataIBC = null; 
+var dataLog = null; 
+function jointables(ldataIBC, ldataLog)
+{
+    if (ldataIBC) {
+        dataIBC = ldataIBC.data; 
+        console.log(dataIBC);
+    }
+    if (ldataLog) {
+        dataLog = ldataLog.data; 
+        console.log(dataLog);
+    }
+
+
+    if (!dataIBC || !dataLog)
+        return
+
+    var tab = $("table#tab1").empty(); 
+    tab.append($("<tr><th>Body count date</th><th>War log date</th><th>IBC number</th><th>IBC location</th><th>Log deaths number</th><th>Log location</th><th>Type</th><th>Category</th><th>Title</th><th>Attack on</th></tr>")); 
+    var eo = "even"; 
+
+    while (dataIBC.length || dataLog.length)
+    {
+        var dateIBC = (dataIBC.length ? dataIBC[0][0] : "9999-12-31"); 
+        var dateLog = (dataLog.length ? dataLog[0][0] : "9999-12-31"); 
+        var cdate = (dateIBC < dateLog ? dateIBC : dateLog); 
+        eo = (eo == "even" ? "odd" : "even"); 
+        while (true)
+        {
+            var fIBC = (dataIBC.length && (dataIBC[0][0] == cdate) ? dataIBC.shift() : null); 
+            var fLog = (dataLog.length && (dataLog[0][0] == cdate) ? dataLog.shift() : null); 
+            if (!fIBC && !fLog)
+                break; 
+            row = [ '<tr class="'+eo+'"><td>', (fIBC ? fIBC[0] : "-"), "</td><td>", (fLog ? fLog[0] : "-"), "</td><td>" ]; 
+            row.push((fIBC ? fIBC[1] : ""), "</td><td>", (fIBC ? fIBC[2] : ""), "</td><td>"); 
+            row.push((fLog ? fLog[1] : ""), "</td><td>", (fLog ? fLog[2] : ""),"</td><td>"); 
+            row.push((fLog ? fLog[3] : ""), "</td><td>", (fLog ? fLog[4] : ""),"</td><td>"); 
+            row.push((fLog ? fLog[5] : ""), "</td><td>", (fLog ? fLog[6] : ""),"</td><td>"); 
+            tab.append($(row.join(""))); 
+        }
+    }
+}
+
+$("#Dateline").click(function()
+{
+   dataIBC = null; 
+   dataLog = null; 
+
+   var sqlselectIBC = "select `Start Date` as SD, `Reported Minimum`, Location from swdata "+
+                   "where SD>='"+$("#startdate").val()+"' and SD<='"+$("#enddate").val()+"' order by SD"; 
+
+    $.ajax({data:{name:"iraq_war_civilan_body_count", query:sqlselectIBC, format: 'jsonlist'}, success: function(tdata) { jointables(tdata, null); } }); 
+
+   var sqlselectLogs = "select Date,`Total deaths`, Region, Type, Category, Title, `Attack on` from swdata where Date is not null "+
+                   "and Date>='"+$("#startdate").val()+"' and Date<='"+$("#enddate").val()+"' order by Date"; 
+   $.ajax({data:{name:"iraq_war_logs", query:sqlselectLogs, format: 'jsonlist'}, success: function(tdata) { jointables(null, tdata); } }); 
+}); 
+
+
+</script>
+
+</body>
+</html>

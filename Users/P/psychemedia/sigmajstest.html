@@ -1,0 +1,69 @@
+<head><title>test</title>
+ <script src="https://gist.github.com/psychemedia/5017081/raw/e8e93f9e4d41520edd2cfdeaad951ceae9901381/sigma.min.js"></script>
+
+<style type="text/css">
+  /* sigma.js context : */
+  .sigma-parent {
+    position: relative;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    background: #222;
+    height: 800px;
+  }
+  .sigma-expand {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+  }
+  .buttons-container{
+    padding-bottom: 8px;
+    padding-top: 12px;
+  }
+</style>
+
+<script src="https://raw.github.com/jacomyal/sigma.js/master/plugins/sigma.forceatlas2.js"></script>
+<script src="https://raw.github.com/jacomyal/sigma.js/master/plugins/sigma.parseGexf.js"></script>
+</head>
+<body> <div class="span12 sigma-parent" id="sigma-example-parent">
+    <div class="sigma-expand" id="sigma-example"></div>
+  </div>
+
+<script type="text/javascript">function init() {
+  // Instanciate sigma.js and customize rendering :
+  var sigInst = sigma.init(document.getElementById('sigma-example')).drawingProperties({
+    defaultLabelSize: 14,
+    defaultLabelBGColor: '#fff',
+    defaultLabelHoverColor: '#000',
+    labelThreshold: 6,
+    defaultEdgeType: 'curve',  defaultLabelColor: '#ccc',
+  font: 'Arial',
+  edgeColor: 'source'
+  }).graphProperties({
+    minNodeSize: 0.5,
+    maxNodeSize: 5,
+    minEdgeSize: 1,
+    maxEdgeSize: 1
+  }).mouseProperties({
+    maxRatio: 32
+  });
+  // Parse a GEXF encoded file to fill the graph
+  // (requires "sigma.parseGexf.js" to be included)
+  sigInst.parseGexf('https://views.scraperwiki.com/run/tesco_sprawl_demo_graph/');
+
+  // Draw the graph  - use draw to plot using gexf co-ords; else use Force Atlas
+  sigInst.draw();
+  //sigInst.startForceAtlas2();
+}
+
+if (document.addEventListener) {
+  document.addEventListener("DOMContentLoaded", init, false);
+} else {
+  window.onload = init;
+}
+</script>
+
+
+</body>

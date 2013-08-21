@@ -1,0 +1,3 @@
+require 'nokogiri'
+html = ScraperWiki.scrape("http://pretraga.apr.gov.rs/RepsisPublicSite/Search/GeneralEnterpriseSearch.aspx")
+doc = Nokogiri::HTML(html)

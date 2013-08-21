@@ -1,0 +1,71 @@
+<h1>ScraperWikian Tweets</h1>
+<p>I take the usernames of the ScraperWikians with the most scrapers, guess that they have the same twitter username and display the Twitter feeds of the users.</p>
+<div id="widgets"></div>
+
+<script src="http://widgets.twimg.com/j/2/widget.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+<script type="text/javascript">
+function swajax(sqlselect,theformat,callback){
+  var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+  var srcname = "scraperwiki_user_profiles";
+  $.ajax({
+    url:apiurl
+  , dataType:"jsonp"
+  , data:{
+      name:srcname
+    , query:sqlselect
+    , format:theformat
+  }
+  , success:callback
+  });
+}
+
+function w(username){
+  new TWTR.Widget({
+    version: 2,
+    type: 'profile',
+    rpp: 5,
+    interval: 3000,
+//    width: 'auto',
+//    height: 'auto',
+    width: 250,
+    height: 400,
+    theme: {
+      shell: {
+        background: '#3399cc',
+        color: '#000000'
+      },
+      tweets: {
+        background: '#f9f9f9',
+        color: '#000000',
+        links: '#3399cc'
+      }
+    },
+    features: {
+      scrollbar: false,
+      loop: false,
+      live: true,
+      behavior: 'default'
+    }
+  }).render().setUser(username).start();
+}
+
+$(function(){
+  sql="SELECT username FROM `users` ORDER BY owns DESC LIMIT 1;"
+  swajax(sql,'jsondict',function(d){
+    document.write=function(widget){
+      document.getElementById("widgets").innerHTML+=widget;
+    }
+    for (i in d){
+      var row=d[i];
+      w(row.username);
+    }
+/*
+   d.map(function(row){
+     w(row.username);
+   });
+*/
+   $(".twtr-widget").css("display","inline-block");
+  });
+});
+</script>

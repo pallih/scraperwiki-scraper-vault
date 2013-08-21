@@ -1,0 +1,42 @@
+<html>
+<!-- cribbed from  https://scraperwiki.com/views/seattle_fire_real-time_911_1 -->
+    <head>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+        <script type="text/javascript" src="http://media.scraperwiki.com/js/json-min.js"></script>
+    </head>
+    <body>
+
+<div id="idout"></div>
+
+
+<script language="javascript">
+
+function puttable(idd, result)
+{
+    var keys = result["keys"];
+    var data = result["data"];
+    $(idd).html('<table class="out"></table>');
+    $(idd+" table").append($("<tr><th>University</th><th>Bursary info</th></tr>"));
+    for (var i = 0; i < data.length; i++)
+    {
+        
+        $(idd+" table").append($('<tr><td class="col1">'+data[i][0]+"</td><td><a href='"+data[i][1]+"'>"+data[i][1]+"</a></td></tr>"));
+    }
+}
+
+
+$(function()
+{
+    var name = "university_bursary_pages";
+    var format = "htmltable"
+    var sqlselect1 = "select * FROM swdata";
+
+    var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite";            
+    $.ajax({url:apiurl, dataType:"jsonp", data:{name:name, query:sqlselect1, format:"jsonlist"}, success:function(tdata)
+    {
+        puttable("#idout", tdata); 
+    }}); 
+});
+</script>
+    </body>
+</html>

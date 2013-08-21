@@ -1,0 +1,35 @@
+<p>Histórico de taxas do Tesouro Direto</p>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<script type="text/javascript">           
+
+var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";            
+var srcname = "extrair_taxas_tesouro_direto";
+var sqlselect = "select * from swdata limit 10"; 
+$.ajax({
+    url: apiurl, 
+    dataType: "jsonp", 
+    data:{
+        name: srcname, 
+        query: sqlselect, 
+        format: "jsonlist"
+    }, 
+    success: consumedata,
+    error: function(jq, status) { 
+        alert(status);
+    }
+}); 
+
+function consumedata(tdata)           
+{
+    //alert (JSON.stringify(tdata, undefined, 2));
+    var keys = tdata["keys"]; 
+    var data = tdata["data"]; 
+    var tab = $("<table>"); 
+    $("body").append(tab); 
+    tab.append($("<tr><th>" + keys.join("</th><th>") + "</th></tr>")); 
+    for (var i = 0; i < data.length; i++)
+        tab.append($('<tr><td>' + data[i].join("</td><td>") + "</td></tr>")); 
+}
+
+</script>

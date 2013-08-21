@@ -1,0 +1,507 @@
+<!-- Begin ScraperWiki asset bubbles -->
+
+<script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+<script src="http://media.scraperwiki.com/js/raphael-1.5.2.js" charset="utf-8"></script>
+<script src="http://media.scraperwiki.com/js/json-min.js"></script>
+<style>
+
+#swholder {
+    width: 625px;
+}
+
+#swholder img {
+    background-color: transparent;
+}
+
+#swholder a img {
+    border: none;
+}
+
+#swholder p {
+    margin: 0;
+}
+
+#swholder h2 img {
+    float: right;
+    margin-top: 5px;
+}
+
+#swintro {
+    baXckground-color: #FFF8F2;
+    boXrder: 1px solid #EDD2CF;
+    paXdding: 10px;
+    margin-bottom: 20px;
+}
+
+#swintro p {
+    coXlor: #611515;
+    font-size: 14px;
+}
+
+#swintro p.first {
+    font-size: 19px;
+    colXor: #8f0f0f;
+    margin-bottom: 10px;
+}
+
+#swintro p.last {
+    margin-top: 10px;
+}
+
+#swintro a, #swintro a:link {
+    text-decoration: underline;
+    color: #300;
+}
+
+#swbubblemap{
+    background: #cfe0ee url(http://files.zarino.co.uk/scraperwiki/gridlines.gif) 0 0;
+}
+
+#rj {
+    width: 605px;
+    height: 605px;
+}
+
+#swbubblemap {
+    padding: 10px;
+}
+
+#xclusterlist {
+    background-color: #fff;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+}
+
+#xclusterlist li {
+    display: inline;
+    float: left;
+    padding: 0 20px 0 10px;
+    line-height: 26px;
+    font-size: 13px;
+    background: #fff url(http://files.zarino.co.uk/scraperwiki/breadcrumb.gif) no-repeat right center;
+    cursor: pointer;
+    margin-bottom: 2px;
+}
+
+#xclusterlist .breadname {
+    color: #0e4a7c;
+}
+
+#xclusterlist .breadmoney {
+    color: #779fc1;
+}
+
+#xclusterlist li:first-child {
+    -moz-border-radius-topleft: 3px;
+    -moz-border-radius-bottomleft: 3px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+
+#xclusterlist li:last-child {
+    -moz-border-radius-topright: 3px;
+    -moz-border-radius-bottomright: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    background-image: none;
+    padding-right: 10px;
+}
+
+#zoomout {
+    background: #fff url(http://files.zarino.co.uk/scraperwiki/zoomout.gif) 6px 4px no-repeat;
+    float: right;
+    padding: 0 10px 0 25px;
+    line-height: 26px;
+    font-size: 13px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    color: #0e4a7c;
+    cursor: pointer;
+}
+
+#source {
+    background: #fff url(http://files.zarino.co.uk/scraperwiki/source.gif) 6px 4px no-repeat;
+    float: right;
+    clear: right;
+    padding: 0 10px 0 25px;
+    margin-top: 5px;
+    line-height: 26px;
+    font-size: 13px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    color: #0e4a7c;
+    cursor: pointer;
+    display: none;
+}
+
+</style>
+
+<div id="swholder"> 
+    <h2><a href="http://www.scraperwiki.com/"><img src="http://scraperwiki.com/media/images/powered.png" alt="Powered by ScraperWiki" /></a>National Assets &ndash; The Big Picture </h2>        
+    <div id="swintro"> 
+        <p class="first">&ldquo;Efficient management of the Government's asset base <br/>is critical to the delivery and performance of public services&rdquo;</p>
+        <p>This is the first line in the foreword to the National Asset Registry. <br/>Yet the government has stopped chronicling its assets in the <a href="http://webarchive.nationalarchives.gov.uk/+/http://www.hm-treasury.gov.uk/psr_investment_nar_2007_index.htm" style="text-decoration: underline">registry from 2007</a>.</p>
+        <p class="last">Here&rsquo;s an interactive guide to the value of government assets in <b>2005</b>, by <a href="http://scraperwiki.com">ScraperWiki</a>. <br/>Click on a bubble to open it out and see what is within. Can you can find the Nimrods?</p> 
+    </div>
+
+    <div id="swbubblemap">
+    <!--    <ul id="zoomcontrols">
+            <li><a title="rotate left">&lt;&lt;</a></li>
+            <li><a title="rotate right">&gt;&gt;</a></li>
+            <li><a title="zoom out">Z-</a></li>
+            <li><a title="zoom in">Z+</a></li>
+         </ul>   -->
+        <a id="zoomout" title="Return to previous item">Zoom out</a>
+        <ul id="xclusterlist"></ul>
+        <a id="source" target="_blank" title="View the source of this item&rsquo;s valuation">Source</a>
+        <div id="rj"></div>
+    </div>
+</div>
+
+<script>
+// http://james.padolsey.com/javascript/wordwrap-for-javascript/
+function wordwrap( str, width, brk, cut ) {
+ 
+    brk = brk || '\n';
+    width = width || 75;
+    cut = cut || false;
+    if (!str) { return str; }
+    var regex = '.{1,' +width+ '}(\\s|$)' + (cut ? '|.{' +width+ '}|.+$' : '|\\S+?(\\s|$)');
+    return str.match( RegExp(regex, 'g') ).join( brk );
+}
+
+var yfac = 0.8; 
+var eyfac = 1.0; 
+var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+var animatetime = 1500; 
+
+var lastclickclusterupper = null; // enables zooming out mode
+function assetclusterD(paper, name, total, citation, uppercluster)
+{
+    var cx = paper.dwidth/2; 
+    var cy = paper.dheight/2; 
+    var rad = Math.sqrt(total/100);
+    var moneytext; 
+    if (total >= 1000)
+        moneytext = "£"+(total/1000).toFixed(1)+"bn";
+    else if (total >= 100)
+        moneytext = "£"+total.toFixed(0)+"m";     
+    else
+        moneytext = "£"+total.toFixed(1)+"m";
+
+    cluster = { name:name, total:total, realrad:rad, uppercluster: uppercluster, subclusters:[ ], 
+                bexpanded:false, bvisible:false, paper:paper, topindex:0, citation:citation }; 
+    cluster.depth = (uppercluster ? uppercluster.depth+1 : 0); 
+
+    cluster.circle = paper.ellipse(cx, cy, rad, rad).attr(
+                {"fill":Raphael.getColor(), "opacity":0.0, cursor:"pointer", title: name + ': ' + moneytext}).hide();
+    cluster.circle.cluster = cluster; 
+    var wrapped_name = wordwrap(name, 14, "\n");
+    cluster.text = paper.text(cx, cy, wrapped_name).attr({cursor:"pointer", "font-size":12, title: name + ': ' + moneytext}).hide(); 
+    cluster.text.cluster = cluster; 
+
+    
+    cluster.moneytext = paper.text(cx, cy, moneytext).attr({cursor:"pointer", "font-size":12, title: name + ': ' + moneytext}).hide(); 
+    cluster.moneytext.cluster = cluster; 
+    cluster.longmoneytext = moneytext;
+
+    if (uppercluster)
+        uppercluster.subclusters.push(cluster); 
+    return cluster; 
+}
+
+function BuildClustersD(paper, data)
+{
+    var cx = paper.dwidth/2; 
+    var cy = paper.dheight/2;
+    var maincluster = assetclusterD(paper, "All", 337104.12, null); 
+    var clusterref = { "-":maincluster }; 
+    for (var i = 0; i < data.length; i++)
+    {
+        var row = data[i]; 
+        if (row[0] == "Total")
+            continue; 
+        var citation = row.pop(); 
+        citation = citation.replace(/clip_/g, "rect_");
+        var total = row.pop(); 
+        var deptchain = [ "", "" ]; 
+        for (var j = 0; ((j < row.length) && row[j]); j++)
+            deptchain.push(row[j]); 
+        var refname = deptchain.join("-"); 
+        var name = deptchain.pop(); 
+        var upperrefname = deptchain.join("-"); 
+        //console.log(refname+" || "+upperrefname+" || "+name); 
+        clusterref[refname] = assetclusterD(paper, name, total, citation, clusterref[upperrefname]);
+    }
+    return maincluster; 
+}
+
+
+function makexcluster(maincluster, clickcluster)
+{
+    var xclusters = maincluster.xclusters; 
+    var bmoved = true; 
+    if (xclusters.length >= 2)
+    {
+        var ltopindex = $.inArray(clickcluster, xclusters[1].subclusters); 
+        if (ltopindex != xclusters[1].topindex)
+        {
+            xclusters[1].topindex = ltopindex; 
+            xclusters[0] = xclusters[1].subclusters[ltopindex]; 
+        }
+        else
+            bmoved = false; 
+    }
+    if (xclusters[0].subclusters.length != 0)
+        xclusters.unshift(xclusters[0].subclusters[xclusters[0].topindex]); 
+
+    applyxcluster(maincluster);
+}
+
+function buildbreadcrumblist(maincluster)
+{
+    // the in out business on clicks on same object makes the logic for this awkward
+    $("ul#xclusterlist").html(""); 
+    for (var i = maincluster.xclusters.length - 1; i >= 1; i--)
+    {
+        var cluster = maincluster.xclusters[i]; 
+        var lis = ["<span class=\"breadname\">", cluster.name, "</span> "]; 
+        lis.push("<span class=\"breadmoney\">", cluster.longmoneytext, "</span> "); 
+        lis.unshift(cluster.subclusters.length == 0 ? "<li>" : "<li class=\"more\">"); 
+        $("ul#xclusterlist").append(lis.join("")); 
+    }
+    $("ul#xclusterlist li").click(function()
+    {
+        var seq = $(this).next(); 
+        while ((seq.length != 0) && (maincluster.xclusters.length >= 2))
+        {
+            maincluster.xclusters.shift(); 
+            seq = seq.next(); 
+        }
+        applyxcluster(maincluster); 
+    }); 
+
+    var citation;
+    if (maincluster.xclusters.length >= 2) {
+        citation = maincluster.xclusters[1].citation; 
+    } else {
+        citation = maincluster.xclusters[0].citation; 
+    }
+    if (citation)
+    {
+        $("a#source").attr("href", citation);
+        $("a#source").fadeIn(1000);
+    }
+    else
+        $("a#source").fadeOut(500);
+}
+
+function applyxcluster(maincluster)
+{
+    buildbreadcrumblist(maincluster);
+
+    if(maincluster.xclusters.length > 1){
+        $('#zoomout:hidden').fadeIn();
+    } else {
+        $('#zoomout:visible').fadeOut();
+    }
+
+    SetPositionsRecurse(maincluster, cluster.paper.dwidth/2, cluster.paper.dheight/2, 1.0, maincluster.xclusters); 
+
+    var fac, fx, fy; 
+    if (maincluster.xclusters.length >= 2)
+    {
+        var clusterrad = maincluster.xclusters[1].subclusters[0];
+        var radin = maincluster.xclusters[1].roff + clusterrad.realrad;
+        var textrad = clusterrad.text.getBBox().height/2; // text height
+        //alert("radin=" + radin + " textrad=" + textrad  + " paperheight=" + maincluster.paper.dheight);
+
+        fac = (0.5*maincluster.paper.dheight-textrad)/radin; 
+        fx = maincluster.xclusters[1].rx; 
+        fy = maincluster.xclusters[1].ry; 
+    }
+    else
+    {
+        fx = maincluster.xclusters[0].rx;
+        fy = maincluster.xclusters[0].ry;
+        fac = 1.5; 
+    }
+    var textlaps = [ ]; 
+    ApplyPositionsRecurse(maincluster, fx, fy, fac, textlaps); 
+    maincluster.xclusters[0].text.attr({"font-size":16, color:"red"}); 
+}
+
+
+function applyclickclusterRecurse(maincluster, cluster)
+{
+    var n = cluster.subclusters.length; 
+    if (n != 0){
+        cluster.circle.attr({"stroke-width":2, stroke: "white", cursor: "pointer"}); 
+    } else {
+        cluster.circle.attr({stroke:"none", cursor: "default"});
+        cluster.moneytext.attr({cursor: "default"});
+    }
+    cluster.subclusters.sort(function(a,b) { return b.total - a.total }); 
+
+    cluster.roff = cluster.realrad; 
+    if (n >= 2)
+        cluster.roff = cluster.subclusters[0].realrad/Math.sin(Math.PI/n); 
+
+    lsubcluster = [ ]; 
+    for (var i = 0; i < n; i++)
+        lsubcluster.push(i*2 < n ? cluster.subclusters[i*2] : cluster.subclusters[2*n-2*i-1]); 
+    cluster.subclusters = lsubcluster; 
+
+    cluster.circle.click(function() { makexcluster(maincluster, cluster) }); 
+    cluster.text.click(function() { makexcluster(maincluster, cluster) }); 
+    cluster.moneytext.click(function() { makexcluster(maincluster, cluster) }); 
+
+    for (var i = 0; i < n; i++)
+        applyclickclusterRecurse(maincluster, cluster.subclusters[i]); 
+}
+
+function SetPositionsRecurse(cluster, rx, ry, zopac, xclusters)
+{
+    var ix = $.inArray(cluster, xclusters); 
+    cluster.bexpanded = ((ix != -1) && (ix != 0)); 
+    var bupperexpanded = ((cluster.uppercluster == null) || cluster.uppercluster.bexpanded); 
+    cluster.rx = rx; 
+    cluster.ry = ry; 
+    cluster.zopac = zopac; 
+
+    var lroff = (cluster.bexpanded ? cluster.roff * ((ix-1)*2+1) : 0.0); 
+    for (var i = 0; i < cluster.subclusters.length; i++)
+    {
+        var theta = 2*(Math.PI*(i - cluster.topindex * 0))/cluster.subclusters.length; 
+        var costh = Math.cos(theta); 
+        var sinth = Math.sin(theta); 
+        SetPositionsRecurse(cluster.subclusters[i], rx-sinth*lroff, ry-costh*lroff,/*(costh/4+0.75)* */zopac, xclusters); 
+    }
+}
+
+function ApplyPositionsRecurse(cluster, fx, fy, fac, textlaps)
+{
+    var fcx = (cluster.rx-fx)*fac+cluster.paper.dwidth/2; 
+    var fcy = (cluster.ry-fy)*fac*yfac+cluster.paper.dheight/2; 
+    var fr = cluster.realrad*fac; 
+
+    var bvisible = (!cluster.bexpanded && (!cluster.uppercluster || cluster.uppercluster.bexpanded)); 
+    if (bvisible)
+    {
+        if (cluster.bvisible) 
+        {
+            cluster.text.hide(); 
+            cluster.moneytext.hide(); 
+        }
+        else
+            cluster.bvisible = true; 
+
+        var tbbox = cluster.text.getBBox(); 
+        var tfcy = fcy - fr*eyfac - tbbox.height/2 - 6; 
+        cluster.text.attr({x:fcx, y:tfcy, opacity:cluster.zopac, "font-size":12, fill: "366aa4"});
+        var fs = cluster.moneytext.attr("font-size") * fr*1.8/cluster.moneytext.getBBox().width; 
+        cluster.moneytext.attr({x:fcx, y:fcy, "font-size":fs, opacity:cluster.zopac, fill: "white"}); 
+
+        var boverlaps = false; 
+        var textlapseq = [fcx-tbbox.width/2, fcx+tbbox.width/2, tfcy-tbbox.height/2, tfcy+tbbox.height]; 
+        for (var j = 0; j < textlaps.length; j++)
+        {
+            if ((textlaps[j][0] < textlapseq[1]) && (textlaps[j][1] > textlapseq[0]) && 
+                (textlaps[j][2] < textlapseq[3]) && (textlaps[j][3] > textlapseq[2]))
+            {
+                boverlaps = true; 
+                break; 
+            }
+        }
+        if (!boverlaps)
+            textlaps.push(textlapseq); 
+    
+        cluster.circle.stop().show().animate({cx:fcx, cy:fcy, rx:fr, ry:fr*eyfac, opacity:cluster.zopac}, 
+                                      animatetime, ">", function() 
+        {
+            if (!boverlaps)
+                cluster.text.show(); 
+            cluster.moneytext.show(); 
+        }); 
+    }
+    else if (cluster.bvisible) 
+    {
+        cluster.text.hide().attr({x:fcx, y:fcy}); 
+
+
+        cluster.moneytext.hide().attr({x:fcx, y:fcy}); 
+        cluster.circle.stop().animate({cx:fcx, cy:fcy, rx:fr, ry:fr*yfac, opacity:0.0 }, 
+                    animatetime, ">", function(){this.hide()}); 
+        cluster.bvisible = false; 
+    }
+    else
+        cluster.circle.attr({cx:fcx, cy:fcy, rx:fr, ry:fr*yfac }); 
+
+    for (var i = 0; i < cluster.subclusters.length; i++)
+    {
+        var li = (i + cluster.topindex) % cluster.subclusters.length; 
+        ApplyPositionsRecurse(cluster.subclusters[li], fx, fy, fac, textlaps); 
+    }
+}
+
+
+
+
+$(window).ready(function() 
+{
+    $.ajaxSetup({type:"GET", dataType: "jsonp", url:apiurl, error:function(jq, status) { alert(status); }}); 
+    var width = $("#rj").width(); 
+    var height = $("#rj").height(); 
+    var paper = Raphael("rj", width, height); 
+    paper.dwidth = width;  paper.dheight = height; 
+    var maincluster; 
+
+    var sseq = "Dept, `Sub dept`, Category, Subcategory"
+    var sqlselect = "select "+sseq+", Amount, Citation from swdata order by "+sseq;
+    var name = "nar_nicola_ss";
+
+    $.ajax({data:{name:name, query:sqlselect}, success:function(tdata) 
+    {
+        maincluster = BuildClustersD(paper, tdata[0]["data"]); 
+        applyclickclusterRecurse(maincluster, maincluster); 
+        maincluster.xclusters = [maincluster]; 
+        applyxcluster(maincluster); 
+    } }); 
+
+/*    $("ul#zoomcontrols a").click(function() 
+    {
+        if (maincluster)
+        {
+            var stitle = $(this).attr("title"); 
+            var xclusters = maincluster.xclusters; 
+            if ((stitle == "zoom out") && (maincluster.xclusters.length >= 2))
+                xclusters.shift(); 
+            else if ((stitle == "zoom in") && (xclusters[0].subclusters.length != 0))
+                xclusters.unshift(xclusters[0].subclusters[xclusters[0].topindex]); 
+            else if (((stitle == "rotate left") || (stitle == "rotate right")) && (xclusters.length >= 2))
+            {
+                var tid = (stitle == "rotate left" ? xclusters[1].subclusters.length - 1 : 1); 
+                xclusters[1].topindex = (xclusters[1].topindex + tid) % xclusters[1].subclusters.length; 
+                xclusters[0] = xclusters[1].subclusters[xclusters[1].topindex]; 
+            }
+            else
+                stitle = false; 
+            if (stitle)
+                applyxcluster(maincluster); 
+        }
+    }); 
+*/
+    $('#zoomout').bind('click', function(){
+        if (maincluster){
+            var xclusters = maincluster.xclusters;
+            if(maincluster.xclusters.length >= 2){ 
+                xclusters.shift();
+                applyxcluster(maincluster);
+            }
+        }
+    });
+
+}); 
+</script> 
+
+<!-- End ScraperWiki asset bubbles -->

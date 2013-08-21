@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Visualisation 1</title>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+</head>
+
+<body>
+<script type="text/javascript">
+var Visualisation = VISUALISATION || {};
+
+VISUALISATION = {
+init: function() {
+$.ajax({ url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=baby_names&query=select%20*%20from%20%60baby_names', dataType: 'json', success: function(data){ console.log(data); } });
+}
+}
+
+$(document).ready(Visualisation.init);
+
+
+</script>
+</body>
+</html>

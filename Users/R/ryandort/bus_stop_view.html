@@ -1,0 +1,164 @@
+<html>
+<head></head>
+
+<style type="text/css">
+body 
+{
+    background-color:#F2F2F2;
+    font-family:"Arial", sans-serif;
+}
+
+table
+{
+    border-collapse:collapse;
+    font-size:150%;
+}
+table,th,td
+{
+    border: 0px solid #F3F3F3;
+    background-color:#FFFFFF;
+}
+
+td.eta
+{
+    text-align:center;
+}
+
+td.time
+{
+    font-weight:bold;
+    text-align:center;
+}
+
+td.other
+{
+    font-size:0.5em;
+}
+
+</style>
+
+<body>
+
+<h1 id="stopHeading"></h1>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script type="text/javascript">
+
+var stopTable;
+
+function getUrlVars() {
+    var vars = {};
+    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+        vars[key] = value;
+    });
+    return vars;
+}
+
+var stop = getUrlVars()["stopId"];
+
+</script>
+
+<table id="stopTable">
+</table>
+
+<script type="text/javascript">
+
+function formatNumberLength(num, length) {
+    var r = "" + num;
+    while (r.length < length) {
+        r = "0" + r;
+    }
+    return r;
+}
+
+var writeTable = function(json)
+{
+    if(json.error != null)
+    {
+        tableContents += "<tr>";
+        tableContents += "<td>" + json.error + "</td>";
+        tableContents += "</tr>";
+    }
+    else
+    {
+        var tableContents = "";
+        // write the table rows
+        for(var i = 0; i < json.length; ++i)
+        {
+            tableContents += "<tr>";
+
+            // decode time
+            var hour = Math.floor(json[i].time / 60);
+            var minutes = json[i].time % 60;
+            
+            // work out time difference
+            var currentTime = new Date();
+            var currentSec = currentTime.getHours() * 60 + currentTime.getMinutes();
+
+            var timeDiff = json[i].time - currentSec;
+            
+            tableContents += "<td rowspan=\"2\" class=\"eta\">" + timeDiff + "m</td>";
+
+            tableContents += "<td class=\"time\">" + formatNumberLength(hour, 2) + ":" + formatNumberLength(minutes, 2) + "</td>";
+            tableContents += "<td rowspan=\"2\" class=\"other\">" + json[i].route_long_name + "</td>";
+            tableContents += "</tr>";
+
+            tableContents += "<tr>";
+            tableContents += "<td class=\"other\">" + json[i].route_short_name + " - " + json[i].headsign + "</td>";            
+            tableContents += "</tr>";
+        }
+    }
+    $('#stopTable').html(tableContents);
+}
+
+$(document).ready(function()
+{
+    if(stop == null)
+    {
+        $('#stopTable').html("<tr><td>Please include a stopId parameter (?stopId=xxx)</td></tr>");
+        return;
+    }
+
+    // need to convert some dates and times
+    // only want stops from 10 minutes ago to 2 hours in the future
+    var startTime = new Date();
+    var startTimeSec = startTime.getHours() * 60 + startTime.getMinutes() - 10;
+    
+    // need also to get the correct trip for the correct calendar object
+    var weekday=new Array(7);
+    weekday[0]="Sunday";
+    weekday[1]="Monday";
+    weekday[2]="Tuesday";
+    weekday[3]="Wednesday";
+    weekday[4]="Thursday";
+    weekday[5]="Friday";
+    weekday[6]="Saturday";
+
+/* QUERY:
+select r.route_short_name, r.route_long_name, tr.headsign, st.time 
+ from StopTime st, Trip tr, Route r
+ where st.stop_id = <STOP> and
+  st.trip_id = tr.trip_id and
+  tr.route_id = r.route_id
+*/
+
+    // query the db for stop information
+    var query = "\
+select r.route_short_name, r.route_long_name, tr.headsign, st.time from\
+ StopTime st, Trip tr, Route r, Calendar c where\
+  st.stop_id = " + stop + " and\
+  st.time >= " + startTimeSec + " and\
+  st.trip_id = tr.trip_id and\
+  tr.route_id = r.route_id and\
+  tr.service_id = c.service_id and\
+  c." + weekday[startTime.getDay()] + " = 1\
+  limit 5";
+
+    var encodedQuery = encodeURIComponent(query);
+    $.getJSON("https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=metlink_bus_timetables_transit_format&query=" + encodedQuery , writeTable);
+})
+
+</script>
+
+</body>
+</html>

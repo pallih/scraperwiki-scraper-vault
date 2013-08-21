@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dribbble colour quilt</title>
+    <meta charset="UTF-8">
+    <style type="text/css">
+    * {
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        font-family: "Myriad Pro", Myriad, Helvetica, Arial, sans-serif;
+        line-height: 16px;
+        background: #333;
+    }
+    table {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        cellspacing: 0;
+        width: 100%;
+        height: 15px;
+        border-collapse: collapse;
+        line-height: 10px;
+        -webkit-transition: height 0.3s ease;
+        -moz-transition: height 0.3s ease;
+        -o-transition: height 0.3s ease;
+        transition: height 0.3s ease;
+    }
+    table:hover {
+        height: 35px;
+    }
+    td {
+        padding: 0 0 10px 0;
+        border: none;
+        height: 100%;
+        -webkit-transition: all 0.2s ease;
+        -moz-transition: all 0.2s ease;
+        -o-transition: all 0.2s ease;
+        transition: all 0.2s ease;
+    }
+    td:hover, td.selected{
+        padding: 0;
+    }
+    td a {
+        display: block;
+        height: 100%;
+        width: 100%;
+        cursor: pointer;
+        text-indent: -9000px;
+        outline: none;
+        -webkit-box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.5);
+        -moz-box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.5);
+        box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.5);
+    }
+    td:hover a {
+        position: relative;
+        z-index: 10;
+    }
+    #shotsOuter {
+        margin-top: 10px;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+    }
+    .patch {
+        float: left;
+        width: 300px;
+        height: 225px;
+        position: relative;
+        -webkit-perspective: 600;
+        -moz-perspective: 600;
+    }
+    img {
+        position: absolute;
+        width: 300px;
+        height: 225px;
+        top: 0;
+        left: 0;
+        -webkit-transform-style: preserve-3d;
+        -moz-transform-style: preserve-3d;
+        -webkit-backface-visibility: hidden;
+        -moz-backface-visibility: hidden;
+        -o-transition: all .4s ease-in-out;
+        -ms-transition: all .4s ease-in-out;
+        -moz-transition: all .4s ease-in-out;
+        -webkit-transition: all .4s ease-in-out;
+        transition: all .4s ease-in-out;
+    }
+    img.front {
+        z-index: 610;
+        -webkit-transform: rotateY(0deg);
+        -moz-transform: rotateY(0deg);
+    }
+    img.back {
+        z-index: 600;
+        -webkit-transform: rotateY(-180deg);
+        -moz-transform: rotateY(-180deg);
+    }
+    .patch.flip img.front {
+        z-index: 800;
+        -webkit-transform: rotateY(180deg);
+        -moz-transform: rotateY(180deg);
+    }
+    .patch.flip img.back {
+        z-index: 810;
+        -webkit-transform: rotateY(0deg);
+        -moz-transform: rotateY(0deg);
+    }
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript">
+    $(function(){
+        $.ajax({
+            url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=dribbble_colour_scraper&query=select%20colour%20from%20%60shots%60%20group%20by%20colour%20order%20by%20colour%20asc",
+            dataType: 'json',
+            success: function(data){
+                for(i = 0; i < data.length; i++){
+                    $('#colours tr').append('<td><a style="background-color: ' + data[i].colour + '">' + data[i].colour + '</a></td>');
+                }
+                $('#colours a').live('click', function(){
+                    $(this).parent().addClass('selected').siblings('.selected').removeClass('selected');
+                    loadQuilt($(this).text());
+                });
+            }, 
+            error: function(jqXHR, textStatus){
+                alert('Error loading ScraperWiki API: ' + textStatus);
+            }
+        });
+
+        $('#shots').width($(window).width() + 300).height($(window).height() + 225);
+        $('#shotsOuter').height($(window).height() - 10);
+        
+        $(window).bind('resize', calculateTiles);
+        calculateTiles();
+
+        function randomBetween(lower, upper){
+            return Math.floor(Math.random() * (upper - lower + 1) + lower);
+        }
+
+        function calculateTiles(){
+            var iw = 300;
+            var ih = 225;
+            var ww = $(window).width();
+            var wh = $(window).height();
+            var across = Math.ceil(ww/iw);
+            var updown = Math.ceil(wh/ih);
+            images  = across * updown * 2;
+        }
+                    
+        function flipRandomImage(){
+            var $patch = $('#shots .patch').eq(randomBetween(0,(images/2)-1));
+            $patch.toggleClass('flip');
+        }
+
+        function loadQuilt(hex){
+            $.ajax({
+                url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=dribbble_colour_scraper&query=select%20*%20from%20%60shots%60%20where%20colour%3D%22' + encodeURIComponent(hex) + '%22%20order%20by%20shot_id',
+                dataType: 'json',
+                success: function(data){
+                    unusedImages = [];
+                    if(typeof(timer) != 'undefined'){ clearInterval(timer); }
+                    $('#shots').empty();
+                    for(i = 0; i < data.length; i++){
+                        if(i < images){
+                            if (i%2 == 0){
+                                $('#shots').append('<div class="patch"><img class="front" src="http://dribbble.com' + data[i].image_url + '" width="300" height="225" /></div>');
+                            } else {
+                                $('#shots').children(':last-child').append('<img class="back" src="http://dribbble.com' + data[i].image_url + '" width="300" height="225" />');
+                            }
+                        } else {
+                            unusedImages.push(data[i]);
+                        }
+                    }
+                    timer = setInterval(flipRandomImage, 5000);
+                }, 
+                error: function(jqXHR, textStatus){
+                    alert('Error loading ScraperWiki API: ' + textStatus);
+                }
+            });
+        }
+
+
+    });
+    </script>
+  </head>
+  <body>
+    <!-- Ignore me --><span style="display:none"><div id="scraperwikipane"></div></span>
+    <table id="colours"><tr></tr></table>
+    <div id="shotsOuter">
+        <div id="shots"></div>
+    </div>
+  </body>
+</html>

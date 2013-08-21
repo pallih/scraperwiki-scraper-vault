@@ -1,0 +1,66 @@
+<html><head>
+<title>Hong Kong Movie Finder Charts</title>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script>
+  google.load("visualization", "1", {packages:["corechart"]});
+  function saveHistogramData(json) {hJSON = json;}
+  function saveTodayByCinemaData(json) {tbcJSON = json;}
+
+  function displayHistogram()
+  {
+    fullDateArray = [];
+    var data = new google.visualization.DataTable();
+    data.addColumn('string', 'Date');
+    data.addColumn('number', 'Showings');
+    data.addRows(hJSON.length);
+    for (i in hJSON)
+    {
+      fullDateArray[parseInt(i)] = hJSON[i]["d"];
+      data.setValue(parseInt(i), 0, hJSON[i]["d"].substring(5,10));
+      data.setValue(parseInt(i), 1, hJSON[i]["c"]);
+    }
+
+    chart = new google.visualization.ColumnChart(document.getElementById('histogram'));
+    chart.draw(data, {width: 1000, height: 300, title: 'Scheduled Showings', legend: 'none',
+                      hAxis: {title: 'Date', titleTextStyle: {color: 'red'}}
+                     });
+    google.visualization.events.addListener(chart, 'select', viewShowingsForDate);
+  }
+
+  // SELECT Cinemas.Name, COUNT(d) AS c FROM Cinemas LEFT OUTER JOIN (SELECT CinemaId, DATE(Time) AS d FROM Showings WHERE DATE(Showings.Time)=DATE(JULIANDAY('now')+.333)) AS s ON Cinemas.Id=s.CinemaId GROUP BY Cinemas.Name
+  function displayTodayByCinema()
+  {
+    var data = new google.visualization.DataTable();
+    data.addColumn('string', 'Cinema');
+    data.addColumn('number', 'Showings Today');
+    data.addRows(tbcJSON.length);
+    for (i in tbcJSON)
+    {
+      data.setValue(parseInt(i), 0, tbcJSON[i]["Name"]);
+      data.setValue(parseInt(i), 1, tbcJSON[i]["c"]);
+    }
+    chart = new google.visualization.ColumnChart(document.getElementById('todayByCinema'));
+    chart.draw(data, {width: 1000, height: 300, title: 'Showings Today (By Cinema)', legend: 'none',
+                      hAxis: {title: 'Cinema', titleTextStyle: {color: 'red'}}
+                     });
+  }
+
+  google.setOnLoadCallback(function(){
+    displayHistogram();
+    displayTodayByCinema();
+  });
+
+  function viewShowingsForDate()
+  {
+    var selectedDate = fullDateArray[chart.getSelection()[0].row];
+    //window.location = 'http://www.hkmoviefinder.com?d=' + selectedDate;
+  }
+</script>
+<script src="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=hong_kong_movies&query=select%20DATE(Time)%20AS%20d%2C%20COUNT(rowid)%20AS%20c%20from%20%60Showings%60%20GROUP%20BY%20d%20ORDER%20BY%20d%20ASC&callback=saveHistogramData"  type="text/javascript"></script>
+<script src="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=hong_kong_movies&query=SELECT%20Cinemas.Name%2C%20COUNT(d)%20AS%20c%20FROM%20Cinemas%20LEFT%20OUTER%20JOIN%20(SELECT%20CinemaId%2C%20DATE(Time)%20AS%20d%20FROM%20Showings%20WHERE%20DATE(Showings.Time)%3DDATE(JULIANDAY('now')%2B.333))%20AS%20s%20ON%20Cinemas.Id%3Ds.CinemaId%20GROUP%20BY%20Cinemas.Name&callback=saveTodayByCinemaData"  type="text/javascript"></script>
+</head>
+<body>
+  <div id="histogram"></div>
+  <div id="todayByCinema"></div>
+</body>
+</html>

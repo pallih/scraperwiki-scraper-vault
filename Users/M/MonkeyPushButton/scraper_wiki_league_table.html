@@ -1,0 +1,49 @@
+<html>
+<head>
+<script src="https://yui.yahooapis.com/3.6.0/build/yui/yui-min.js"></script>
+<!--Load the AJAX API-->
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+</head>
+<body>
+
+<table id="league-table">
+    <tr>
+        <th>Author</th>
+        <th>Number of Scrapers Auhored</th>
+    </tr>
+</table>
+
+<script type="text/javascript"> 
+
+function add_rows(data){
+    var table = $.find("#league-table");
+    for(i = 0; i < data.length; i++){ 
+        table.append("<tr><td>" + data[i].author + "</td><td>" + data[i].count + "</td></tr>");
+    }
+}
+
+// Create a YUI sandbox on your page.
+YUI().use('node', 'event', 'datasource', 'history', function (Y) {
+    var myDataSource = new Y.DataSource.Get({
+                source: "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=scraperwiki-scraper&"
+            });
+            var query = "select author, count(*) count from `swdata` WHERE author IS NOT NULL group by author order by count(*) DESC limit 50";
+            // Normalize the data sent to myCallback
+            myDataSource.plug({fn: Y.Plugin.DataSourceJSONSchema, cfg: {
+                schema: {
+                    resultFields: ["author", "count "]
+                }
+            }});
+            myDataSource.sendRequest({
+                request: "query=" + encodeURIComponent(query),
+                callback: {
+                    success: function(e) {add_rows(e);},
+                    failure: function(e) {alert(e);}
+                }
+            });
+});
+</script>
+
+</body>
+</html>
+

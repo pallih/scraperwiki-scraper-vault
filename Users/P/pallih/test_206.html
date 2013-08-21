@@ -1,0 +1,57 @@
+<html>
+<!-- cribbed from  https://scraperwiki.com/views/seattle_fire_real-time_911_1 -->
+    <head>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+        <script type="text/javascript" src="http://media.scraperwiki.com/js/json-min.js"></script>
+    </head>
+    <body>
+
+<div id="idout"></div>
+
+
+<script language="javascript">
+
+function puttable(idd, result)
+{
+    var keys = result["keys"];
+    var keyID=new Object()
+    var c=0
+    for (k in keys){
+        console.log(keys[k])
+        keyID[String(keys[k])]=c
+        c++
+    }
+
+    var data = result["data"];
+    $(idd).html('<table class="out"></table>');
+console.log(keys)
+console.log(keyID)
+    for (var i = 0; i < data.length; i++)
+    {
+        
+magic='<div class="vidembed" align="center"><div id="MAGICKEY" class="player"><embed id="bbc_emp_embed_MAGICKEY" width="512" height="323" flashvars="domId=MAGICKEY&config_settings_showFullScreenCta=false&playlist=http://www.bbc.co.uk/iplayer/playlist/MAGICKEY&config=http://www.bbc.co.uk/emp/iplayer/config.xml&config_settings_suppressCodec=h264" allowscriptaccess="always" allowfullscreen="true" wmode="default" quality="high" bgcolor="#000000" name="bbc_emp_embed_MAGICKEY" style="" src="http://www.bbc.co.uk/emp/9player.swf?revision=7276_7623" type="application/x-shockwave-flash"/></div>'
+        console.log(magic)
+        magic=magic.replace('MAGICKEY',data[i][keyID['progID']])
+        magic2='<script type="text/javascript">var emp = new embeddedMedia.Player();emp.setWidth("512");emp.setHeight("323");emp.setDomId("MAGICKEY");emp.set("config_settings_showFullScreenCta","false"); emp.setPlaylist("http://www.bbc.co.uk/iplayer/playlist/MAGICKEY");emp.setConfig("http://www.bbc.co.uk/emp/iplayer/config.xml");emp.write();< /script>'
+magic2=magic2.replace('MAGICKEY',data[i][keyID['progID']])
+
+        $(idd+" table").append($('<tr><td><img src="'+data[i][keyID['image']]+'"/></td><td>'+magic+magic2+'</td><td>'+data[i][keyID['seriesTitle']]+'</td><td>'+data[i][keyID['title']]+'</td><td>'+data[i][keyID['short_synposis']]+'</td><td><a href="http://www.bbc.co.uk/programmes/'+data[i][keyID['progID']]+'">'+data[i][keyID['availability']]+'</a></td><td><em>'+data[i][keyID['ouTitle']]+'</em><br/>'+data[i][keyID['ouContent']]+'</td><td><a href="'+data[i][keyID['ouURI']]+'">'+data[i][keyID['ouLinkTitle']]+'</a></td></tr>'));
+    }
+}
+
+
+$(function()
+{
+    var name = "ou_bbc_co-pros_on_iplayer";
+    var format = "htmltable"
+    var sqlselect1 = "select * FROM bbcOUcoPros";
+
+    var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite";            
+    $.ajax({url:apiurl, dataType:"jsonp", data:{name:name, query:sqlselect1, format:"jsonlist"}, success:function(tdata)
+    {
+        puttable("#idout", tdata); 
+    }}); 
+});
+</script>
+    </body>
+</html>

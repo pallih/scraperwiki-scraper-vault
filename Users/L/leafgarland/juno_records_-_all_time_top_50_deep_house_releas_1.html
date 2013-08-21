@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>UK Universities and Colleges</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>        
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+            $(function(){
+                
+                $.ajax({           
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=juno_records_-_all_time_top_50_deep_house_releases&query=select%20*%20from%20%60swdata%60%20limit%2010',
+                    dataType: 'json',
+                    success: function(data){ 
+                        var ul = $('<ul/>');
+                        $('#releases').append(ul);
+                        for(i = 0; i < data.length; i++){                            
+                            ul.append('<li>' + data[i].artist + ", " + data[i].title + '</li>');
+                            $.ajax({
+                                url: 'http://ws.spotify.com/search/1/album.json?q=' +
+                                    data[i].title + '%20artist:' + data[i].artist,
+                                dataType: 'json',
+                                success: function(results) {
+                                    $('#releases').append('<iframe src="https://embed.spotify.com/?uri=' +
+                                        results.albums[0].href +
+                                        '" frameborder="0" allowtransparency="true"></iframe>');
+                                }
+                            });
+                        }
+                    }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div id="releases"></div>
+    </body>
+<html>

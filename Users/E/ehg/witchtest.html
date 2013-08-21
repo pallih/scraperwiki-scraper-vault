@@ -1,0 +1,40 @@
+<html>
+  <head>
+   <title> Witch accusations </title>
+   <script language="javascript" src="http://www.google.com/jsapi"></script>
+   <script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['corechart']});
+    </script>
+   </head>
+   <body>
+
+   <div id="chart"></div>
+     <div id="vis" style="width:900px; height: 700px";></div>
+
+   <script type="text/javascript">
+      var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+      var srcname = "witches_1"; 
+      var sqlselect = "SELECT Characterisation, COUNT(Characterisation) as c FROM swdata GROUP BY Characterisation HAVING c > 20 ORDER BY c DESC"; 
+ 
+      var queryString = '';
+      var dataUrl = '';
+
+      function onLoadCallback() {
+
+       $.ajax({url:apiurl, dataType:"jsonp", data:{name:srcname, query:sqlselect, format:"jsonlist"}, success:function(tdata)
+       {
+          data = $.map(tdata.data, function (arr) { return [[arr[0], arr[1]]] });  
+          var dataTable = new google.visualization.arrayToDataTable(data, true);
+          new google.visualization.PieChart(document.getElementById('vis')).draw(dataTable);
+        }});
+
+        
+      }
+
+      google.setOnLoadCallback(onLoadCallback);
+
+    </script>
+  </body>
+</html>

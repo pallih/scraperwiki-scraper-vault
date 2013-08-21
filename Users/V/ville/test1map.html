@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>UK universities</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+    <!doctype html>
+<html>
+<head>
+    <title>Hyper Island Student Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <style type="text/css">
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, 
+cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd,
+ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, 
+embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video { 
+margin: 0; padding: 0; border: 0; font-size: 100%; font: inherit; vertical-align: baseline; }
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 18px; line-height: 24px; }
+ol, ul { list-style: none; }
+table { border-collapse: collapse; border-spacing: 0; }
+b, strong { font-weight: bold; }
+i, em { font-style: italic; }
+
+html, body, #map_canvas, #options {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+body {
+    position: relative;
+}
+
+#scraperwikitag {
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 122px;
+    width: 188px;
+    height: 30px;
+    padding: 0;
+    background: #f6f6f6 url('https://media.scraperwiki.com/images/powered.png') 50% 50% no-repeat;
+    text-indent: -9000px;
+    cursor: pointer;
+    -webkit-box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.4);
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.4);
+    -webkit-border-bottom-right-radius: 2px;
+    -webkit-border-bottom-left-radius: 2px;
+    -moz-border-radius-bottomright: 2px;
+    -moz-border-radius-bottomleft: 2px;
+    border-bottom-right-radius: 2px;
+    border-bottom-left-radius: 2px;
+}
+
+#scraperwikitag:hover {
+    background-color: #fff;
+    -webkit-box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.3);
+    -moz-box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.3);
+}
+
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript">
+
+// I hate IE8
+$.ajaxTransport("+*", function( options, originalOptions, jqXHR ) { if(jQuery.browser.msie && window.XDomainRequest) { var xdr; return { send: function( headers, completeCallback ) { xdr = new XDomainRequest(); xdr.open("get", options.url); xdr.onload = function() { if(this.contentType.match(/\/xml/)){ var dom = new ActiveXObject("Microsoft.XMLDOM"); dom.async = false; dom.loadXML(this.responseText); completeCallback(200, "success", [dom]); }else{ completeCallback(200, "success", [this.responseText]); } }; xdr.ontimeout = function(){ completeCallback(408, "error", ["The request timed out."]); }; xdr.onerror = function(){ completeCallback(404, "error", ["The requested resource could not be found."]); }; xdr.send(); }, abort: function() { if(xdr)xdr.abort(); } }; } });
+
+// stuff that requires the DOM goes here
+$(function(){
+
+    var map = new google.maps.Map(
+        document.getElementById('map_canvas'), 
+        {zoom: 3, center: new google.maps.LatLng(45.1, 9.3), mapTypeId: google.maps.MapTypeId.TERRAIN}
+    );
+
+    var markers = {};
+
+    $.ajax({
+        url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=uk_universities_and_colleges&query=select%20*%20from%20%60universities%60%20where%20latitude%20is%20not%20null",
+        data: {
+            format: 'jsondict', 
+            name: 'hyper_island_student_profiles', 
+            query: "select * from students where lat is not null"
+        },
+        success: function(students){
+            $.each(students, function(i,student) {
+
+                var latlng = new google.maps.LatLng(student.lat, student.lng)
+                markers[student.url] = new google.maps.Marker({
+                    map: map,
+                    position: latlng
+                });
+                markers[student.url]['data'] = student;
+
+                infowindow = new google.maps.InfoWindow({
+                    content: 'Click a marker to show student info here'
+                });
+
+                google.maps.event.addListener(markers[student.url], 'click', function() {
+                    popuphtml = '<h1><a href="' + this.data.url + '" target="_blank">' + this.data.name + '</a></h1>';
+                    if(this.data.course){
+                        popuphtml += '<p style="font-size: 14px; color: #666">' + this.data.course + ' (' + this.data.year + ')</p>';
+                    }
+                    if(this.data.avatar){
+                        popuphtml += '<a href="' + this.data.url + '" target="_blank" style="display: block; margin-top: 10px">';
+                        popuphtml += '<img src="' + this.data.avatar + '" width="200" height="200" />'
+                        popuphtml += '</a>';
+                    }
+                    infowindow.setContent(popuphtml);
+                    infowindow.open(map, this);
+                });
+            });
+        }
+    });
+
+    $('<a>').attr('id', 'scraperwikitag').attr('href', $('#scraperwikipane a').attr('href')).appendTo('body');
+
+});
+    </script>
+</head>
+<body>
+    <!-- Ignore me --><span style="display:none"><div id="scraperwikipane"></div></span>
+    <div id="map_canvas"></div>
+</body>
+</html>
+</script>
+
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>

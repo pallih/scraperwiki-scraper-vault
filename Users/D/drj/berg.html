@@ -1,0 +1,181 @@
+<!doctype html>
+<head>
+    <!--
+             _                  
+            | |__  ___ _ _ __ _ 
+            | '_ \/ -_) '_/ _` |  By David Jones
+            |_.__/\___|_| \__, |  and Zarino Zappia
+                          |___/ 
+
+          - You can use the arrow keys to flick forward and back.
+          - Double click the YYYY-DDD to manually enter a date (press Enter to save).
+          - In a hurry? Hold down either arrow key to preload dozens of images simultaneously,
+            then peruse at your leisure.
+
+    -->
+    <script type="text/javascript" src="https://devmedia.scraperwiki.com/js/jquery-1.5.2.js"></script>
+    <style type="text/css">
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    width: 1024px;
+    margin: 20px auto;
+    text-align: center;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+#navinator {
+    background-color: #eee;
+    margin-bottom: 2px;
+}
+#navinator a, #navinator span {
+    display: inline-block;
+    padding: 5px 10px;
+}
+#navinator span {
+    border-left: 2px solid #fff;
+    border-right: 2px solid #fff;
+    width: 160px;
+}
+#navinator a {
+    width: 400px;
+    height: 100%;
+    cursor: pointer;
+    color: #333;
+}
+#navinator a:hover {
+    background-color: #e6e6e6;
+    color: #000;
+}
+#date input {
+    width: 3.2em;
+    text-align: center;
+    font-size: 14px;
+    margin: -2px 0;
+}
+#imagebox {
+    position: relative;
+    cursor: crosshair;
+}
+.dot {
+    position: absolute;
+    z-index: 100;
+    display: block;
+    width: 2px;
+    height: 2px;
+    border: 1px solid #f00;
+    -webkit-border-radius: 2px;
+    -moz-border-radius: 2px;
+    border-radius: 2px;
+}
+    </style>
+</head>
+<body>
+    <div style="display:none"><div id="scraperwikipane"></div></div>
+    <div id="navinator"><a id='prev'>&larr; prev</a><span id="date"></span><a id='next'>next &rarr;</a></div>
+    <div id="imagebox"></div>
+    <script type="text/javascript">
+// Return the URL for the image tile for a
+// particular row and column and
+// year and day and instrument.
+// *instrument* defaults to 'aqua' ('terra'
+// as the other option).
+function tileurl(row, column, year, day, instrument) {
+    return "http://lance-modis.eosdis.nasa.gov/imagery/subsets/?subset=Arctic_" +
+        'r' + pad(row,2) + 
+        'c' + pad(column,2) + 
+        '.' + pad(year,4) + pad(day,3) + 
+        '.' + (instrument || 'aqua') + 
+        '.1km.jpg';
+}
+function pad(number, length) {
+    var str = number.toString();
+    while (str.length < length) {
+        str = '0' + str;
+    }
+    return str;
+}
+$(function(){
+    // Top level browser available from:
+    // http://rapidfire.sci.gsfc.nasa.gov/subsets/?mosaic=Arctic
+    // (which is surprisingly difficult to find, but you can google for
+    // "rapidfire modis subset arctic".
+    year = 2011;
+    day = 11;
+    row = 6;
+    col = 3;
+    // Note r=6,c=3,2011-014 is reasonably interesting.
+
+    var stash = [];
+
+    // Add a to the current day, and recompute *year* and *day* when
+    // they wrap round a year end.
+    function fixday(a){
+        a = a|0;
+        day += a;
+        // ECMA-262 says that this works, giving the "wrapped around" date,
+        // even when day is obviously out of range...
+        var nd = new Date(Date.UTC(year, 0, day));
+        // ... and as a consequence nd's year may have changed.
+        year = nd.getUTCFullYear();
+        day = (nd - new Date(Date.UTC(year, 0))) / (24*3600e3);
+        day += 1; 
+    }
+    function loadimage(){
+        // The source (URL) for the image; the value of the src attribute.
+        var src = tileurl(row, col, year, day);
+        if(stash[src]) {
+            console.log('reading from cache: ' + src);
+            $('#imagebox').html(stash[src]);
+        } else {
+            $img = $('<img>').attr({
+                src: src,
+                height: 1024,
+                width: 1024
+            });
+            stash[src] = $img;
+            $('#imagebox').html($img);
+        }
+        $('#date').text( pad(year, 4) + '-' + pad(day, 3) );
+    }
+    loadimage();
+    $("#prev, #next").click(function(){
+        if($(this).is('#prev')){ fixday(-1); } else { fixday(+1); }
+        loadimage();
+    });
+    $('#imagebox').bind('click', function(e){
+        var x = e.pageX - this.offsetLeft;
+        var y = e.pageY - this.offsetTop;
+        $(this).append('<span class="dot" style="left: ' + (x-2) + 'px; top: ' + (y-2) + 'px"></span>');
+    });
+    $('#date').bind('dblclick', function(){
+        if(! $('input', $(this)).length){
+            var bits = $(this).text().split('-');
+            $year = $('<input>').attr({ type: 'text', value: bits[0] });
+            $day = $('<input>').attr({ type: 'text', value: bits[1] });
+            $(this).text(' - ').prepend($year).append($day).children().bind('keydown', function(e){
+                if (e.keyCode == 13) {
+                    year = Number($('#date input:first').val());
+                    day = Number($('#date input:last').val().replace(/^0+/,''));
+                    loadimage();
+                } else if (e.keyCode == 27){
+                    $('#date').text( pad(year, 4) + '-' + pad(day, 3) );
+                }
+            }).eq(1).focus();
+        }
+    }).attr('title', 'Double click to edit; Press Enter to save').css('cursor', 'help');
+    $(document).bind('keydown', function(e){
+        if (e.keyCode == 37) {
+            e.preventDefault();
+            $('#prev').trigger('click');
+        } else if (e.keyCode == 39) {
+            e.preventDefault();
+            $('#next').trigger('click');
+        }
+    });
+});
+    </script>
+</body>
+</html>

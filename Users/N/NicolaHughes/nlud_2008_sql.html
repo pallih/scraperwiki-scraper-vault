@@ -1,0 +1,123 @@
+<html>
+<head>
+    <script src="http://media.scraperwiki.com/js/raphael-1.5.2.min.js"></script>
+    <script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+    <script src="http://media.scraperwiki.com/js/json-min.js"></script>
+    <style>
+        td, th { background:#eee }
+        td.col1 { color:blue }
+        ul.sqlcomps li { width:80%; text-align:right; list-style: none; }
+        ul.sqlcomps label { width:400px; font-family:Courier; font-size:120%;  }
+        ul.sqlcomps input { font-size:120%; width:70%; }
+        #bquery { font-size:150% }
+        #sqlall { width:80%; }
+        span.egdatabase { background:#efe; }
+    </style>
+</head>
+
+<body>
+    <h2>SQLite view of National Land Use Database 2008</h2>
+    <p>
+        Use the boxes below to explore this data set for all regions. There are over 23,000 records so use this for a better view of the data you're interested.
+    </p>
+    <p> 
+        <input type="text" id="src" value="nlud_2008"/>
+        
+    </p>
+    <input type="button" id="bquery" value="Query"/>
+    <input type="text" id="sqlall" value=""/>
+    <ul class="sqlcomps">
+        <li><label for="sqlselect">SELECT</label>
+            <input type="text" id="sqlselect" value="rowid, *"/>
+        </li>
+        <li><label for="sqlfrom">FROM</label>
+            <input type="text" id="sqlfrom" value="swdata"/>
+        </li>
+        <li><label for="sqlwhere">WHERE</label>
+            <input type="text" id="sqlwhere" value=""/>
+        </li>
+        <li><label for="sqlgroupby">GROUP BY</label>
+            <input type="text" id="sqlgroupby" value=""/>
+        </li>
+        <li><label for="sqlorder">ORDER BY</label>
+            <input type="text" id="sqlorder" value=""/>
+        </li>
+        <li><label for="sqllimit">LIMIT</label>
+            <input type="text" id="sqllimit" value=""/>
+        </li>
+    </ul>
+
+    <div id="output" style="background:#eee">
+    </div>
+    <div id="useroutput" style="border: thin black solid">
+    </div>
+<script>
+
+var sourcescraper = "nlud_2008"; 
+function filltable(result, idout)
+{ 
+    var keys = result["keys"]; 
+    var data = result["data"]; 
+    $("#"+idout).html('<table border="1"></table>'); 
+    $("#"+idout+" table").append($("<tr><th>"+keys.join("</th><th>")+"</th></tr>")); 
+    for (var i = 0; i < data.length; i++)
+        $("#"+idout+" table").append($('<tr><td class="col1">'+data[i].join("</td><td>")+"</td></tr>")); 
+}
+
+
+function trim(stringToTrim) {  return stringToTrim.replace(/^\s+|\s+$/g,"") }
+function makesqlval()
+{
+    var sqlselect = trim($("#sqlselect").val()); 
+    var sqlfrom = trim($("#sqlfrom").val()); 
+    var sqlwhere= trim($("#sqlwhere").val()); 
+    var sqlgroupby= trim($("#sqlgroupby").val()); 
+    var sqlorder= trim($("#sqlorder").val()); 
+    var sqllimit= trim($("#sqllimit").val()); 
+
+    sqlval = [ sqlselect ]; 
+    if (sqlfrom)
+        { sqlval.push("FROM"); sqlval.push(sqlfrom); }
+    if (sqlwhere)
+        { sqlval.push("WHERE"); sqlval.push(sqlwhere); }
+    if (sqlgroupby)
+        { sqlval.push("GROUP BY"); sqlval.push(sqlgroupby); }
+    if (sqlorder)
+        { sqlval.push("ORDER BY"); sqlval.push(sqlorder); }
+    if (sqllimit)
+        { sqlval.push("LIMIT"); sqlval.push(sqllimit); }
+    return sqlval.join(" "); 
+}
+
+
+$(document).ready(function()
+{
+    $("#bquery").click(function()
+    {
+        $("#output").html('<h1>Loading...</h1>'); 
+        var surl = ["http://api.scraperwiki.com/api/1.0/datastore/sqlite?name="]; 
+        surl.push(escape($("#src").val())); 
+        surl.push("&query=select+"); 
+        var sqlall = makesqlval(); 
+        $("#sqlall").val(sqlall); 
+        surl.push(escape(sqlall)); 
+        $.ajax({url:surl.join(""), dataType:"jsonp", success: function(sdata)
+        {
+//alert ($.toJSON(sdata)); 
+            filltable(sdata[0], "output"); 
+        },  error: function(a,b) {alert(b)} 
+        }); 
+    })
+
+    $("#src").val(sourcescraper); 
+    $("span.egdatabase").click(function()
+    {
+        $("#src").val($(this).text()); 
+    }); 
+
+})
+
+</script>
+
+</body>
+</html>

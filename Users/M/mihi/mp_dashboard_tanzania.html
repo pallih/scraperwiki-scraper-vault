@@ -1,0 +1,190 @@
+<html><head>
+<title>Tanzanian Parliament - Graphical Overview</title>
+<style>
+
+h1, h2, h3 {
+    font-family: sans-serif;
+    }
+h1, h2 {
+    margin-left: 10px;
+    }
+div.line, div.pie {
+    float: left;
+    width: 300px;
+    margin: 10px;
+    }
+.axis {
+    fill: none;
+    shape-rendering: cripsEdges;
+    stroke: black;
+    }
+.axis text, text.label {
+    font-family: sans-serif;
+    font-size: 8pt;
+    font-weight: normal;
+    }
+.arcs text {
+    background: white;
+    padding: 2px;
+    display:none }
+.arcs:hover text {
+    display: inline;
+    }
+.spacer {
+    clear: both;
+    }
+h3 {
+    font-size: 11pt;
+    }
+</style>
+</head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js"></script>
+<body itemscope itemtype="http://schema.org/WebPage">
+<h1 itemprop="name">Tanzanian Parliament</h1>
+<h2>Engagement</h2>
+<div id="nc" class="line">
+<h3>Contributions</h3>
+</div>
+<div id="nq" class="line">
+<h3>Questions</h3>
+</div>
+<div id="nsq" class="line">
+<h3>Supplementary Questions</h3>
+</div>
+<div class="spacer"></div>
+<h2>Members</h2>
+<div id="parties" class="pie">
+<h3>Parties</h3>
+</div>
+<div id="type" class="pie">
+<h3>Member Types</h3>
+</div>
+<div class="spacer"></div>
+<p itemprop="description">
+A graphical overview of the Tanzanian Parliament - engagement and member composition. 
+</p>
+<div class="footer">
+Created by <a href="http://tentacleriot.eu" itemprop="creator">Michael Bauer</a>
+</div>
+<script>
+d3.json("https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=mps_tanzania&query=select%20*%20from%20%60swdata%60",
+    function(data) {
+    var bin = function (lst) {
+        return lst.reduce(function (x,y) { if (x[y]) { x[y]++ } else { x[y]=1 }; return x},{});
+        }
+    var to_bin=["questions","Political Party","contributions","supplementary_questions","Member Type"];
+    var summary={};
+    for (i in to_bin) {
+        summary[to_bin[i]]=bin(data.map(function(x) {return x[to_bin[i]]}))
+        }
+    console.log(summary);
+    var to_points = function(obj) {
+        return d3.zip(d3.keys(obj).map(function(x) {return parseInt(x)}),d3.values(obj)).sort(function(a,b) {if (a[0]>b[0]) {return 1} else { return -1 }});
+        }
+    var do_line = function(obj,el) {
+        var width=300, height=200, padding=32;
+        svg=d3.select(el).append("svg")
+            .attr("width",width)
+            .attr("height",height);
+        var max=function(lst) {
+            return lst.reduce(function(x,y) {y=parseInt(y); if (x>y) { return x;} else {return y;}});
+            }
+        var xscale=d3.scale.linear()
+            .domain([0,max(d3.keys(obj.data))])
+            .range([padding,width]);
+        var yscale=d3.scale.linear()
+            .domain([0,max(d3.values(obj.data))])
+            .range([height-padding,0]);
+        var line=d3.svg.line()
+            .x(function(d) {return xscale(d[0])})
+            .y(function(d) {return yscale(d[1])})
+            .interpolate("cardinal")
+            .tension(0.5);
+        svg.selectAll("path")
+            .data([to_points(obj.data)])
+            .enter()
+            .append("svg:path")
+            .attr("d",line)
+            .attr("stroke",obj.color)
+            .attr("width","1")
+            .attr("fill","none");
+        var xAxis=d3.svg.axis();
+        xAxis.scale(xscale)
+        .orient("bottom")
+        .ticks(3);
+        svg.append("g")
+            .attr("class","axis")
+            .attr("transform","translate(0,"+(height-padding)+")")
+            .call(xAxis);
+    var yAxis=d3.svg.axis();
+        yAxis.scale(yscale)
+        .orient("left")
+        .ticks(3);
+        svg.append("g")
+            .attr("class","axis")
+            .attr("transform","translate("+(padding)+",0)")
+            .call(yAxis);
+        svg.append("text")
+            .text("# of MPs")
+            .attr("class","label")
+            .attr("x","100")
+            .attr("y",0)
+            .attr("text-anchor","end")
+            .attr("transform","rotate(90)");
+        }
+        var lines={"#nc":{"data":summary.contributions,
+                          "color":"#3333FF"},
+                    "#nq":{"data":summary.questions,
+                          "color":"#FFFF00"},
+                    "#nsq":{"data":summary.supplementary_questions,
+                           "color":"#33FF33"}}
+        for (i in lines) {
+            do_line(lines[i],i)
+            }
+        var do_pie=function(obj,el) {
+            var height=200, width=300,r=100;
+            var colors=["#3333FF","#FFFF00","#33FF33","#33FFFF","#FF3333","#FF33FF","#333333"]
+            svg=d3.select(el)
+                .append("svg")
+                .data([d3.values(obj)])
+                .attr("width",width)
+                .attr("height",height)
+                .append("svg:g")
+                .attr("transform","translate("+(width/2)+","+(height/2)+")");
+            var arc = d3.svg.arc() 
+                .outerRadius(r);
+
+            var pie=d3.layout.pie()
+                .value(function(d) { return d});
+            
+            var arcs=svg.selectAll("g.arcs")
+                .data(pie)
+                .enter()
+                .append("svg:g")
+                .attr("class","arcs");
+
+            arcs.append("svg:path")
+                .attr("fill",function(d,i) { return colors[i] })
+                .attr("d",arc);
+            
+            
+        arcs.append("svg:text")                                     //add a label to each slice
+                .attr("transform", function(d) {                    //set the label's origin to the center of the arc
+                //we have to make sure to set these before calling arc.centroid
+                d.innerRadius = 0;
+                d.outerRadius = r;
+                return "translate(" + arc.centroid(d) + ")";        //this gives us a pair of coordinates like [50, 50]
+            })
+            .attr("text-anchor", "middle")
+            .attr("z-index", 22)
+            .text(function(d, i) { return d3.keys(obj)[i]; }); 
+            }
+            
+        do_pie(summary["Political Party"],"#parties");
+        do_pie(summary["Member Type"],"#type");
+        
+    });
+
+</script>
+</body>
+</html>

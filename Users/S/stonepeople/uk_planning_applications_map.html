@@ -1,0 +1,507 @@
+<html>
+<head>
+  <style type="text/css" media="all">
+    body {
+        margin: 10 20;
+        padding: 0;
+        background: #FFF;
+        color: #494949;
+        font-weight: normal;
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 85%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin: 6px 0;
+      padding: 0;
+    }
+    h1 {font-size: 2em; padding-top: 20px; }
+    h2 {font-size: 1.8em; line-height: 1.8em;}
+    h3 {font-size: 1.6em;}
+    h4 {font-size: 1.4em;}
+    h5 {font-size: 1.2em;}
+    h6 {font-size: 1em;}
+    input {
+      font: 1em/1.2em Verdana, sans-serif;
+      color: #494949;
+    }
+    table {margin: 16px 0; width: 90%; font-size: 0.92em;}
+   </style>
+   <script src="http://maps.google.com/maps/api/js?sensor=false" type="text/javascript"></script>
+   <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/base/jquery-ui.css" type="text/css" media="all" />
+   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js" type="text/javascript"></script>
+   <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js" type="text/javascript"></script>
+   <script type="text/javascript">
+        function showhide(divId)
+        {
+            if(document.getElementById(divId).style.display == 'none')
+                {
+                document.getElementById(divId).style.display = 'block';
+                }
+            else
+                {
+                document.getElementById(divId).style.display = 'none';
+                }
+        }
+    </script>
+</head>
+<body>
+<div id="mapdiv" style="width:600px;height:600px;float:left;"></div>
+<div id="right_col" style="margin: 10px 0 0 620px">
+    <h1>UK Planning Applications</h1>
+    <p id="message" style="height: 4em;">Make a selection and press <em>Go</em> to show planning applications on the map</p>
+    <form id="tform" name="tform">
+    <table><tr>
+    <th>Region</th>
+    <td><select name="db" id="db">
+    </select>
+    </td></tr>
+    <tr>
+    <th>Authority</th>
+    <td><select name="auth" id="auth">
+    </select>
+    </td></tr>
+    <tr><th>Max. records returned</th><td><input type="text" name="max" id="max" value="200" /></td></tr>
+    <tr><th>Date range</th><td>(enter using DD/MM/YYYY format)</td></tr>
+    <tr><th>Date type</th><td><select name="dtype" id="dtype">
+        <option value="" selected="selected">Received/Validated</option>
+        <option value="received">Received</option>
+        <option value="validated">Validated</option></select></td></tr>
+    <tr><th>From</th><td><input type="text" name="from" id="from" value="" /></td></tr>
+    <tr><th>To</th><td><input type="text" name="to" id="to" value="" /></td></tr>
+    <tr><th>Location</th><td>(enter postcode and max distance from it)</td></tr>
+    <tr><th>Postcode</th><td><input type="text" name="pcode" id="pcode" value="" /></td></tr>
+    <tr><th>Distance (km)</th><td><input type="text" name="dist" id="dist" value="" /></td></tr>
+    <tr><th><input id="go" type="button" value="Go" /></th><td><input id="reset" type="reset" value="Clear" /></td></tr>
+    </table>
+    </form>
+    <p style="font-size: 0.9em;"> <a id="embed_link" href="">map link</a> |
+    <a id="rss_link" href="">RSS feed</a> | 
+    <a href="javascript:showhide('embed-instructions')">how to embed</a> |
+    <a href="https://scraperwiki.com/views/pa_api/">API</a> | 
+    <a id="db_link" href="https://views.scraperwiki.com/run/planing_alerts_scrape_status/">data source</a> </p>
+    <div id="embed-instructions" style="display: none; font-size: 0.9em;">To embed a map with this data in your Web page, put the &lt;script&gt; tag below in the header and the &lt;div&gt; tag in the body.
+    <br /> <code id="embed_code"></code>
+    <br /> <code>&lt;div id="pa-widget-container" style="width: 400px; height: 400px;"&gt;&lt;/div&gt;</code></div>
+</div>
+
+<script>
+
+var map;
+var startlocs = ['East England', 'East Midlands', 'London', 'Northern Ireland', 'North East', 'North West', 'Scotland', 'South East', 'South West', 'Wales', 'West Midlands', 'Yorkshire and Humber' ]; 
+var startzooms = [8, 8, 10, 8, 8, 8, 7, 8, 8, 8, 8, 8];
+var startlats = [52.30, 52.8928, 51.5081, 54.6928, 54.9928, 53.9928, 56.6594, 51.5081, 51.0081, 52.3302, 52.4928, 53.7928 ];
+var startlngs = [0.4000, -1.1085, -0.1280, -6.8085, -1.8085, -3.1100, -4.4112, -0.1280, -3.5664, -3.7664, -1.9085, -1.3085 ]; 
+var dataurl = "https://views.scraperwiki.com/run/pa_api/";
+var planlist = new Array(); // markers 
+var authlist; // authority options list
+var circle = new google.maps.Circle();
+var centre = new google.maps.Marker();
+centre.setIcon('http://google-maps-icons.googlecode.com/files/home.png') 
+var geocoder = new google.maps.Geocoder();
+var infowindow = new google.maps.InfoWindow();
+var match_in_date = /^(\d\d\d\d)-(\d\d)-(\d\d)$/;
+var match_at_date = /^(\d\d*)\/(\d\d*)\/(\d\d\d\d)$/;
+var colours = [ 'ff0000', '00ff00', '0000ff', 'ffff00', '00ffff', 'ff00ff', 'cccc00', '00cccc', 'cc00cc' ];
+var linkurl = 'https://views.scraperwiki.com/run/planning_map/';
+var prelink = '&lt;script type="text/javascript" src="https://views.scraperwiki.com/run/planning_applications_map_widget/';
+var postlink = '"&gt;&lt;/script&gt;';
+
+function addMarker(planinfo)
+{
+    if (!planinfo['lat'] || !planinfo['lng']) return false;
+    lat = planinfo['lat'] + ((Math.random()*2-1)/11100); 
+    lng = planinfo['lng'] + ((Math.random()*2-1)/7000); 
+    // adds a random value equiv to approx +-10m in case multiple markers are on one spot
+    planinfo.pos = new google.maps.LatLng(lat, lng);
+    var letter = planinfo.authority.substr(0,1);
+    var index = String.charCodeAt(letter) % 9;
+    var lt2 = letter+planinfo.authority.substr(3,1);
+    var col = colours[index]; // add colour here based on authority first letter
+    planinfo.icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld='+lt2+'|'+col+'|000000';
+    planinfo.marker = new google.maps.Marker({position:planinfo.pos, map:map, title:planinfo.address, icon:planinfo.icon});
+    google.maps.event.addListener(planinfo.marker, "click", function()
+    {
+        var rmsg = '';
+        var vmsg = '';
+        if (planinfo.received_date) rmsg = 'Date received: '+showDate(planinfo.received_date)+'<br />';
+        if (planinfo.validated_date) vmsg = 'Date validated: '+showDate(planinfo.validated_date)+'<br />';
+        infowindow.setContent('<div><strong>'+planinfo.address+'</strong></div>'+
+                '<div>'+planinfo.description+'</div>'+
+                '<div>Planning authority: '+
+                authlist[planinfo.authority]+'<br />'+
+                'Reference: '+
+                '<a href="'+planinfo.info_url+'" target="_blank">'+planinfo.reference+'</a><br />'+
+                rmsg+
+                vmsg+
+                'Postcode: '+
+                planinfo.postcode+'</div>'
+        );
+        infowindow.open(map, planinfo.marker);
+    });
+    return true;
+}
+
+function checkDate(at_date) { // checks date parameter is supplied in dd/mm/yyyy format
+    var dt_match =  at_date.match(match_at_date);
+    if (dt_match) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function showDate(in_date) { // outputs formatted date 
+    if (!in_date) return 'Empty date';
+    if (checkDate(in_date)) return in_date+'(dmy)';
+    var dt_bits =  match_in_date.exec(in_date);
+    if (!dt_bits) {
+        return 'Wrong date format';
+    } else if (dt_bits.length == 4) {
+        return dt_bits[3]+'/'+dt_bits[2]+'/'+dt_bits[1];
+    } else {
+        return 'Date not matched';
+    }
+}
+
+function drawCircle(pcode, dist) {
+    centre.setMap(null);
+    circle.setMap(null);
+    geocoder.geocode( { 'address': pcode, 'region': 'uk' }, function(results, status) {
+      if (status == google.maps.GeocoderStatus.OK) {
+        var loc = results[0].geometry.location;
+        circle.setCenter(loc);
+        circle.setRadius(dist*1000);
+        circle.setMap(map);
+        centre.setPosition(loc);
+        centre.setTitle(pcode);
+        centre.setMap(map);
+        google.maps.event.addListener(centre, "click", function()
+        {
+            sloc = 'new google.maps.LatLng('+loc.toUrlValue()+')';
+            infowindow.setContent('<div><strong>'+pcode+'</strong></div>'+
+                    '<div>Centre of '+dist+' km search zone</div>'+
+                    '<div><a href="javascript: map.setCenter('+sloc+');">Click</a> to centre map on this spot</div>'
+            );
+            infowindow.open(map, centre);
+        });
+      } else {
+        alert("Error looking up postcode: " + status);
+      }
+    });
+}
+
+// try to re-scale and centre the current map to exactly fir the current markers
+function scaleAndCentre() {
+
+    // get the existing marker array
+    var latlngbounds = new google.maps.LatLngBounds();
+    var mapbounds = map.getBounds();
+    var total_lat = 0.0;
+    var total_lng = 0.0;
+    var added = 0
+    for (var i = 0; i < planlist.length; i++) {
+        if (planlist[i].pos !== undefined && mapbounds.contains(planlist[i].pos)) { // only if within the current map area
+                total_lat = total_lat + planlist[i].pos.lat();
+                total_lng = total_lng + planlist[i].pos.lng();
+                latlngbounds.extend(planlist[i].pos);  
+                added += 1;
+            }
+        }
+    if (added > 1) {
+        map.setCenter(new google.maps.LatLng(total_lat/added, total_lng/added)); // centroid  
+        map.fitBounds(latlngbounds);
+    }
+
+}
+
+function changeDb(db_val) { 
+
+    // NB the call is now synchronous, so this is nor really necessary
+    // disable the go button until the database finishes refreshing successfully
+    $('#go').attr('disabled', 'disabled');
+
+    // remove authority options
+    $('#auth').empty();
+
+    // clear the existing marker array
+    for (var i = 0; i < planlist.length; i++)
+        if (planlist[i].marker != undefined) planlist[i].marker.setMap(null);
+    planlist = new Array();
+    
+    // and any circle
+    circle.setMap(null);
+    centre.setMap(null);
+
+    // set new map zoom and centre
+    var newzoom = startzooms[db_val];
+    map.setZoom(newzoom);
+    var newpos = new google.maps.LatLng(startlats[db_val], startlngs[db_val]);
+    map.setCenter(newpos);
+
+    // get name of database
+    var db_text = startlocs[db_val];
+
+    $.ajax({url:dataurl, dataType: "json", data:{fmt:"json", db:db_text}, timeout: 30000, async: false,
+        success:function(values) {
+                if (values.authorities !== undefined && values.authorities.authority.length > 0) {
+                    var auths = values.authorities.authority;
+                    authlist = new Object(); // global variable
+                    $('#auth').append(new Option("Any","")); // text,val
+                    for (var i = 0; i < auths.length; i++) {
+                        var name = auths[i].title;
+                        $('#auth').append(new Option(name,name));
+                        authlist[name] = auths[i].description
+                        }
+                    $('#auth').val("");
+                    $('#go').removeAttr('disabled');
+                } else {
+                    alert('The list of planning authorities for this region was empty, try refreshing the page');
+                }
+            },
+        error:function(object, status) {
+                alert('Failed to retrieve planning authorities list for this region ('+status+'), try refreshing the page');
+            }
+        });
+
+    var db_text_enc = encode(db_text);
+    $('#db_link').attr('href', "https://views.scraperwiki.com/run/planing_alerts_scrape_status/?db="+db_text_enc);
+    code = linkurl + '?db=' + db_text_enc;
+    $('#embed_link').attr('href', code);
+    code = xunescape(prelink) + '?db=' + db_text_enc + xunescape(postlink);
+    $('#embed_code').text(code);
+    code = dataurl + '?db=' + db_text_enc + '&fmt=atom';
+    $('#rss_link').attr('href', code);
+        
+}
+
+function getUrlVars()
+{
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+        hash = hashes[i].split('=');
+
+        if($.inArray(hash[0], vars)>-1)
+        {
+            vars[hash[0]]+=","+hash[1];
+        }
+        else
+        {
+            vars.push(hash[0]);
+            vars[hash[0]] = hash[1];
+        }
+    }
+
+    return vars; 
+}
+
+function decode(str) {
+    return unescape(str.replace(/\+/g, "%20"));
+}
+
+function xunescape(str) {
+    str = str.replace(/&lt;/g, "<");
+    str = str.replace(/&gt;/g, ">");
+    return str.replace(/&amp;/g, "&");
+}
+
+function encode(str) {
+    str = escape(str);
+    return str.replace(/%20/g, "+");
+}
+
+$('#reset').click(function() {
+
+    //event.preventDefault();
+
+    $("#auth").val('');
+    $("#from").val('');
+    $("#to").val('');
+    $("#dtype").val('');
+    $("#pcode").val('');
+    $("#dist").val('');
+    $("#max").val('');
+    return false;
+
+});
+
+
+$('#go').click(function() {
+
+    //event.preventDefault();
+
+    doNewQuery(false);
+
+    return false;
+
+});
+
+function doNewQuery(scale) { 
+
+    // get parameters for query
+    var db_val = $("#db").val();
+    var db_text = startlocs[db_val];
+    var auth = $("#auth").val();
+    var from = $("#from").val();
+    var to = $("#to").val();
+    var dtype = $("#dtype").val();
+    var pcode = $("#pcode").val();
+    var dist = $("#dist").val();
+    var max = $("#max").val();
+    
+    // clear the existing marker array
+    for (var i = 0; i < planlist.length; i++)
+        if (planlist[i].marker != undefined) planlist[i].marker.setMap(null);
+    planlist = new Array();
+    
+    if (pcode) {
+        if (!dist || isNaN(dist) || dist <= 0) {
+            dist = 1.0;
+            $('#dist').val(dist);
+        }
+        drawCircle(pcode, dist);
+    } else {
+        circle.setMap(null);
+        centre.setMap(null);
+    }
+    if (from && !checkDate(from)) {
+        alert ('Invalid from date entered');
+        return false; 
+        }
+    if (to && !checkDate(to)) {
+        alert ('Invalid to date entered');
+        return false; 
+        }
+
+    $('#message').text("Loading applications data, please wait ...");
+    $.ajax({url:dataurl, dataType: "json", data:{db:db_text, auth:auth, pcode:pcode, 
+            dist:dist, from:from, to:to, dtype:dtype, max:max, fmt:"json"}, timeout: 30000,
+            success:function(values) {
+                if (values.applications !== undefined && values.applications.application.length > 0) {
+                    planlist = values.applications.application; // global variable
+                    var max_date = '';
+                    var min_date = '';
+                    var source = '';
+                    var count = 0;
+                    var msg = '';
+                    for (var i = 0; i < planlist.length; i++) {
+                        if (addMarker(planlist[i])) count += 1;
+                        var rdate = planlist[i].received_date;
+                        var vdate = planlist[i].validated_date;
+                        if (rdate) {
+                            if (!min_date || rdate < min_date) { min_date = rdate; }
+                            if (!max_date || rdate > max_date) { max_date = rdate; }
+                        } else if (vdate) {
+                            if (!min_date || vdate < min_date) { min_date = vdate; }
+                            if (!max_date || vdate > max_date) { max_date = vdate; }
+                        }
+                        var auth = authlist[planlist[i].authority];
+                        if (!source) { source = auth; }
+                        else if (source !== auth ) { source = 'several authorities'; }
+                    }
+                    msg = " dated between "+showDate(min_date)+" and "+showDate(max_date);
+                    var msrct = '';
+                    if (max && planlist.length == max) msrct = 'most recent ';
+
+                    if (scale) { scaleAndCentre(); }
+
+                    $('#message').text("Showing "+msrct+count+" planning applications from "+source+msg);
+                } else {
+                    $('#message').text("No planning applications found, try again"); 
+                }
+            },
+            error:function(object, status) {
+                var msg = 'Failed to retrieve any planning applications ('+status+'), try again';
+                alert(msg);
+                $('#message').text(msg);
+            }
+        });
+
+    var query = '';
+    if (db_text) query += '&db=' + encode(db_text);
+    if (auth) query += '&auth=' + encode(auth);
+    if (from) query += '&from=' + encode(from);
+    if (to) query += '&to=' + encode(to);
+    if (dtype) query += '&dtype=' + encode(dtype);
+    if (pcode) query += '&pcode=' + encode(pcode);
+    if (dist) query += '&dist=' + encode(dist);
+    if (max) query += '&max=' + encode(max);
+
+    code = linkurl + '?' + query.substr(1);
+    $('#embed_link').attr('href', code);
+    code = xunescape(prelink) + '?' + query.substr(1) + xunescape(postlink);
+    $('#embed_code').text(code);
+    code = dataurl + '?' + query.substr(1) + '&fmt=atom';
+    $('#rss_link').attr('href', code);
+
+    return true;
+}
+
+$('#db').change(function() {
+    var db_val = $("#db").val();
+    var db_text = startlocs[db_val];
+    window.open('?db='+encode(db_text), '_self');
+    //changeDb(db_val);
+});
+
+//var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+//var sourcename = "planning_applications";
+//var sqlselect = "select * from applications";
+//$.ajax({url:apiurl, dataType: "jsonp", data:{name:sourcename, query:sqlselect, format:"jsondict"}, success:function(data)
+
+$(window).ready(function()
+{
+    $.datepicker.setDefaults({ dateFormat: 'dd/mm/yy' });
+    $("#from").datepicker();
+    $("#to").datepicker();
+    $('#db').empty(); 
+
+    var mapTypeIds = [];
+    for(var type in google.maps.MapTypeId) {
+        mapTypeIds.push(google.maps.MapTypeId[type]);
+    }
+    mapTypeIds.push("OSM");
+    var mapOptions = { "mapTypeId": google.maps.MapTypeId.ROADMAP, 
+            mapTypeControlOptions: { mapTypeIds: mapTypeIds } };
+    map = new google.maps.Map(document.getElementById("mapdiv"), mapOptions);
+
+    map.mapTypes.set("OSM", new google.maps.ImageMapType({
+            getTileUrl: function(coord, zoom) {
+                return "http://tile.openstreetmap.org/" + zoom + "/" + coord.x + "/" + coord.y + ".png";
+            },
+            tileSize: new google.maps.Size(256, 256),
+            name: "OpenStreetMap",
+            maxZoom: 18
+        }));
+
+    var params = getUrlVars();
+    db_val = 0;
+    for (var i = 0; i < startlocs.length; i++) {
+        $('#db').append(new Option(startlocs[i],i)); // text,val
+        if (params["db"] == encode(startlocs[i])) {
+            db_val = i;
+            }
+        }   
+    $('#db').val(db_val);
+    //$('#db option[value="'+db_val+'"]').attr('selected', 'selected');
+
+    changeDb(db_val);
+
+    var query_set = false;
+    if (params["pcode"]) { $('#pcode').val(decode(params["pcode"])); query_set = true; }
+    if (params["dist"]) { $('#dist').val(decode(params["dist"])); query_set = true; }
+    if (params["from"]) { $('#from').val(decode(params["from"])); query_set = true; }
+    if (params["to"]) { $('#to').val(decode(params["to"])); query_set = true; }
+    if (params["dtype"]) { $('#dtype').val(decode(params["dtype"])); query_set = true; }
+    if (params["max"]) { $('#max').val(decode(params["max"])); query_set = true; }
+    if (params["auth"]) { $('#auth').val(decode(params["auth"])); query_set = true; }
+
+    if (query_set) { 
+        doNewQuery(true);
+    }
+    
+});
+</script>
+</body>
+</html>

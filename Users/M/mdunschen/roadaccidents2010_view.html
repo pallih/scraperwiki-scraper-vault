@@ -1,0 +1,622 @@
+<html>
+<head>
+<link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+<script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
+<script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerclusterer/1.0/src/markerclusterer.js"></script>
+
+<script type="text/javascript" src="http://seagrass.goatchurch.org.uk/~martin/cgi-bin/uploads/raphael-min.js"></script>
+<script type="text/javascript" src="http://seagrass.goatchurch.org.uk/~martin/cgi-bin/uploads/g.raphael-min.js"></script>
+<script type="text/javascript" src="http://seagrass.goatchurch.org.uk/~martin/cgi-bin/uploads/g.pie-min.js"></script>
+<script type="text/javascript" src="http://seagrass.goatchurch.org.uk/~martin/cgi-bin/uploads/g.bar-min.js"></script>
+<script type="text/javascript">
+function spinner(holderid, R1, R2, count, stroke_width, colour) {
+    var sectorsCount = count || 12,
+    color = colour || "#fff",
+    width = stroke_width || 15,
+    r1 = Math.min(R1, R2) || 35,
+    r2 = Math.max(R1, R2) || 60,
+    cx = r2 + width,
+    cy = r2 + width,
+    r = Raphael(holderid, r2 * 2 + width * 2, r2 * 2 + width * 2),
+    
+    sectors = [],
+    opacity = [],
+    beta = 2 * Math.PI / sectorsCount,
+
+    pathParams = {stroke: color, "stroke-width": width, "stroke-linecap": "round"};
+    Raphael.getColor.reset();
+    for (var i = 0; i < sectorsCount; i++) {
+        var alpha = beta * i - Math.PI / 2,
+        cos = Math.cos(alpha),
+        sin = Math.sin(alpha);
+        opacity[i] = 1 / sectorsCount * i;
+        sectors[i] = r.path([["M", cx + r1 * cos, cy + r1 * sin], ["L", cx + r2 * cos, cy + r2 * sin]]).attr(pathParams);
+        if (color == "rainbow") {
+            sectors[i].attr("stroke", Raphael.getColor());
+        }
+    }
+    var tick;
+    (function ticker() {
+        opacity.unshift(opacity.pop());
+        for (var i = 0; i < sectorsCount; i++) {
+            sectors[i].attr("opacity", opacity[i]);
+        }
+        r.safari();
+        tick = setTimeout(ticker, 1000 / sectorsCount);
+    })();
+    return function () {
+        clearTimeout(tick);
+        r.remove();
+    };
+};
+</script>
+
+
+<style type="text/css">
+#mapdiv
+{
+    position: absolute;
+    width:49%;
+    height:95%;
+    top: 30px;
+    left: 50%;
+}
+
+#show
+{
+    height: 60px;
+    width: 180px;
+    background-color: #aaffaa;
+}
+#clear
+{
+    height: 60px;
+    width: 180px;
+    background-color: #ffaaaa;
+}
+
+#mappopup, th
+{
+    font-family: Arial;
+    font-size: 8pt;
+    text-align: left;
+}
+
+#spinholder {
+    z-index: 30;
+    background-repeat:no-repeat;
+    background-position:center;
+    position:absolute;
+    top: 0px;
+    left: 0px;
+}
+.darkClass
+{
+    background-color: #111111;
+    filter:alpha(opacity=50); /* IE */
+    opacity: 0.5; /* Safari, Opera */
+    -moz-opacity:0.50; /* FireFox */
+    z-index: 20;
+    height: 100%;
+    width: 100%;
+    background-repeat:no-repeat;
+    background-position:center;
+    position:absolute;
+    top: 0px;
+    left: 0px;
+}
+
+.debug
+{
+    display: none;
+}
+
+#DebugText
+{
+    width: 300px;
+    height: 100px;
+}
+</style>
+</head>
+<body>
+<script>
+var sourcename = "roadaccidents_1";
+var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite";
+
+var map;
+
+var stickPin = function(p)
+{
+    var pos = new google.maps.LatLng(p.latlon[0], p.latlon[1]);
+    var iconurl = "http://seagrass.goatchurch.org.uk/~martin/cgi-bin/uploads/cone.png";
+    var markerImg = new google.maps.MarkerImage(iconurl);
+    return new google.maps.Marker({position:pos, icon:markerImg, animation: google.maps.Animation.DROP});     
+}
+
+var removespinner;
+var nspin = 0;
+var spin = function()
+{
+    if (nspin == 0)
+    {
+        $("#darkLayer").toggle(); 
+        $("#spinholder").toggle();
+
+        var o = $("#mapdiv").offset();
+        var R2 = 120;
+        var stroke = 20;
+        $("#spinholder").css("left", o.left - (R2 + stroke/2)); // 130 = width of 120 + half stroke width of 20
+        $("#spinholder").css("top", o.top + $("#mapdiv").height()/2 - (R2 + stroke/2));
+        removespinner = spinner($("#spinholder").get(0), 60, 120, 12, 20, "#eee");
+    }
+    nspin++;
+}
+
+var stopspin = function()
+{
+    nspin--;
+    if (nspin == 0)
+    {
+        removespinner();
+        $("#darkLayer").toggle(); 
+        $("#spinholder").toggle();
+    }
+} 
+
+var attachMessage = function(marker)
+{
+    google.maps.event.addListener(marker, 'click', function()
+    {
+        var cont = "<table id='mappopup'><tr><th>Accident Index:</th><td>" + marker.relatedRecords[0]["Accident_Index"] + "</td></tr>" +
+               "<tr><th>Date, Time:</th><td>" + marker.relatedRecords[0].Date + ", " + marker.relatedRecords[0].Time + "</td></tr>" +
+               "<tr><th>Vehicles:</th><td>" + marker.relatedRecords[0].Number_of_Vehicles + ", (";
+        var iv = 0;
+        for (; iv < parseInt(marker.relatedRecords[0].Number_of_Vehicles) - 1; ++iv)
+        {
+            debugOutput("iv = " + iv);
+            cont += marker.relatedRecords[iv]["Vehicle_Type"] + ", ";
+        }
+        cont += marker.relatedRecords[iv]["Vehicle_Type"] + ")";
+        cont += "</td></tr></table>";
+        cont += '<div><input class="report" id="' + marker.relatedRecords[0].Accident_Index + '" type="button" value="Full Report"></div>';
+
+        var infowindow = new google.maps.InfoWindow(
+        { content: cont,
+          size: new google.maps.Size(50,50)
+        });
+
+        infowindow.open(map, marker);
+    });
+}
+
+var debugOutput = function(s) 
+{
+    $("#DebugText").text($("#DebugText").text() + s + "\n");
+}
+
+var fillOptions = function(selectId, distinctValue, table, count)
+{
+     // select `Police_Force`, count(`Police_Force`) as "Number" from `accidents` group by `Police_Force`
+    var q = 'select `' + distinctValue + '`, count(`' + distinctValue + '`) as "Num" from `' + table + '` group by `' + distinctValue + '`';
+    debugOutput(q);     
+    spin();
+    $.ajax(
+    {
+        url:apiurl, dataType:"jsonp", data:{name:sourcename, query:q},
+            success:function(tdata) {
+                stopspin();
+                if (tdata.error)
+                {
+                    if (count < 2)
+                    {
+                        debugOutput(count + " go with query: " + q);
+                        fillOptions(selectId, distinctValue, table, count + 1);
+                    }
+                    else
+                        alert(tdata.error);
+                    return;
+                }
+                for (var i = 0; i < tdata.length; ++i)
+                {
+                    var op = new Option(tdata[i][distinctValue] + " (" + tdata[i].Num + ")", "value"+i);
+                    $(selectId).append(op);
+                }
+            }
+    });
+}
+
+var drawBarGraph = function(selectId, distinctValue, table)
+{
+    // Creates canvas
+    var r = Raphael(selectId);
+
+    // select `Police_Force`, count(`Police_Force`) as "Number" from `accidents` group by `Police_Force`
+    var q = 'select `' + distinctValue + '`, count(`' + distinctValue + '`) as "Num" from `' + table + '` group by `' + distinctValue + '`';
+    spin();
+    $.ajax(
+    {
+        // gets a list of all police forces
+        url:apiurl, dataType:"jsonp", data:{name:sourcename, query:q}, 
+            success:function(tdata) { 
+                stopspin();
+                var x = 10, y = 10;
+                var h = 20, w = 200;
+                for (var i = 0; i < tdata.length; ++i)
+                {
+                    // the name of the force:
+                    var forcename = tdata[i][distinctValue]
+                    var num = tdata[i].Num;
+                    r.rect(x, y, w, h, 2);
+                    r.text(x + w / 2, y + h / 2, forcename +  "    " + num);
+                    y += h;
+                    r.setSize(x + w + 2, y + h);
+                }                
+            }
+    });
+}
+
+$(function()
+{
+    $(".debug").toggle();
+    $("#DebugText").text(""); 
+    var c = new google.maps.LatLng(53.9742, -4.7905);
+    var mapOptions = { "zoom": 5, "center":c, "mapTypeId": google.maps.MapTypeId.ROADMAP };
+    map = new google.maps.Map(document.getElementById("mapdiv"), mapOptions);
+    var markers = new Array();
+    var markerCluster = new MarkerClusterer(map);
+
+    var pin;
+    var getDateRange = function()
+    {
+        var dayfrom = $("#dayfrom").val();
+        var dayto = $("#dayto").val();
+        var dat = "A1.`Date`";
+        var daterange = dat + ' >= "' +  dayfrom + '" and ' + dat + ' <= "' + dayto + '"';
+        return daterange;
+    }
+
+    var getLocalAuthority = function()
+    {
+        var authority = $("#LocalAuthority").val();
+        return 'A1.`Local_Authority_District` == "' + authority + '"';        
+    }
+
+    var getLatLongRange = function()
+    {
+        var center = ($("#LatLngCtr").val()).split(",");
+        var rad, lat, lon;
+        try
+        {
+            rad = parseFloat($("#Radius").val());
+        }
+        catch(err)
+        {
+            alert("Could not convert radius to a number.");
+        }
+        // assume 111km per degree lat lng
+        // parse the latitude, longitude
+        try
+        {
+            var lat = parseFloat(center[0]);
+            var lon = parseFloat(center[1]);
+        }
+        catch(err)
+        {
+            alert("Could not convert center to a pair of numbers.");
+        }
+
+        var latlo = lat - rad / 111.0;
+        var lathi = lat + rad / 111.0;
+
+        // more complicated for longitude conversion
+        var a = 6378137.0; // radius of earth in meters
+
+        var radatlon = a * Math.cos(lat * 3.1415 / 180.0);
+        var londiff = rad / 60.0;
+
+        var lonlo = lon - londiff;
+        var lonhi = lon + londiff;
+        var latlngrange = 'A1.`Latitude` >= "' + latlo + '" and A1.`Latitude` <= "' + lathi + '" and A1.`Longitude` >= "' + lonlo + '" and A1.`Longitude` <= "' + lonhi + '"';
+        return latlngrange
+    }
+
+
+    // the function that does the actual sql query
+    $("#show").click(function() {
+        var SQLSELECT = 'SELECT ';
+        var COLUMNS = new Array();
+        var TABLES = new Array();
+        var WHERE = new Array();
+        COLUMNS.push("A1.*");
+        COLUMNS.push("V1.*");
+        COLUMNS.push("C1.*");
+        TABLES.push("`vehicles` as V1");
+        TABLES.push("`casualties` as C1");
+        var LEFTJOINS = new Array();
+        LEFTJOINS.push("`accidents` AS A1 ON V1.Acc_Index=A1.Accident_Index");
+        LEFTJOINS.push("`accidents` AS A2 ON C1.Acc_Index=A2.Accident_Index");
+        if ($("#filterdate").prop("checked"))
+        {
+            WHERE.push(getDateRange());
+        }
+
+        if ($("#filterlocation").prop("checked"))
+        {
+            WHERE.push(getLatLongRange());
+        }
+
+        if ($("#filterlocalauthority").prop("checked"))
+        {
+            WHERE.push(getLocalAuthority());
+        }
+
+        if ($("#filtervehicletype").prop("checked"))
+        {
+            TABLES[0] = "`vehicles` as V2"
+            LEFTJOINS[0] = "`accidents` AS A1 ON V2.Acc_Index=A1.Accident_Index";
+            LEFTJOINS.push("`vehicles` AS V1 ON V2.Acc_Index=V1.Acc_Index");
+            var veh =  $("#VehicleType>option:selected").text() ;
+            veh = veh.substring(0, veh.indexOf(" (", 0));
+            WHERE.push("V2.`Vehicle_Type`=='" + veh + "'");
+        }
+
+        if ($("#filterpolicforce").prop("checked"))
+        {
+            var police =  $("#PoliceForce>option:selected").text();
+            police = police.substring(0, police.indexOf(" (", 0));
+            WHERE.push('A1.`Police_Force` == "' + police + '"');
+        }
+
+        if ($("#filtercasualtytype").prop("checked"))
+        {
+            var castype =  $("#CasualtyType>option:selected").text();
+            castype = castype.substring(0, castype.indexOf(" (", 0));
+            WHERE.push('C1.`Casualty_Type` == "' + castype + '"');
+        }
+
+        if (COLUMNS.length > 0)
+        {
+            var it = 0;
+            for (;it < COLUMNS.length - 1; ++it)
+                SQLSELECT += COLUMNS[it] + ', ';
+            SQLSELECT += COLUMNS[it];
+        }
+        if (TABLES.length > 0)
+        {
+            SQLSELECT += " FROM ";
+            var it = 0;
+            for (;it < TABLES.length - 1; ++it)
+                SQLSELECT += TABLES[it] + ',';
+            SQLSELECT += TABLES[it];
+        }
+        
+        if (LEFTJOINS.length > 0)
+        {
+            var it = 0;
+            for (;it < LEFTJOINS.length; ++it)
+                SQLSELECT += ' LEFT JOIN ' + LEFTJOINS[it];
+        }
+
+        if (WHERE.length > 0)
+        {
+            SQLSELECT += ' WHERE ';
+            var i = 0;
+            for (; i < WHERE.length - 1; ++i)
+                SQLSELECT += WHERE[i] + ' and ';
+            SQLSELECT += WHERE[i];
+        }
+
+        if ($("#filterlimit").prop("checked"))
+        {
+            SQLSELECT += ' LIMIT ' + $("#limit").val();
+        }
+
+        debugOutput(SQLSELECT);
+        spin();
+        $.ajax(
+        {
+            url:apiurl, dataType:"jsonp", data:{name:sourcename, query:SQLSELECT}, success:function(tdata)
+            {
+                stopspin();
+                if  (tdata.error)
+                {
+                    alert(tdata.error);
+                    return;
+                }
+                if (tdata.length == 0)
+                    alert("No records found.");
+                var lastIndex = ""; 
+                var count = 0;
+                for (var i = 0; i < tdata.length; i++)
+                {
+                    if (tdata[i].Accident_Index != lastIndex)
+                    {
+                        if (markers.length > 0)
+                        {
+                            debugOutput("attach..."); 
+                            attachMessage(markers[markers.length - 1]);
+                            count++;              
+                        }
+                        debugOutput("i, tdata[i].Accident_Index = " + i + ", " + tdata[i].Accident_Index)
+                        var m = stickPin({latlon: [tdata[i].Latitude, tdata[i].Longitude]});
+                        m.setTitle(tdata[i].Accident_Index + " " + tdata[i].Date);
+                        lastIndex = tdata[i].Accident_Index;
+                        m.relatedRecords = new Array();
+                        m.relatedRecords.push(tdata[i])
+                        markers.push(m);
+                    }
+                    else
+                    {
+                        markers[markers.length - 1].relatedRecords.push(tdata[i]);
+                    }                
+                }
+                if (markers.length > 0)
+                {
+                    debugOutput("attach last");
+                    attachMessage(markers[markers.length - 1]);
+                    count++;
+                }
+                $("#show").attr("value", "Collisions: " + count); 
+                markerCluster.addMarkers(markers);              
+            },
+            error:function(o, ts)
+            {
+                alert("Some error. " + ts);
+            }
+        });
+    });
+
+    $("#clear").click(function()
+    {
+        markerCluster.clearMarkers();
+        markers = new Array(); 
+    });
+
+
+    $(".datepicker").datepicker({ dateFormat: 'yy-mm-dd', minDate: new Date(2004, 1 - 1, 1), maxDate: new Date(2010, 12 - 1, 31)});
+
+    // fill in select options
+    //drawBarGraph("policeforcebargraph", "Police_Force", "accidents");
+    fillOptions("#PoliceForce", "Police_Force", "accidents", 0);
+    fillOptions("#VehicleType", "Vehicle_Type", "vehicles", 0);
+    fillOptions("#CasualtyType", "Casualty_Type", "casualties", 0);
+
+    // all filter boxes not checked
+    $(".filtercheck").prop("checked", false);
+    $(".filtercheck").click(function()
+    {
+        var divname = "#" + this["id"] + "div";
+        if (this["checked"])
+            $(divname).show();
+        else
+            $(divname).hide();
+    });
+
+    $(".filtercheck").each(function()
+    {
+        var divname = "#" + this["id"] + "div";
+        if (this["checked"])
+            $(divname).show();
+        else
+            $(divname).hide();
+    });
+
+    $(".report").live("click", function()
+    {
+        var rec;
+        var accid = $(this).prop("id");
+        for (var m in map.markers)
+        {
+            var marker = map.markers[m];
+            if (marker.relatedRecords[0].Accident_Index == accid)
+            {
+                rec = marker.relatedRecords[0];
+                break;
+            }
+        }
+        var rd = $("#reportwindow");
+        var htmlStr = "<table>";
+        for (v in rec)
+            htmlStr += "<tr><td><b>" + v + "</b></td><td>" + rec[v] + "</td></tr>";
+        htmlStr += "</table>";
+        rd.html(htmlStr);
+        rd.dialog("open");
+    });
+
+    //$("#LatLngCtr").val("51.484361,-0.175802");
+    $("#limit").val(10);
+    $("#reportwindow").dialog({ autoOpen: false });
+
+    var hdlListener;
+    setLocationCentre = function(evt)
+    {
+        debugOutput("Clicked on: " + evt.latLng.toString());
+        $("#LatLngCtr").val(evt.latLng.lat().toFixed(4) + ", " + evt.latLng.lng().toFixed(4));
+    };
+
+    $("#filterlocation").click(function() 
+    {
+        if (this["checked"])
+        {
+            debugOutput("Add event listener for location...");
+            hdlListener = google.maps.event.addListener(map, 'dblclick', setLocationCentre);            
+        }
+        else
+        {
+            debugOutput("Remove event listener for location...");
+            google.maps.event.removeListener(hdlListener);            
+        }
+    });
+});
+</script>
+
+<h1>Road Accidents (UK)</h1>
+<h2>Filter by:</h2>
+
+<h3><input type="checkbox" class="filtercheck" id="filterdate">Date</h3>
+<div id="filterdatediv">
+<table>
+<tr><td>From: </td><td><input class="datepicker" id="dayfrom" type="text"></td>
+<td>To: </td><td><input class="datepicker" id="dayto" type="text"></td></tr>
+</table>
+</div>
+
+<h3><input type="checkbox" class="filtercheck" id="filterlocation">Location</h3>
+<div id="filterlocationdiv">
+<table><tr><td>Center[Lat, Lon]: <input id="LatLngCtr" type="text" title="Double click on the map to set center."></td>
+<td>Radius[km]: <input id="Radius" type="text"></td></tr></table>
+</div>
+
+
+<h3><input type="checkbox" class="filtercheck" id="filterlocalauthority">Local Authority / District</h3>
+<div id="filterlocalauthoritydiv">
+Local Authority or District: <input id="LocalAuthority" type="text">
+</div>
+
+<h3><input type="checkbox" class="filtercheck" id="filtervehicletype">Vehicle type</h3>
+<div id="filtervehicletypediv">
+<select id="VehicleType">
+</select>
+</div>
+
+<h3><input type="checkbox" class="filtercheck" id="filterpolicforce">Local Policeforce</h3>
+<div id="filterpolicforcediv">
+<div id="policeforcebargraph"></div>
+<select id="PoliceForce">
+</select>
+</div>
+
+<h3><input type="checkbox" class="filtercheck" id="filtercasualtytype">Casualty Type</h3>
+<div id="filtercasualtytypediv">
+<select id="CasualtyType">
+</select>
+</div>
+
+<div class="debug">
+<h3><input type="checkbox" class="filtercheck" id="filterlimit">Limit</h3>
+<div id="filterlimitdiv">
+<p><input type="text" id="limit">Limit</p>
+</div>
+</div>
+
+
+<br>
+<table>
+<tr><td><input type="button" id="show" value="Show On Map"></td>
+<td><input type="button" id="clear" value="Clear Map"></td></tr>
+</table>
+<div id="Stats"></div>
+<div id="mapdiv"></div>
+<div id="reportwindow"></div>
+
+<div id="Debug" style="font-family: Courier; font-size: 8pt; width: 50%;">
+<textarea class="debug" id="DebugText" readonly="readonly"></textarea>
+</div>
+<div id="spinholder" style="display:none"></div>
+<div id="darkLayer" class="darkClass" style="display:none"></div>
+
+
+</body>
+</html>

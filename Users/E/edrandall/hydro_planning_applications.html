@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Hydro planning applications</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+html, body {
+    margin: 0;
+    padding: 0;
+    border 0 none;
+    height: 100%;
+    min-height: 100%;
+    overflow: hidden;
+}
+
+#title {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0;
+    height: 40px;
+}
+
+#errorMessage {
+    position: absolute;
+    display: none;
+    z-index: 2;
+    background-color: #FFFFFF;
+    width: 400px;
+    height: 400px;
+    border: 2px solid black;
+    border-radius: 5px;
+    padding: 10px;
+    font-family: Arial, Verdana, Sans-serif;
+    font-size: 14px;
+}
+
+#mapCanvas {
+    z-index: 1;
+    margin: 2px 2px 2px 2px;
+    padding: 0;
+    height: 100%;
+}
+
+.mapPopup {
+    position: absolute;
+    display: none;
+    background-color: #FFFFFF;
+    border: 2px solid #004C92;
+    border-radius: 5px;
+    padding: 10px;
+    font-family: Arial, Verdana, Sans-serif;
+    font-size: 11px;
+}
+
+.mapPopup .popupClose {
+    color: blue;
+    float: right;
+    font-weight: bold;
+    font-family: Arial, Verdana, Sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid black;
+    border-radius: 2px;
+    padding: 1px 3px 0px 3px;
+}
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+
+var jsonURL = 'https://api.scraperwiki.com/api/1.0/datastore/sqlite';
+var query = 'select * from hydro_applications';
+var schemas = [
+    'hydro_planning_applications_3'
+];
+
+
+$(document).ready(function(){
+    $('#scraperwikipane').css('top', '6px')
+                         .css('right', '140px');
+
+    var mapOptions = {
+        zoom: 7,
+        center: new google.maps.LatLng(52.000000, -1.000000),
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    var map = new google.maps.Map(document.getElementById('mapCanvas'), mapOptions);
+
+    for (var r=0; r<schemas.length; r++) {
+        var schema = schemas[r];
+        $.ajax( {
+            url: jsonURL,
+            dataType: 'jsonp',
+            data: {
+                name:   schema,
+                query:  query,
+                format: 'jsondict'
+            },
+            success: function(data){
+                for (var i=0; i<data.length; i++) {
+                    addMarker(map, data[i]);
+                }
+            },
+            error: function(object, status) {
+                var msg = 'Failed to retrieve any results ('+status+'), try again';
+                $('#errorMessage').text(msg);
+                $('#errorMessage').show();
+            }
+        } );
+    }
+});
+
+function addMarker(map, data){
+    if (!map || !data || !data.lat || !data.lng)
+        return;
+
+    var markerPos = new google.maps.LatLng(data.lat, data.lng);
+    var markerOptions = {
+        position: markerPos,
+        map: map,
+        title: data.description
+    };
+    var marker = new google.maps.Marker(markerOptions);
+    addDetailPopup(map, marker, data);
+}
+
+
+function addDetailPopup(map, marker, planData) {
+
+    var dt = "Received:";
+    var date = planData.received_date;
+    if (!date) {
+        dt = "Validated:";
+        date = planData.validate_date;
+    }
+    if (!date) {
+        dt = "Scraped:";
+        date = planData.scrape_date;
+    }
+    if (!date) {
+        dt="Date:";
+        date="UNKNOWN";
+    }
+
+    var postcode = planData.postcode;
+    if (!postcode) {
+        postcode = "-";
+    }
+
+    var refLink;
+    if (planData.info_url) {
+        refLink= "<a target='_new' href='"+planData.info_url+"'>"+planData.reference+"</a>";
+    } else {
+        refLink= planData.reference;
+    }
+    var text = "Authority: "+planData.authority+"&nbsp;&nbsp;"+postcode+"<br/>"+
+               "Ref: "+refLink+"<br/>"+
+               dt+" "+date+"<br/>"+
+               planData.description;
+
+    google.maps.event.addListener(marker, 'click', function() {
+        $('.mapPopup').remove();
+        var infoBox = new InfoBox({content: text, latlng: marker.getPosition(), map: map});
+    });    
+}
+
+
+/* InfoBox extends GOverlay class from the Google Maps API  */
+InfoBox.prototype = new google.maps.OverlayView();
+
+
+/* An InfoBox is like an info window, but it displays
+ * under the marker, opens quicker, and has flexible styling.
+ * @param {GLatLng} latlng Point to place bar at
+ * @param {Map} map The map on which to display this InfoBox.
+ * @param {Object} opts Passes configuration options - content,
+ *   offsetVertical, offsetHorizontal, className, height, width
+ */
+function InfoBox(opts) {
+  google.maps.OverlayView.call(this);
+  this.latlng_ = opts.latlng;
+  this.map_ = opts.map;
+  this.content_ = opts.content;
+  this.offsetVertical_ = -100;
+  this.offsetHorizontal_ =  25;
+  this.width_ = 244;
+  var me = this;
+  this.boundsChangedListener_ =
+    google.maps.event.addListener(this.map_, "bounds_changed", function() {
+      return me.panMap.apply(me);
+    }); 
+
+  // Once the properties of this OverlayView are initialized, set its map so
+  // that we can display it.  This will trigger calls to panes_changed and
+  // draw.
+  this.setMap(this.map_);
+};
+
+// Removes the DIV representing this InfoBox
+InfoBox.prototype.remove = function() {
+  if (this.div_ && this.div_.parentNode) {
+    this.div_.parentNode.removeChild(this.div_);
+    this.div_ = null;
+  }
+};
+
+// Redraw the Bar based on the current projection and zoom level
+InfoBox.prototype.draw = function() {
+  // Creates the element if it doesn't exist already.
+  this.createElement();
+  if (!this.div_) return;
+
+  // Calculate the DIV coordinates of two opposite corners of our bounds to
+  // get the size and position of our Bar
+  var pixPosition = this.getProjection().fromLatLngToDivPixel(this.latlng_);
+  if (!pixPosition) return;
+
+  // Now position our DIV based on the DIV coordinates of our bounds
+  this.div_.style.width = this.width_ + "px";
+  this.div_.style.left = (pixPosition.x + this.offsetHorizontal_) + "px";
+  this.div_.style.top = (pixPosition.y + this.offsetVertical_) + "px";
+  this.div_.style.display = 'block';
+};
+
+/* Creates the DIV representing this InfoBox in the floatPane.  If the panes
+ * object, retrieved by calling getPanes, is null, remove the element from the
+ * DOM.  If the div exists, but its parent is not the floatPane, move the div
+ * to the new pane.
+ * Called from within draw.  Alternatively, this can be called specifically on
+ * a panes_changed event.
+ */
+InfoBox.prototype.createElement = function() {
+  var panes = this.getPanes();
+  var div = this.div_;
+  if (!div) {
+    // This does not handle changing panes.  You can set the map to be null and
+    // then reset the map to move the div.
+    div = this.div_ = document.createElement("div");
+    div.style.width = this.width_ + "px";
+    div.className = "mapPopup";
+    var contentDiv = document.createElement("div");
+    contentDiv.innerHTML = this.content_;
+
+    var topDiv = document.createElement("div");
+    topDiv.className = "popupClose";
+    topDiv.innerHTML = "X";
+
+    function removeInfoBox(ib) {
+      return function() {
+        ib.setMap(null);
+      };
+    }
+
+    google.maps.event.addDomListener(topDiv, 'click', removeInfoBox(this));
+
+    div.appendChild(topDiv);
+    div.appendChild(contentDiv);
+    div.style.display = 'none';
+    panes.floatPane.appendChild(div);
+    this.panMap();
+  } else if (div.parentNode && (div.parentNode != panes.floatPane)) {
+    // The panes have changed.  Move the div.
+    div.parentNode.removeChild(div);
+    panes.floatPane.appendChild(div);
+  } else {
+    // The panes have not changed, so no need to create or move the div.
+  }
+}
+
+// Pan the map to fit the InfoBox.
+InfoBox.prototype.panMap = function() {
+  // if we go beyond map, pan map
+  var map = this.map_;
+  var bounds = map.getBounds();
+  if (!bounds) return;
+
+  // The position of the infowindow
+  var position = this.latlng_;
+
+  // The dimension of the infowindow
+  var iwWidth = this.width_;
+  var iwHeight = this.height_;
+
+  // The offset position of the infowindow
+  var iwOffsetX = this.offsetHorizontal_;
+  var iwOffsetY = this.offsetVertical_;
+
+  // Padding on the infowindow
+  var padX = 0;
+  var padY = 0;
+
+  // The degrees per pixel
+  var mapDiv = map.getDiv();
+  var mapWidth = mapDiv.offsetWidth;
+  var mapHeight = mapDiv.offsetHeight;
+  var boundsSpan = bounds.toSpan();
+  var longSpan = boundsSpan.lng();
+  var latSpan = boundsSpan.lat();
+  var degPixelX = longSpan / mapWidth;
+  var degPixelY = latSpan / mapHeight;
+
+  // The bounds of the map
+  var mapWestLng = bounds.getSouthWest().lng();
+  var mapEastLng = bounds.getNorthEast().lng();
+  var mapNorthLat = bounds.getNorthEast().lat();
+  var mapSouthLat = bounds.getSouthWest().lat();
+
+  // The bounds of the infowindow
+  var iwWestLng = position.lng() + (iwOffsetX - padX) * degPixelX;
+  var iwEastLng = position.lng() + (iwOffsetX + iwWidth + padX) * degPixelX;
+  var iwNorthLat = position.lat() - (iwOffsetY - padY) * degPixelY;
+  var iwSouthLat = position.lat() - (iwOffsetY + iwHeight + padY) * degPixelY;
+
+  // calculate center shift
+  var shiftLng =
+      (iwWestLng < mapWestLng ? mapWestLng - iwWestLng : 0) +
+      (iwEastLng > mapEastLng ? mapEastLng - iwEastLng : 0);
+  var shiftLat =
+      (iwNorthLat > mapNorthLat ? mapNorthLat - iwNorthLat : 0) +
+      (iwSouthLat < mapSouthLat ? mapSouthLat - iwSouthLat : 0);
+
+  // The center of the map
+  var center = map.getCenter();
+
+  // The new map center
+  var centerX = center.lng() - shiftLng;
+  var centerY = center.lat() - shiftLat;
+
+  // center the map to the new shifted center
+  map.setCenter(new google.maps.LatLng(centerY, centerX));
+
+  // Remove the listener after panning is complete.
+  google.maps.event.removeListener(this.boundsChangedListener_);
+  this.boundsChangedListener_ = null;
+};
+        </script>
+    </head>
+    <body>
+        <div id="errorMessage"></div>
+        <div id="mapCanvas"></div>
+    </body>
+<html>

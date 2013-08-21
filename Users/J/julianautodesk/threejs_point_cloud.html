@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>three.js webgl - buffergeometry [particles]</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<style>
+body { color: #cccccc; font-family:Monospace; font-size:13px; text-align:center; background-color: #050505; margin: 0px; overflow: hidden; }
+</style>
+<script src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<script src="https://scraperwiki.com/editor/raw/threejs"></script>
+<script>
+var container, stats;
+
+var camera, scene, renderer;
+var mesh;
+var particleSystems = [ ]; 
+
+var blocksize = 20000; 
+var blockoffset = 0; 
+
+function FetchNextBlock() {
+    $.ajax({url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite", 
+        data: { format:"jsonlist", name:"plyreader", query:"select x, y, z from points limit "+blocksize+" offset "+blockoffset },
+        dataType: "jsonp",
+        error: function(jq, status) { alert(status); },
+        success: MakeParticlesystem 
+    });
+    blockoffset += blocksize; 
+}
+
+function MakeParticlesystem(tdata) {
+    var npoints = tdata.data.length; 
+    var geometry = new THREE.BufferGeometry();
+    geometry.attributes = { position: { itemSize: 3, array: new Float32Array(npoints * 3), numItems: npoints * 3 },
+                            color: { itemSize: 3, array: new Float32Array(npoints * 3), numItems: npoints * 3 }
+                          }
+
+    var positions = geometry.attributes.position.array;
+    var colors = geometry.attributes.color.array;
+    var color = new THREE.Color();
+    var n = 1000, n2 = n / 2; // particles spread in the cube
+    for ( var j = 0; j < tdata.data.length; j += 3 ) {
+        var i = j*3; 
+        var x = tdata.data[j][0]-400; 
+        var y = tdata.data[j][1]-400; 
+        var z = tdata.data[j][2]-400; 
+
+        positions[ i ]     = x;
+        positions[ i + 1 ] = y;
+        positions[ i + 2 ] = z;
+
+        var vx = ( x / n ) + 0.5;
+        var vy = ( y / n ) + 0.5;
+        var vz = ( z / n ) + 0.5;
+        color.setRGB( vx, vy, vz );
+        color.setHSL(blockoffset/blocksize/7. % 1, 1.0, 0.5);
+
+        colors[ i ]     = color.r;
+        colors[ i + 1 ] = color.g;
+        colors[ i + 2 ] = color.b;
+    }
+
+    geometry.computeBoundingSphere();
+    var material = new THREE.ParticleBasicMaterial( { size: 15, vertexColors: true } );
+    var particleSystem = new THREE.ParticleSystem( geometry, material );
+    particleSystems.push(particleSystem); 
+    scene.add(particleSystem);
+
+    if (npoints == blocksize)
+        FetchNextBlock(); 
+}
+
+function init() {
+    container = document.getElementById('container');
+
+    camera = new THREE.PerspectiveCamera( 23, window.innerWidth / window.innerHeight, 5, 3500 );
+    camera.position.z = 2750;
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog( 0x050505, 2000, 3500 );
+
+    FetchNextBlock(); 
+
+    renderer = new THREE.WebGLRenderer( { antialias: false, clearColor: 0x333333, clearAlpha: 1, alpha: false } );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setClearColor( scene.fog.color, 1 );
+    container.appendChild( renderer.domElement );
+    window.addEventListener( 'resize', onWindowResize, false );
+
+    animate(); 
+}
+
+function onWindowResize() {
+    windowHalfX = window.innerWidth / 2;
+    windowHalfY = window.innerHeight / 2;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+}
+
+function animate() {
+    requestAnimationFrame( animate );
+    render();
+}
+
+function render() {
+    var time = Date.now() * 0.0005;
+    for (var i = 0; i < particleSystems.length; i++) {
+        particleSystems[i].rotation.x = time * 0.25;
+        particleSystems[i].rotation.y = time * 0.5;
+    }
+    renderer.render( scene, camera );
+}
+
+
+$(window).ready(init); 
+
+</script>
+
+</head>
+    <body>
+
+        <div id="container"></div>
+        <div id="info"><a href="http://threejs.org" target="_blank">three.js</a> webgl - buffergeometry - particles</div>
+    </body>
+</html>
+
+

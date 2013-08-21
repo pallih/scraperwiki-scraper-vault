@@ -1,0 +1,3 @@
+import cgi
+
+cgi.FieldStorage()

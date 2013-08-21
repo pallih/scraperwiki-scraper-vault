@@ -1,0 +1,68 @@
+<script type="text/javascript" src="https://www.google.com/jsapi"></script><br />
+<script type="text/javascript">
+
+  // Load the Visualization API and the controls package.
+  // Packages for all the other charts you need will be loaded
+  // automatically by the system.
+  google.load('visualization', '1.1', {'packages':['controls','treemap']});
+
+  // Set a callback to run when the Google Visualization API is loaded.
+  google.setOnLoadCallback(initialize);
+
+function initialize() {
+ var script = document.createElement('script');
+script.src = 'https://views.scraperwiki.com/run/ergast_championship_gviz/?year=2012&callback=drawTable';
+script.type = 'text/javascript';
+document.getElementsByTagName('head')[0].appendChild(script);
+}
+
+
+    function drawTable(json) {
+     var json_data = new google.visualization.DataTable(json, 0.6);
+ var treemap = new google.visualization.TreeMap(document.getElementById('visualization'));
+ treemap.draw(json_data, {});
+ 
+    var json_table = new google.visualization.ChartWrapper({'chartType': 'Table','containerId':'table_div_json','options': {allowHtml: true}});
+    var stringFilter = new google.visualization.ControlWrapper({
+      'controlType': 'StringFilter',
+      'containerId': 'control1',
+      'options': {
+        'filterColumnLabel': 'Driver',
+        'matchType': 'any'
+      }
+    });
+/*
+//need a different data loader
+   var posFilter = new google.visualization.ControlWrapper({
+      'controlType': 'StringFilter',
+      'containerId': 'control3',
+      'options': {
+        'filterColumnLabel': 'Position',
+        'matchType': 'any'
+      }
+    });
+var categoryPicker = new google.visualization.ControlWrapper({
+    'controlType': 'CategoryFilter',
+    'containerId': 'control2',
+    'options': {
+      'filterColumnLabel': 'Sector',
+      'ui': {
+      'labelStacking': 'vertical',
+        'allowTyping': false,
+        'allowMultiple': false
+      }
+
+    }
+  });*/
+  //var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard')).bind([posFilter,stringFilter,categoryPicker], json_table).draw(json_data);
+
+
+    }
+    google.setOnLoadCallback(initialize);
+</script>
+
+<div id='visualization'></div>
+<div id="dashboard">
+    <div id="control1"></div><div id="control2"></div><div id="control3"></div>
+    <div id="table_div_json"></div>
+</div>

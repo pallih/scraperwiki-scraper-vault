@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map-canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD2iNO1jQ_XYFja4gJxMRg8CMGyN6gE4nk&sensor=true">
+    </script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+    <script type="text/javascript" src="https://github.com/janl/mustache.js/raw/master/mustache.js"></script>
+    <script type="text/javascript">
+var infowindow = new google.maps.InfoWindow({content: ""});
+var template_image = '<img src="{{image_url}}" alt="{{title}}" style="width:400px;float:right;margin:0 5px 0 5px;" />';
+var template = '<h1><a href="{{ link }}" target="_blank">{{ title }}</a></h1><p class="description">{{ description }}</p><p class="time">Starts: {{start_date}} Ends: {{end_date}}</p>';
+
+function initialize() {
+  var mapOptions = {
+    center: new google.maps.LatLng(51.5, -0.12),
+    zoom: 12,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  };
+  var map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+
+  getMarkers(map);
+  //var points = new google.maps.KmlLayer("https://views.scraperwiki.com/run/timeout-atom-feed/");
+  //var points = new google.maps.KmlLayer("http://api.flickr.com/services/feeds/photoset.gne?set=72157624451068292&nsid=34972638@N07&lang=en-us&format=rss_200&georss=1");
+  //points.setMap(map);
+}
+
+function getMarkers(map) {
+    var d = new Date();
+    // SQLite likes its dates zero-padded.
+    var month = ("00" + (d.getMonth() + 1)).substr(-2);
+    var day = ("00" + d.getDate()).substr(-2);
+    var today = d.getFullYear() + "-" + month + "-" + day;
+
+  $.getJSON(
+     'https://api.scraperwiki.com/api/1.0/datastore/sqlite',
+       "format=jsondict&name=timeout&query=select%20*%20from%20%60swdata%60%20where%20date('" + today + "')%20between%20date(start)%20and%20date(end)",
+     function(data) {
+      var bounds = new google.maps.LatLngBounds();
+
+      $.each(data, function(key, val) {
+        var latlng = new google.maps.LatLng(val.lat, val.lon);
+
+        var marker = new google.maps.Marker({
+          position: latlng,
+          title: val.title,
+          map: map
+        });
+
+        google.maps.event.addListener(marker, 'click', function(e) {
+          val.start_date = format_date(val.start);
+          val.end_date = format_date(val.end);
+
+          if (val.image_url != null) {
+            infowindow.content = Mustache.render(template_image + template, val);
+          } else {
+            infowindow.content = Mustache.render(template, val);
+          }
+          infowindow.open(map, this);  
+        });
+
+        bounds.extend(latlng);
+      });
+
+      map.fitBounds(bounds);
+    }
+  );
+}
+
+function format_date(date) {
+  var m_names = new Array("January", "February", "March", 
+    "April", "May", "June", "July", "August", "September", 
+    "October", "November", "December");
+
+  var d = new Date(date);
+  var curr_day = d.getDate();
+  var sup = "th";
+  if (curr_day % 10 == 1) {
+     sup = "st";
+  } else if (curr_day % 10 == 2) {
+     sup = "nd";
+  } else if (curr_day % 10 == 3) {
+     sup = "rd";
+  }
+
+  var curr_month = d.getMonth();
+  var curr_year = d.getFullYear();
+
+  return curr_day + sup + " " + m_names[curr_month] + " " + curr_year;
+}
+
+google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+  </head>
+  <body>
+    <div id="map-canvas"/>
+  </body>
+</html>

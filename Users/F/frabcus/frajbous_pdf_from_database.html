@@ -1,0 +1,204 @@
+<html>           
+<head>
+<script src="http://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<script src="http://media.scraperwiki.com/js/json-min.js"></script>
+<style> 
+    span.blue, span.blue3 { color:blue }
+    ul#pdfpages li { display:inline }
+    li:hover { background-color:#fdd; cursor: pointer; }
+    li.selected { border: thin black solid ; background:#ffa; }
+    div#pdfpageframe { background-color:#def; border:thin black solid; position:relative; margin:2em; width:595px; height:842px}
+    div.text { position:absolute; white-space:pre; background-color:#fff; }
+    div.text:hover { background-color:#faa; cursor: pointer;}
+    h5 { margin: 0; padding: 0 }
+    div#pdfpage { position:absolute; top:0; left:0 }
+    img#backimg { position:absolute; width:595px; height:842px; left:0; top:0; display:none; }
+    pre#showpage { position:absolute; width:20px; height:842px; left:600px; top:0; margin:0; background:#bbf }
+    div#numbers { position:absolute; left:630px; top:0; margin:0; }
+    div#numbers ul { font-size:80%; list-style-type: none; }
+    div#othnums { position:absolute; left:720px; top:0; margin:0; width:400px; }
+    div#othnums ul { font-size:60%; list-style-type: none; margin:0;  }
+</style>
+<script>
+var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite";
+var cropperurl = "http://scraperwiki.com/cropper";
+$(window).ready(function()
+{          
+    $.ajaxSetup({type:"GET", dataType: "jsonp", url:apiurl, error:function(jq, status) { alert(status); }});
+    var pagetoselect = null; 
+
+    var sqlselect = "SELECT pdfurl, count(*), docname FROM line group by pdfurl";           
+    $.ajax({data:{name:"frabjous_pdf_to_database", query:sqlselect, format:"jsonlist"}, success:function(tdata)
+    {
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var t = tdata.data[i];
+            var lis = [ '<li id="', t[2], '">', "[", t[2], "]" ];
+            lis.push('<span class="blue">', t[0], '</span>', ' (', t[1], ')</li>');
+            $("ul#pdfurls").append(lis.join(""));
+        }
+        $("ul#pdfurls li").click(clickdocpage);
+    }});
+
+    function clickdocpagepage()
+    {
+        $("ul#pdfpages li").removeClass("selected");
+        $(this).addClass("selected");
+        var page = $(this).find("span.blue3").text();
+        var pdfurl = $("ul#pdfurls li.selected span.blue").text();
+        if (page)
+        {
+            MakePage(pdfurl, page);
+            MakeNumbers(pdfurl, page);
+        }
+        $("div#othnums ul").empty();
+    }
+
+    // needs to select a document and then the page.  tricky
+    function clickdocpagepagenum()
+    {
+        var docname = $(this).find("span.blue2").text();
+        var page = $(this).find("span.blue3").text(); 
+        var currdocname = $("ul#pdfurls li.selected").attr("id"); 
+        if (docname == currdocname)
+            $("#p"+page).click(); 
+        else
+        {
+            pagetoselect = page; 
+            $("#"+docname).click(); 
+        }
+    }
+
+
+    function clickdocpage()
+    {
+        $("ul#pdfurls li").removeClass("selected");
+        $(this).addClass("selected");
+        var pdfurl = $(this).find("span.blue").text();
+        var psqlselect = "SELECT page, count(*) FROM line WHERE pdfurl='"+pdfurl+"' GROUP BY page ORDER BY page";
+        $.ajax({data:{name:"frabjous_pdf_to_database", query:psqlselect, format:"jsonlist"}, success:function(ptdata)
+        {
+            $("ul#pdfpages").empty(); 
+            for (var j = 0; j < ptdata.data.length; j++)
+            {
+                var t = ptdata.data[j]; 
+                $("ul#pdfpages").append($("<li id=\"p"+t[0]+"\"> <span class=\"blue3\">"+t[0]+"</span> ("+t[1]+")</li>"));
+            }
+            $("ul#pdfpages li").click(clickdocpagepage); 
+            if (pagetoselect != null)
+            {
+                $("#p"+pagetoselect).click(); 
+                pagetoselect = null; 
+            }
+        }});
+        clickdocpagepage();
+    };
+
+    function DoHid(hid, text)
+    {
+        $("#"+hid).css("background-color", "#faa");
+        var sqlselect = "SELECT swdata.hid, value, pdfurl, page, docname, line.text FROM df.swdata";
+        var sqljoin = " LEFT JOIN line ON swdata.hid=line.hid";
+        var sqlwhere = " WHERE value="+text+" GROUP BY pdfurl, page";
+        var query = sqlselect+sqljoin+sqlwhere;
+        $("div#othnums ul").empty().append($("<li>loading...</li>"));
+        $.ajax({data:{name:"frabjous_pdf_to_database", query:query, attach:'frabjous_detect_finances,df', format:"jsonlist"}, success:function(tdata)
+        {
+            $("div#othnums ul").empty();
+            for (var i = 0; i < tdata.data.length; i++)
+            {
+                var t = tdata.data[i];
+                $("div#othnums ul").append($('<li><span class="blue2">'+t[4]+'</span> <span class="blue3">'+t[3]+'</span> '+t[5]+'</li>'));
+            }
+            $('div#othnums ul li').click(clickdocpagepagenum);
+        }});
+    }
+
+    function MakeNumbers(pdfurl, page)
+    {
+        var sqlselect = "SELECT line.hid, start, end, value FROM line";
+        var sqljoin = " LEFT JOIN df.swdata ON swdata.hid=line.hid";
+        var sqlwhere = " WHERE page="+page+" AND line.pdfurl='"+pdfurl+"' AND value";
+        var query = sqlselect+sqljoin+sqlwhere;
+
+        $("div#numbers ul").empty().append($("<li>Loading...</li>"));
+        $.ajax({data:{name:"frabjous_pdf_to_database", query:query, attach:'detect_finances,df', format:"jsonlist"}, success:function(tdata)
+        {
+            $("div#numbers ul").empty();
+            for (var i = 0; i < tdata.data.length; i++)
+            {
+                var t = tdata.data[i];
+                $("div#numbers ul").append($('<li id=Z'+t[0]+'>'+t[3]+'</li>'));
+            }
+            $("div#numbers ul li").click(function() 
+            {
+                $("div#numbers ul li").removeClass("selected"); 
+                $(this).addClass("selected"); 
+                DoHid($(this).attr("id").substr(1), $(this).text()); }
+            );
+        }});
+    }
+
+    function MakePage(pdfurl, page)
+    {
+        var sqlselect = "SELECT top, left, height, width, text, size, family, hid FROM line";
+        var sqljoin = " LEFT JOIN fonts ON fonts.fontid=line.fontid AND fonts.pdfurl=line.pdfurl";
+        //var sqljoin2 = " LEFT JOIN df.swdata ON swdata.hid=line.hid";
+        var sqlwhere = " WHERE page="+page+" AND line.pdfurl='"+pdfurl+"'";
+        var query = sqlselect+sqljoin+sqlwhere;
+        $.ajax({data:{name:"frabjous_pdf_to_database", query:query, format:"jsonlist"}, success:function(tdata)
+        {
+            $("div#pdfpage").empty();
+            for (var i = 0; i < tdata.data.length; i++)
+            {
+                var t = tdata.data[i];
+                var style = 'top:'+t[0]+'px; left:'+t[1]+'px; height:'+t[2]+'px; width:'+t[3]+'px';
+                style += '; font-size:'+t[5]+'px; font-family:'+t[6];
+                var el = '<div id="'+t[7]+'" class="text fontspec-'+1+'" style="'+style+'">'+t[4]+'</div>'
+                $("div#pdfpage").append($(el));
+            }
+        }})
+        var imgsrc = cropperurl+"/pngprev/u/page_"+page+"/?url="+encodeURIComponent(pdfurl);
+        $('img#backimg').attr("src", imgsrc);
+        $('#showpage').text("l\no\na\nd\ni\nn\ng\n \ni\nm\na\ng\ne\n\n.\n.\n.").css("background-color", "#fbb");
+    }
+
+    $('img#backimg').load(function()
+    {
+        $('img#backimg').show().fadeOut(500);
+        $('#showpage').text("i\nm\na\ng\ne\n \nl\no\na\nd\ne\nd\n").css("background-color", "#bbf");
+    });
+    $('#showpage').hover(function() { $('img#backimg').show() }, function() { $('img#backimg').hide() });
+});
+</script>
+
+<h2>PDF from database</h2>
+
+<p><b>Instructions:</b> Several council budget PDF files have been processed into a database.  The number in brackets is the number of
+text fragments.</p>
+<p>Click on the name of the document to get the list of pages (number in brackets is number of text fragments on the page).</p>
+<p>Click on a page number to see the text with its original layout.  Put the mouse on the red strip to see the original image.</p>
+<p>First column of numbers to the right lists the numbers detected on the page.  Click on a number to find all instances of same 
+number in all the other documents (displayed as part of the text fragment).</p>
+
+
+<h4>Documents</h4>
+<ul id="pdfurls"></ul>
+
+<h4>Pages</h4>
+<ul id="pdfpages"></ul>
+
+
+<h4>Preview</h4>
+<div id="pdfpageframe">
+  <div id="pdfpage">...</div>
+  <img id="backimg" src="">
+  <pre id="showpage"></pre>
+  <div id="numbers"><h5>Numbers</h5><ul></ul></div>
+  <div id="othnums"><h5>Refs</h5><ul></ul></div>
+</div>
+
+</head>
+<body>
+</body>
+</html>

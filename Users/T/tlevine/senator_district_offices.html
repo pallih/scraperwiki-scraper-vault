@@ -1,0 +1,31 @@
+<style> #map {width: 100%; height: 100%; text-align: center;} img#loading{margin-top: 150px;}</style>
+<div id="map"><img id="loading" src="http://thomaslevine.com/tahrir_ajax_loader.gif" alt="Loading"></div>
+<script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+<script src="http://thomaslevine.com/jquery.gmap-1.1.0-min.js"></script>
+<script type="text/javascript">
+function swajax(sqlselect,theformat,callback){
+  var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+  var srcname = "us-senators"; 
+
+  $.ajax({
+    url:apiurl
+  , dataType:"jsonp"
+  , data:{
+      name:srcname
+    , query:sqlselect
+    , format:theformat
+  }
+  , success:callback
+  });
+}
+
+$(function(){
+  //The address is Washington rather than district. Darn.
+  sql="select address,('<a href=\"' || website || '\">' || first_name || ' ' || last_name || '<br>' || phone || '</a>') as \"html\", 0 as 'popup' from `swdata`;"
+  swajax(sql,'jsondict',function(locations){
+    //console.log(locations);
+    $("#map").gMap({ markers:locations,zoom: 11 });
+  });
+});
+</script>

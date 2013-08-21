@@ -1,0 +1,3 @@
+import requests
+requests.post('http://thomaslevine-status.nfshost.com/')
+#requests.post('http://status.thomaslevine.com')

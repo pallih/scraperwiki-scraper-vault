@@ -1,0 +1,87 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
+
+<script type="text/javascript">
+spark = function (data) {
+    ctx = document.querySelector("canvas").getContext('2d');
+    max = _.max(data);
+    min = _.min(data);
+    delta = max - min;
+    pData = _.map(data, function(n) {
+            return (n - min)/delta;
+            });
+    ctx.beginPath();
+    scaleX = 1;
+    scaleY = 50;
+    _.each(pData, function(v, i) {
+            ctx.lineTo(i * scaleX, v*scaleY);
+            });
+    ctx.stroke();
+    
+
+    ctx.fillText("max: " + max, 10, 10);
+    ctx.fillText("min: " + min, 10, 25);
+}
+
+window.onload = function() {
+    var qUrl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=weathergcca_week_prevision&query=select%20*%20from%20%60swdata%60%0A";
+    $.ajax({
+        url: qUrl,
+        success: function(d) {
+            // console.log(d);
+            //data = JSON.parse(d);
+
+            data = d;
+            var matchN = /[-+]?[0-9]+\.?[0-9]*/;
+            aValue = _.map(data, function(day) {
+                if(day.high == null || day.low == null) return 0
+                h = day.high.match(matchN);
+                l = day.low.match(matchN);
+
+                if(h != null) {
+                    h = h[0];
+                }
+                else if(l != null) {
+                    h = l[0];
+                }
+                else {
+                    h = 0;
+                }
+
+                if(l != null &&  l[0] != null) {
+                    l = l[0];
+                }
+                else if(h != null && h[0] != null) {
+                    l = h[0];
+                }
+                else {
+                    l = 0;
+                }
+
+                h = parseInt(h);
+                l = parseInt(l);
+                if(!l && l !== 0) {
+                    if(h) return h;
+                }
+                if(!h && h !== 0){
+                    if(l) return l;
+                }
+
+                return (h + l) / 2;
+            });
+            spark(aValue);
+        }
+    });
+}
+</script>
+
+</head>
+    <body>
+        <canvas id="canvas" width="1000" height="600"></canvas>
+    </body>
+</html>

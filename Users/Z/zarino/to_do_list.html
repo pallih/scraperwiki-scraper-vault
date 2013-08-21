@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="content-language" content="en" />
+    <title>Dirty little to-do list</title>
+    <style type="text/css">
+        body { padding: 10px; font-family: "Myriad Pro", Helvetica, Arial; }
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js"></script>
+    <script type="text/javascript">
+
+        function htmlencode(s){
+            var el = document.createElement("div");
+            el.innerText = el.textContent = s;
+            s = el.innerHTML;
+            delete el;
+            return s;
+        }
+
+        $(function() {
+
+var apiurl = "https://api.bitbucket.org/1.0/repositories/ScraperWiki/scraperwiki/issues/";            
+$.ajax({url:apiurl, dataType:"jsonp", data:{responsible:'zarino',status:'!resolved'}, success:function(data){
+    console.log(data);
+    $('#loading').hide();
+    $('h2 span').text(data['count'] + ' ');
+    $.each(data['issues'], function(key, value) {
+        var temp = '<tr><td><img src="' + data['issues'][key]['reported_by']['avatar'] + '" title="';
+        if(data['issues'][key]['reported_by']['first_name'] !== ''){
+            temp += data['issues'][key]['reported_by']['first_name'] + ' ' + data['issues'][key]['reported_by']['last_name'];
+        } else {
+            temp += data['issues'][key]['reported_by']['username'];
+        }
+        temp += '" /></td>';
+        temp += '<td><h4><a href="' + data['issues'][key]['resource_uri'] + '">' + data['issues'][key]['title'] + '</a></h4>';
+        if(data['issues'][key]['content'] !== ''){
+            temp += '<p class="issue_content">' + htmlencode(data['issues'][key]['content']) + '</p>';
+        }
+        temp += '</td>';
+        temp += '<td>Milestone: ' + data['issues'][key]['metadata']['component'] + ' &bullet; Component: ' + data['issues'][key]['metadata']['milestone'];
+        temp += '</td></tr>';
+        $('table').append(temp);
+    });
+}});
+
+        });
+    </script>
+</head>
+<body>
+    <div id="page">
+        <h2>Zarino&rsquo;s <span></span>BitBucket Issues</h2>
+        <table>
+            <tr id="loading"><td>Loading issues&hellip;</td></tr>
+        </table>
+    </div>
+</body>
+</html>

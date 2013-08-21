@@ -1,0 +1,3 @@
+import scraperwiki
+
+print "outré"

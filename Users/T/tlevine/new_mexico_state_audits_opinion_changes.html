@@ -1,0 +1,14 @@
+<h1><a href="https://scraperwiki.com/scrapers/new_mexico_state_audits_parse/">New Mexico State Audits</a></h1>
+<h2>Opinion changes</h2>
+<p>The query is</p>
+<pre>
+SELECT j1.nodeId AS nodeId, (j2.time_scraped - j1.time_scraped) AS time_diff,
+j1.Opinion as old, j2.Opinion as new FROM opinions j1 INNER JOIN opinions j2
+ON (j1.nodeId = j2.nodeId) WHERE j1.Opinion != j2.Opinion
+</pre>
+<a href="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=new_mexico_state_audits_parse&query=SELECT%20j1.nodeId%20AS%20nodeId%2C%20(j2.time_scraped%20-%20j1.time_scraped)%20AS%20time_diff%2C%20j1.Opinion%20as%20old%2C%20j2.Opinion%20as%20new%0AFROM%20opinions%20j1%20INNER%20JOIN%20opinions%20j2%20ON%20(j1.nodeId%20%3D%20j2.nodeId)%0AWHERE%20j1.Opinion%20!%3D%20j2.Opinion%20limit%208">
+Preview this query.</a>
+<h2>All opinions</h2>
+<p>The query is</p>
+<pre> select * from opinions join audits on opinions.nodeId</pre>
+<a href="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=new_mexico_state_audits_parse&query=select%20*%20from%20opinions%20join%20audits%20on%20opinions.nodeId%20limit%208">Preview this query</a>

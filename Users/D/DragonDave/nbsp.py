@@ -1,0 +1,2 @@
+# Blank Python
+print "*&nbsp;*"

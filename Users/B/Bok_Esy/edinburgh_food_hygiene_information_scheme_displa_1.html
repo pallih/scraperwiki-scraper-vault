@@ -1,0 +1,125 @@
+<html dir="ltr" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Mapped Edinburgh Food Hygiene Information Scheme Data</title>
+    <style type="text/css" media="screen">p{padding:1px;}</style>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+</head>
+
+<body>
+
+    <h2>Map of <span id="scrapername">...</span> <em id="message">...</em> : Restaurants beginning with letters 'C'</h2>
+<div id="map" style="width:100%;height:80%"></div>
+
+<script type="text/javascript" charset="utf-8">
+// ####################################################################
+// Start of javascript code.  You should edit the functions below 
+// so that your map expresses the particular contents of the data
+// ####################################################################
+    
+var sourcescraper = 'edinburgh-food-hygiene-information-scheme';
+$('#scrapername').html('<b>'+sourcescraper+'</b>'); 
+    
+// ####################################################################
+// Set the dynamic icon for your point.  For more see: 
+// http://code.google.com/apis/chart/docs/gallery/dynamic_icons.html
+// ####################################################################
+function mapicon(record)
+{
+    col = 'FFBB00';
+    if (record["rating"] == "Pass")
+        col = 'C6EF8C';
+    if (record["rating"] == "Improvement Required")
+        col = 'FF0000';
+    if (record["rating"] == "Awaiting Inspection")
+        col = 'FFBB00';
+    if (record["rating"] == "Exempt")
+        col = 'FFBB00';
+
+
+    letter = ' ';
+     
+    icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld='+letter+'|'+col+'|000';
+    return icon
+}
+
+// ####################################################################
+// Set the tooltip title value
+// ####################################################################
+function mapicontext(record)
+{
+    return record["name"] + " (" + record["rating"] + " on " + record["inspection_date"] + ")" 
+}
+
+// ####################################################################
+// Set the popup text for your pin, usually with the link
+// ####################################################################
+function mapicontent(record)
+{
+    return '<a href="'+record['url']+'" target="_blank">'+record["name"]+'</a>' +
+        '<br/>Inspected on ' + record["inspection_date"] + 
+        '<br/>Rating: ' + record['rating'];
+}
+
+var map; 
+var centreset = false; 
+function makemap()
+{
+    var mapOptions = { "zoom": 13, "center": new google.maps.LatLng(55.950161,-3.202515), 
+                    "mapTypeId": google.maps.MapTypeId.ROADMAP };
+    map = new google.maps.Map(document.getElementById("map"), mapOptions);
+}
+ 
+function recorddata(record)
+{
+    if (!('lat' in record))
+        return; 
+            //pos = new google.maps.LatLng(record['latlng'][0], record['latlng'][1]); 
+    pos = new google.maps.LatLng(record['lat'], record['long']); 
+
+    text = mapicontext(record);
+    icon = mapicon(record);
+    content = mapicontent(record); 
+
+    marker = new google.maps.Marker({position:pos,map:map,title:text, icon:icon});
+
+    infowindow = new google.maps.InfoWindow({ content: content });
+    (function(j) {
+            google.maps.event.addListener(j.marker, "click", function(){
+                                j.infowindow.open(map, j.marker); });
+                 })({'marker':marker, 'infowindow':infowindow});
+    if (!centreset)
+        {  map.setCenter(pos); centreset = true }
+}
+
+var olength = 500; 
+var olimit = 100; 
+var offset = 0; 1    
+function gotback(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddata(r[i]); 
+
+    offset += olength; 
+    if ((r.length == olength) && (offset < olimit))
+        loaddata(); 
+    else
+        $("#message").html("Total records=" + (offset - olength + r.length)); 
+}
+
+function loaddata() 
+{
+    $("#message").html("Loading ..."); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=job_centre_isle_of_man&query=select%20*%20from%20JobTable%20limit%202";
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}
+
+$(function() { makemap(); loaddata(); });
+
+</script> 
+</body> 
+</html>

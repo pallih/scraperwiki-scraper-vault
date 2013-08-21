@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Dim Sum Diaries Review Map</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+            $(function(){
+                var myOptions = {
+                    zoom: 14,
+                    center: new google.maps.LatLng(22.290605,114.17284),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+
+                $.ajax({
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=dsd_reviews&query=select%20*%20from%20%60swdata%60%20where%20lat%20is%20not%200',
+                    dataType: 'json',
+                    success: function(data){ drop_markers(data); }
+                });
+                function drop_markers(data){
+                    var infoWindows = [];
+                    bounds = new google.maps.LatLngBounds();
+                    for(i = 0; i < data.length; i++){
+                        var myLatLng = new google.maps.LatLng(data[i].lat, data[i].lng);
+                        infoWindows[i] = new google.maps.InfoWindow({
+                            content: "<a href='"+data[i].url+"'>"+data[i].title+"</a>"
+                        });
+                        if (data[i].rating<0) data[i].rating = "";
+                        var marker = new google.maps.Marker({
+                            position: myLatLng,
+                            icon: "http://chart.googleapis.com/chart?chst=d_map_xpin_letter&chld=pin|" + data[i].rating + "|E01B6A",
+                            map: map,
+                            title:data[i].title,
+                            infoWindowIndex : i
+                        });
+                        google.maps.event.addListener(marker, 'click', function() { infoWindows[this.infoWindowIndex].open(map, this); });
+                        bounds.extend(myLatLng);
+                    }
+                    //map.fitBounds(bounds);
+
+                    //Tags aren't very useful: https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=dsd_reviews&query=SELECT%20tag%2C%20count(id)%20FROM%20tags%20GROUP%20BY%20tag%20ORDER%20BY%20count(id)%20DESC%3B
+                }
+            }); 
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>

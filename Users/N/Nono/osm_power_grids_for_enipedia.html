@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>OSM Power Grid selection for Enipedia</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3&libraries=geometry&sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+            var overlaysEnipedia = [];
+            var overlaysScraper = [];
+
+            var selectedScraper = [];
+            var selectedData = {};
+
+            var infowindowEnipedia = new google.maps.InfoWindow();
+            var infowindowScraper = new google.maps.InfoWindow({disableAutoPan: true});
+            
+            var queryString = {};
+            
+            $(function(){
+            
+                var params = location.search.split(/[?&]/);
+                for (var param in params) {
+                    queryString[params[param].split("=")[0]] = params[param].split("=")[1];
+                }
+                
+                var myOptions = {
+                    zoom: 7,
+                    center: new google.maps.LatLng(49, 2),
+                    mapTypeId: google.maps.MapTypeId.HYBRID,
+                    mapTypeControlOptions: { 
+                        //mapTypeIds: ['ITO', google.maps.MapTypeId.HYBRID],
+                        style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+                    }
+                };
+                
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+                
+                var myITOOptions = {
+                    getTileUrl: function(coord, zoom) {
+                        return "http://t" + Math.floor(Math.random()*4) + ".beta.itoworld.com/4/770fc0c2b467b4cb16c330d996e2ddd2/" 
+                                + zoom + "/" + coord.x + "/" + coord.y + ".png";
+                    },
+                    tileSize: new google.maps.Size(256, 256),
+                    isPng: true,
+                    opacity: 0.5,
+                    alt: "ITOWorld Power Transmission",
+                    name: "ITOWorld"
+                }
+                
+                //map.mapTypes.set('ITO', new google.maps.ImageMapType(myITOOptions));
+                //map.setMapTypeId('ITO');
+                map.overlayMapTypes.insertAt(0, new google.maps.ImageMapType(myITOOptions));
+
+                var controlDiv = createControls();
+                map.controls[google.maps.ControlPosition.TOP].push(controlDiv);
+                
+                function createControls() {
+                    var controlDiv = document.createElement('div');
+                    controlDiv.id = "map_controls";
+                    controlDiv.style.background = "-moz-linear-gradient(left center , rgba(255, 255, 255, 0.2) 5px, rgba(255, 255, 255, 0.7) 50px) repeat scroll 0% 0% transparent";
+                    controlDiv.style.fontFamily = 'Arial,sans-serif';
+                    controlDiv.style.fontSize = '10pt';
+                    
+                    controlDiv.appendChild(document.createTextNode("\u00a0\u00a0\u00a0Scraped OSM:"));
+                    var cboScraperCountries = document.createElement('select');
+                    cboScraperCountries.id = "scraper_countries";
+                    controlDiv.appendChild(cboScraperCountries);
+                    google.maps.event.addDomListener(cboScraperCountries, 'change', function() { load_grid_scraper(cboScraperCountries.value) });
+                    
+                    $.ajax({
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite',
+                    data: { 
+                        name: "osm_power_grid", 
+                        query: "select distinct country from powerlines where country <> '' order by country", 
+                        format: "jsondict" 
+                    },
+                    dataType: 'json',
+                        success: function(data) { 
+                                    for (var i = 0; i < data.length; i++) {
+                                        var opt = document.createElement('option');
+                                        opt.appendChild(document.createTextNode(data[i].country));
+                                        cboScraperCountries.appendChild(opt);
+                                    } 
+                                    load_grid_scraper(data[0].country)
+                                }
+                    });
+                    
+                    controlDiv.appendChild(document.createTextNode("\u00a0\u00a0\u00a0"));
+                    var chkITO = document.createElement('input');
+                    chkITO.setAttribute("type", "checkbox");
+                    chkITO.setAttribute("checked", "true");
+                    chkITO.id = "ito";
+                    controlDiv.appendChild(chkITO);
+                    google.maps.event.addDomListener(chkITO, 'change', function() { if(chkITO.checked) 
+                                                                                        map.overlayMapTypes.insertAt(0, new google.maps.ImageMapType(myITOOptions));
+                                                                                    else
+                                                                                        map.overlayMapTypes.removeAt(0) });
+                    controlDiv.appendChild(document.createTextNode("ITOWorld power distribution"));
+                    
+                    controlDiv.appendChild(document.createTextNode("\u00a0\u00a0\u00a0"));
+                    var chkEnipedia = document.createElement('input');
+                    chkEnipedia.setAttribute("type", "checkbox");
+                    chkEnipedia.setAttribute("checked", "true");
+                    chkEnipedia.id = "enipedia_dynamic";
+                    controlDiv.appendChild(chkEnipedia);
+                    google.maps.event.addDomListener(chkEnipedia, 'change', function() { if (chkEnipedia.checked) load_grid_enipedia(); else clearOverlays(overlaysEnipedia) });
+                    controlDiv.appendChild(document.createTextNode("dynamic generation from Enipedia"));
+
+                    load_grid_enipedia();
+                    
+                    return controlDiv;
+                }
+
+                
+                function load_grid_scraper(country) {
+                
+                    clearOverlays(overlaysScraper);
+                    
+                    $.ajax({
+                        url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite',
+                        data: { 
+                            name: "osm_power_grid", 
+                            query: "select osmid, name, path, voltage, frequency, cables, operator from powerlines where country = '" + country + "'" +
+                                    " and (voltage like '%22_000%' or voltage like '%27_000%' or voltage like '%380000%' or voltage like '%400000%') ", 
+                            format: "jsondict" 
+                        },
+                        dataType: 'json',
+                        success: function(data){ 
+                                    drop_lines_scraper(data); 
+                                    $.ajax({
+                                        url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite',
+                                        data: { 
+                                            name: "osm_power_grid", 
+                                            query: "select osmid, name, centroid, ring, voltage, operator from stations where country = '" + country + "' and type like '%station'" +
+                                                    (country == 'France' ? " and (voltage like '%220000%' or voltage like '%225000%' or voltage like '%380000%' or voltage like '%400000%') " : " "), 
+                                            format: "jsondict" 
+                                        },
+                                        dataType: 'json',
+                                        success: function(data){ drop_stations_scraper(data); }
+                                    });
+                                }
+                    });
+                    
+                }
+                
+                function load_grid_enipedia() {
+                        
+                    clearOverlays(overlaysEnipedia);
+                    
+                    $.ajax({
+                        url: 'http://enipedia.tudelft.nl/sparql',
+                        data: { 
+                            query:  "BASE <http://enipedia.tudelft.nl/wiki/>\n" + 
+                                    "PREFIX prop: <http://enipedia.tudelft.nl/wiki/Property:>\n" + 
+                                    "PREFIX cat: <http://enipedia.tudelft.nl/wiki/Category:>\n" + 
+                                    "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" + 
+                                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" + 
+                                    "select ?x (?powerLineName as ?name) ?voltage ?geopath\n" + 
+                                    "       ?substation1 ?substation1Name ?substation2 ?substation2Name where {\n" + 
+                                    "  ?x rdf:type cat:PowerLine . \n" + 
+                                    "  ?x rdfs:label ?powerLineName . \n" + 
+                                    "  ?x prop:GeoPath ?geopath . \n" + 
+                                    "  ?x prop:ConnectedToSubstation1 ?substation1 . \n" + 
+                                    "  ?x prop:ConnectedToSubstation2 ?substation2 . \n" + 
+                                    "  ?substation1 rdfs:label ?substation1Name . \n" + 
+                                    "  ?substation2 rdfs:label ?substation2Name . \n" + 
+                                    "  OPTIONAL{?x prop:Voltage ?voltage }. \n" + 
+                                    "} limit 5000", 
+                            output: "json" 
+                        },
+                        dataType: 'jsonp',
+                        success: function(data){ drop_lines_enipedia(data); }
+                    });
+                    
+                    $.ajax({
+                        url: 'http://enipedia.tudelft.nl/sparql',
+                        data: { 
+                            query:  "BASE <http://enipedia.tudelft.nl/wiki/>\n" + 
+                                    "PREFIX prop: <http://enipedia.tudelft.nl/wiki/Property:>\n" + 
+                                    "PREFIX cat: <http://enipedia.tudelft.nl/wiki/Category:>\n" + 
+                                    "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" + 
+                                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" + 
+                                    "select ?x ?name ?voltage ?point where {\n" + 
+                                    "  ?x rdf:type cat:PowerSubstation . \n" + 
+                                    "  ?x rdfs:label ?name . \n" + 
+                                    "  ?x prop:Point ?point . \n" + 
+                                    "  OPTIONAL{?x prop:Voltage ?voltage }. \n" + 
+                                    "} limit 5000", 
+                            output: "json" 
+                        },
+                        dataType: 'jsonp',
+                        success: function(data){ drop_stations_enipedia(data); }
+                    });
+                }
+            });
+
+            function clearOverlays(overlaysArray) {
+                if (overlaysArray) {
+                    for (var i in overlaysArray) {
+                        overlaysArray[i].setMap(null);
+                    }
+                    overlaysArray.length = 0;
+                }
+            }
+
+            
+            function drop_lines_scraper(data){
+                for (var i = 0; i < data.length; i++){
+                    var color, weight;
+                    if (data[i].voltage.indexOf('450000') >= 0){
+                        color = "#0000ff";
+                        weight = 10;
+                    } else if (data[i].voltage.indexOf('400000') >= 0 || data[i].voltage.indexOf('380000') >= 0) {
+                        color = "#ffff00";
+                        weight = 7;
+                    } else if (data[i].voltage.indexOf('225000') >= 0 || data[i].voltage.indexOf('220000') >= 0 ||
+                               data[i].voltage.indexOf('275000') >= 0 || data[i].voltage.indexOf('270000') >= 0) {
+                        color = "#ff0000";
+                        weight = 4;
+                    }
+                    
+                    var pts = data[i].path.split(" ");
+                    for (var j=0; j<pts.length; j++) {
+                        var pt = pts[j].split(",");
+                        pts[j] = new google.maps.LatLng(pt[0], pt[1]);
+                    }
+                    
+                    var lineOptions = {map: map, path: pts, strokeColor: color, strokeWeight: weight, strokeOpacity: 0.35};
+                    var line = new google.maps.Polyline(lineOptions);
+                    line.data = data[i];
+                    line.position = pts[Math.floor(pts.length/2)]
+                    overlaysScraper.push(line);
+                    google.maps.event.addListener(line, 'mouseover', function() { this.setOptions({strokeOpacity: 1})} );
+                    google.maps.event.addListener(line, 'mouseout', function() { if (!this.selected) this.setOptions({strokeOpacity: 0.35 })} );
+                    google.maps.event.addListener(line, 'click', function(event) { select_line_scraper(this, event.b) } );
+                }
+            }
+            
+            function drop_stations_scraper(data){
+                var maxPos = overlaysScraper.length;
+                for (var i = 0; i < data.length; i++){
+                    var bOK = false;
+                    var coords = (data[i].centroid ? data[i].centroid : data[i].ring.split(' ')[0]).split(',');
+                    var myLatLng = new google.maps.LatLng(coords[0], coords[1]);
+                    if (data[i].voltage && ( data[i].voltage.indexOf('450000') >= 0 ||
+                        data[i].voltage.indexOf('400000') >= 0 || data[i].voltage.indexOf('380000') >= 0 ||
+                        data[i].voltage.indexOf('275000') >= 0 || data[i].voltage.indexOf('270000') >= 0 ||
+                        data[i].voltage.indexOf('225000') >= 0 || data[i].voltage.indexOf('220000') >= 0) ) {
+                        bOK = true;
+                    } else {
+                        bOK = false;
+                        for (var j=0; j<maxPos; j++) {
+                            if (google.maps.geometry.poly.isLocationOnEdge(myLatLng, overlaysScraper[i], 5)) {
+                                bOK = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (bOK) {
+                        var markerOptions = {position: myLatLng, map: map, 
+                                             title: data[i].name||("OSM id:"+data[i].osmid), icon: "http://enipedia.tudelft.nl/kml/powersubstation.png"};
+                        var marker = new google.maps.Marker(markerOptions);
+                        marker.data = data[i];
+                        overlaysScraper.push(marker);
+                        google.maps.event.addListener(marker, 'click', function(event) { select_marker_scraper(this, event)} );
+                    }
+                }
+            }
+
+        
+            function drop_lines_enipedia(data) {
+                var list = data.results.bindings; 
+                for (var i = 0; i < list.length; i++){
+                    var color, weight;
+                    if (list[i].voltage.value == 450000) {
+                        color = "#0000ff";
+                        weight = 10;
+                    } else if (list[i].voltage.value == 380000) {
+                        color = "#ffff00";
+                        weight = 7;
+                    } else if (list[i].voltage.value == 220000) {
+                        color = "#ff0000";
+                        weight = 4;
+                    }
+                    var pts = list[i].geopath.value.split(" ");
+                    for (var j=0; j<pts.length; j++) {
+                        var pt = pts[j].split(",");
+                        pts[j] = new google.maps.LatLng(pt[0], pt[1]);
+                    }
+                    var lineOptions = {map: map, path: pts, strokeColor: color, strokeWeight: weight};
+                    var line = new google.maps.Polyline(lineOptions);
+                    line.data = list[i];
+                    line.position = pts[Math.floor(pts.length/2)]
+                    overlaysEnipedia.push(line);
+                    google.maps.event.addListener(line, 'click', function() { open_info_enipedia(this, "line")} );
+                }
+            }
+            
+            function drop_stations_enipedia(data) {
+                var list = data.results.bindings; 
+                for (var i = 0; i < list.length; i++){
+                    var coords = list[i].point.value.split(',');
+                    var latitude = coords[0].indexOf('S') > 0 ? "-"+coords[0].replace(' S','') : coords[0].replace(' N','');
+                    var longitude = coords[1].indexOf('W') > 0 ? "-"+coords[1].replace(' W','') : coords[1].replace(' E','');
+                    var myLatLng = new google.maps.LatLng(latitude, longitude);
+                    var markerOptions = {position: myLatLng, map: map, title: list[i].name.value, icon: "http://enipedia.tudelft.nl/kml/powersubstation.png"};
+                    var marker = new google.maps.Marker(markerOptions);
+                    marker.data = list[i];
+                    overlaysEnipedia.push(marker);
+                    google.maps.event.addListener(marker, 'click', function() { open_info_enipedia(this, "marker")} );
+                }
+            }
+
+            
+            function select_line_scraper(line, event) {
+                if (!event.ctrlKey) {
+                    var old;
+                    while (old = selectedScraper.shift()) {
+                        old.selected = false;
+                        old.setOptions({strokeOpacity: 0.35});
+                    }
+                    selectedData = {
+                        name: (line.data.name || "OSM id:"+line.data.osmid),
+                        voltage: line.data.voltage.split(';')[0], 
+                        path: line.data.path,
+                        substations: []
+                    }
+                } else {
+                    selectedData.name = (line.data.name || selectedData.name+","+line.data.osmid);
+                    var selectedPath = selectedData.path.split(' ');
+                    var linePath = line.data.path.split(' ');
+                    if (selectedPath[0] == linePath[linePath.length-1])
+                        selectedData.path = linePath.concat(selectedPath).join(' ');
+                    else if (selectedPath[selectedPath.length-1] == linePath[0])
+                        selectedData.path = selectedPath.concat(linePath).join(' ');
+                    else {
+                        alert("line mismatch!");
+                        return;
+                    }
+                }
+                line.selected = true;
+                selectedScraper.push(line);
+
+                var name = selectedData.voltage.replace("000","") + " kV " + selectedData.substations.join('-')
+                var content = "<div style='font-size: 9pt; font-family: Arial'><span style='font-size: 12pt'><nowrap>" + selectedData.name + "</nowrap></span><ul>";
+                for (var p in line.data) {
+                    if (p != "name" && p != "path" && p != "osmid" && line.data[p] != null)
+                        content += "<li>" + p + ": " + line.data[p] +"</li>";
+                }
+                content += "</ul><b>Substations: </b>" + selectedData.substations.join(',');
+                content += "<br/>Use Ctrl+Click to add more segments if needed or add connected substations<p/>"
+                content += "<form action='http://enipedia.tudelft.nl/wiki/Special:FormEdit/PowerLine/" + name + "' metod='POST' target='enipedia_edit'>";
+                content += "<input type='hidden' id='PowerLine[voltage]' name='PowerLine[voltage]' value='" + line.data.voltage + "'/>";
+                content += "<input type='hidden' id='PowerLine[ConnectedToSubstation1]' name='PowerLine[ConnectedToSubstation1]' value='" + selectedData.substations[1] + " Substation'/>";
+                content += "<input type='hidden' id='PowerLine[ConnectedToSubstation2]' name='PowerLine[ConnectedToSubstation2]' value='" + selectedData.substations[0] + " Substation'/>";
+                content += "<input type='hidden' id='PowerLine[path]' name='PowerLine[path]' value='" + selectedData.path + "'/>";
+                content += "<input type='hidden' id='PowerLine[CurrentType]' name='PowerLine[CurrentType]' value='AC'/>";
+                content += "<input type='hidden' id='PowerLine[PowerLineType]' name='PowerLine[PowerLineType]' value='Cable'/>";
+                content += "<input type='hidden' name='wpPreview' id='wpPreview' value='Show preview'/><input type='submit' value='Create in Enipedia' /></form></div>";
+                infowindowScraper.setContent(content);
+                infowindowScraper.open(map, line);
+            }
+            
+            function select_marker_scraper(obj, event) {
+                var content = "<div style='font-size: 9pt; font-family: Arial'><span style='font-size: 12pt'><nowrap>" + (obj.data.name || ("OSM id:"+obj.data.osmid)) + "</nowrap></span><ul>";
+                for (var p in obj.data) {
+                    if (p != "name" && p != "ring" && p != "centroid" && p != "osmid" && obj.data[p] != null)
+                        content += "<li>" + p + ": " + obj.data[p] +"</li>";
+                }
+                content += "</ul>";
+                if (obj.data.name) {
+                    var name = obj.data.name;
+                    name = name.replace(/Poste électrique de (.*)/, "$1 Substation");
+                    name = name.replace(/Umspannwerk (.*)/, "$1 Substation");
+                    name = name.replace(/Umspannanlage (.*)/, "$1 Substation");
+                    name = name.replace(/Elia (.*)/, "$1 Substation");
+                    if (selectedData.substations) {
+                        selectedData.substations.unshift(name.replace(" Substation",""));
+                    }
+                    content += "<form action='http://enipedia.tudelft.nl/wiki/Special:FormEdit/PowerSubstation/" + name + "' metod='POST' target='enipedia_edit'>";
+                    if (obj.data.voltage)
+                        content += "<input type='hidden' id='PowerSubstation[voltage]' name='PowerSubstation[voltage]' value='" + obj.data.voltage + "'/>";
+                    content += "<input type='hidden' id='PowerSubstation[point]' name='PowerSubstation[point]' value='" + ll2s(obj.getPosition()) + "'/>";
+                    content += "<input type='hidden' name='wpPreview' id='wpPreview' value='Show preview'/><input type='submit' value='Create in Enipedia' /></form>";
+                } else {
+                    content += "<form action='http://enipedia.tudelft.nl/wiki/Form:PowerSubstation' metod='POST' target='enipedia_edit'>";
+                    content += "<input type='submit' value='Create in Enipedia' /></form>";
+                }
+                content += "</div>";
+                infowindowScraper.setContent(content);
+                infowindowScraper.open(map, obj);
+            }
+            
+            function open_info_enipedia(obj, type) {
+                var content = "<div style='font-size: 9pt; font-family: Arial'><span style='font-size: 12pt'>" + obj.data.name.value + "</span>";
+                for (var p in obj.data) {
+                    if (p == "x")
+                        content += "<li><b>Enipedia link:</b> <a href='" + obj.data[p].value + "' target='enipedia_view'>" + obj.data[p].value + "</a></li>";
+                    else if (p != "name" && p != "point" && p != "geopath" && p.indexOf("substation") == -1 && obj.data[p].value != null)
+                        content += "<li><b>" + p.replace("_"," ") + ":</b> " + obj.data[p].value.replace("_"," ") + "</li>";
+                }
+                if (type == "line") {
+                    content += "<li><b>Sunstation 1:</b> <a href='" + obj.data["substation1"].value + "' target='enipedia_view'>" + obj.data["substation1Name"].value + "</a></li>";
+                    content += "<li><b>Sunstation 2:</b> <a href='" + obj.data["substation2"].value + "' target='enipedia_view'>" + obj.data["substation2Name"].value + "</a></li>";
+                }
+                content += "</ul></div>";
+                infowindowEnipedia.setContent(content);
+                infowindowEnipedia.open(map, obj);
+            }
+            
+            function ll2s(ll) {
+                var s = Math.abs(ll.lat()) + "° " + (ll.lat() > 0 ? "N" : "S") + ", ";
+                return s + Math.abs(ll.lng()) + "° " + (ll.lng() > 0 ? "E" : "W");
+            }
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>

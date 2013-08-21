@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Air Disasters (1920 - Present Day)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <style type="text/css">
+      html, body, #map_canvas {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript">
+
+        var map;
+
+        $(function(){
+            var myOptions = {
+                zoom: 4,
+                center: new google.maps.LatLng(0,0),
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+            $.ajax({
+                url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=air_crash_data_1&query=select%20*%20from%20%60swdata%60%20where%20lat%20is%20not%20null',
+                dataType: 'json',
+                success: function(data){
+                    bounds = new google.maps.LatLngBounds();
+                    for(i = 0; i < data.length; i++){
+                        myLatLng = new google.maps.LatLng(data[i].lat, data[i].long);
+                        markerOptions = {position: myLatLng, map: map, title: data[i].summary};
+                        new google.maps.Marker(markerOptions);
+                        bounds.extend(myLatLng);
+                        map.fitBounds(bounds);
+                    }
+                }, 
+                error: function(jqXHR, textStatus){
+                    alert('Error loading ScraperWiki API: ' + textStatus);
+                }
+            });
+        });
+
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas"></div>
+  </body>
+</html>

@@ -1,0 +1,62 @@
+<html>
+<head>
+<title>North Warwickshire Food Safety Inspections</title>
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.4/leaflet.css" />
+<!--[if lte IE 8]>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.4/leaflet.ie.css" />
+<![endif]-->
+<script src="http://cdn.leafletjs.com/leaflet-0.4/leaflet.js"></script>
+<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+<style type="text/css">
+body, html {
+margin: 0;
+padding: 0;
+}
+
+#map {
+height: 100%; 
+width: 100%;
+}
+</style>
+</head>
+<body>
+<div id="map">Can't see the map? Make sure you've allowed your browser to download insecure content.</div>
+<script>
+
+function getReports(map) {
+
+    var d = new Date();
+    var dateString;
+    
+    d.setMonth(d.getMonth() - 6);
+    
+    dateString = d.getFullYear() +'-'+ ('0' + (d.getMonth()+1)).slice(-2) +'-'+ ('0' + d.getDate()).slice(-2);
+    
+    url = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=lichfield_district_council_fixmystreet_reports&query=select%20*%20from%20swdata%20WHERE%20updated%20%3E%20'"+ dateString +"'%20ORDER%20BY%20updated%20DESC"
+
+   console.log(url)
+
+   $.getJSON(url, function(data) {
+       $.each(data, function(key, val) {
+           console.log(val)
+           popup = ''
+           popup += '<strong>'+val.details+'</strong> '+val.url+'<br />'
+           group.addLayer(L.marker([val.lng, val.lat]).addTo(map).bindPopup(popup));
+       });
+   })
+}
+
+var map = L.map('map').setView([52.4962, -1.708], 13);
+
+L.tileLayer('http://{s}.tile.cloudmade.com/BC9A493B41014CAABB98F0471D759707/997/256/{z}/{x}/{y}.png', {
+   maxZoom: 18,
+   attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>'
+}).addTo(map);
+
+var group = new L.layerGroup();
+
+getReports(map);
+
+</script>
+</body>
+</html>

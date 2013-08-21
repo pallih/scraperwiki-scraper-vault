@@ -1,0 +1,50 @@
+<style> #map {width: 100%; height: 100%; text-align: center;} img#loading{margin-top: 150px;}</style>
+<div id="map"><img id="loading" src="http://thomaslevine.com/tahrir_ajax_loader.gif" alt="Loading"></div>
+<script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+<script src="http://thomaslevine.com/jquery.gmap-1.1.0-min.js"></script>
+<script type="text/javascript">
+function swajax(sqlselect,theformat,callback){
+  var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+  var srcname = "rubbish_scraper"; 
+
+  $.ajax({
+    url:apiurl
+  , dataType:"jsonp"
+  , data:{
+      name:srcname
+    , query:sqlselect
+    , format:theformat
+  }
+  , success:callback
+  });
+}
+
+$(function(){
+  sql="select * from `swdata`"
+  swajax(sql,'jsondict',function(dwellings){
+    console.log(dwellings);
+    locations = [];
+    for(var i=0;i<dwellings.length;i++){
+        var dwelling = dwellings[i];
+        //console.log(dwelling);
+        var geoloc = eval("("+dwelling.geo+")");
+        console.log(geoloc);
+        if(geoloc.results.length>0){
+            var geo = geoloc.results[0].geometry;
+            locations.push({
+                html: "<h1>"+dwelling.price+"</h1><p>"+dwelling.address+", "+dwelling.location+"</p><p><img src='"+dwelling.img+"'/></p>",
+                latitude: geo.location.lat,
+                longitude: geo.location.lng,
+                popup: 0
+            });
+            console.log(geo);
+        }else{
+            console.warn("Could not find geo data for dwelling: "+dwelling.location+", "+dwelling.address);
+        }
+    }
+    
+    $("#map").gMap({ markers:locations,zoom: 9 });
+  });
+});
+</script>

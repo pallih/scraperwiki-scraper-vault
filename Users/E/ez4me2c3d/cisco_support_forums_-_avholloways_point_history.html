@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Cisco Support Forums - avholloway's Point History</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            
+        </style>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            // Load the Visualization API and the piechart package.
+            google.load('visualization', '1.0', {'packages':['corechart']});
+                      
+            // Set a callback to run when the Google Visualization API is loaded.
+            google.setOnLoadCallback(getScraperData);
+            
+            function drawChart(json) {
+                console.log('drawChart');
+                  var data = new google.visualization.DataTable();
+
+                // Declare columns
+                data.addColumn('date', 'Date');
+                data.addColumn('number', 'Points');
+                
+                // Add data
+                for (var i = 0, j = json['data'].length; i < j; i++) {
+                    var d = new Date(json['data'][i][0] * 1000),
+                        p = json['data'][i][1];
+
+                    d.setHours(0);
+                    d.setMinutes(0);
+                    d.setSeconds(0);
+
+                    data.addRow([d, p]);
+                }
+
+                var options = {
+                  title: "Anthony's CSC Points",
+                    is3D: true
+                };
+
+                var chart = new google.visualization.LineChart(document.getElementById('chart_canvas'));
+                chart.draw(data, options);
+
+            }
+
+            function getScraperData() {
+                console.log('getScraperData');
+
+                //select strftime('%m', date(timestamp, 'unixepoch')) as month, username, points from `swdata` where strftime('%d', date(timestamp, 'unixepoch')) = '15' limit 12
+
+                $.ajax({           
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsonlist&name=cisco_support_community_-_points_tracker&query=select%20timestamp%2C%20points%20from%20%60swdata%60%20order%20by%20timestamp%20desc%20limit%20365',
+                    dataType: 'json',
+                    success: function(json){ drawChart(json); }
+                });
+            }
+        </script>
+    </head>
+    <body>
+        <div id="chart_canvas"></div>
+    </body>
+<html>

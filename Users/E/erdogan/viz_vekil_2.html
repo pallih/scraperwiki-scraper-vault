@@ -1,0 +1,87 @@
+<html>
+  <head>
+    <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+    <script type="text/javascript">
+
+      // Load the Visualization API and the controls package.
+      google.load('visualization', '1.0', {'packages':['controls']});
+
+      // Set a callback to run when the Google Visualization API is loaded.
+      google.setOnLoadCallback(drawDashboard);
+
+      // Callback that creates and populates a data table, 
+      // instantiates a dashboard, a range slider and a pie chart,
+      // passes in the data and draws it.
+
+      function drawDashboard() {
+
+        /////////////////////////////////////////////////////
+        //only here works right now//////////////////////////
+        /////////////////////////////////////////////////////
+        var data = [];
+        // jsonlist is an object w/ 2 arrays: 1 for the data, 2nd for keys
+        // jsondict simply returns an array of data objects
+        $.getJSON('https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=vekil&query=select%20*%20from%20swdata&callback=?', function(json) {
+          $.each(json, function(key, val) {
+            console.log(val.isim, val.parti, val.il);
+            //console.log(val);
+            //data.push({val});
+          });
+          //data = google.visualization.arrayToDataTable(data);
+          //console.log(data);
+          //console.log(json[0].val.name);
+        });
+        /////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////
+
+
+        // Create our data table.
+        // Create a dashboard.
+        var dashboard = new google.visualization.Dashboard(
+          document.getElementById('dashboard_div'));
+
+        // Create a range slider, passing some options
+        var donutRangeSlider = new google.visualization.ControlWrapper({
+          'controlType': 'NumberRangeFilter',
+          'containerId': 'filter_div',
+          'options': {
+            'filterColumnLabel': 'vekil_id'
+          }
+        });
+
+        // Create a pie chart, passing some options
+        var pieChart = new google.visualization.ChartWrapper({
+          'chartType': 'PieChart',
+          'containerId': 'chart_div',
+          'options': {
+            'width': 300,
+            'height': 300,
+            'pieSliceText': 'value',
+            'legend': 'right'
+          }
+        });
+
+        // Establish dependencies, declaring that 'filter' drives 'pieChart',
+        // so that the pie chart will only display entries that are let through
+        // given the chosen slider range.
+        dashboard.bind(donutRangeSlider, pieChart);
+
+        // Draw the dashboard.
+        dashboard.draw(data);
+      }
+    </script>
+  </head>
+
+  <body>
+
+    <!--Div that will hold the dashboard-->
+    <div id="dashboard_div">
+      <!--Divs that will hold each control and chart-->
+      <div id="filter_div"></div>
+      <div id="chart_div"></div>
+    </div>
+  </body>
+</html>

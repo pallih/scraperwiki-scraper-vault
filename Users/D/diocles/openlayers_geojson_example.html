@@ -1,0 +1,70 @@
+<html>
+<head>
+<title>OpenLayers example</title>
+
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-1.5.2.min.js"></script>
+<script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script> 
+<script type="text/javascript" src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+
+<script type="text/javascript"> 
+
+// Start position for the map (hardcoded here for simplicity)
+var lat=50.90685
+var lon=-1.4029
+var zoom=12
+  
+var map; //complex object of type OpenLayers.Map 
+  
+//Initialise the 'map' object
+$(function() {
+  $.getJSON("http://mapit.mysociety.org/area/66016.geojson",
+    "callback=?",
+    function(data, textStatus, jqXHR) {
+      map = new OpenLayers.Map('map', {
+        layers: [
+            new OpenLayers.Layer.OSM.Mapnik("Mapnik"),
+        ],
+        controls: [
+          new OpenLayers.Control.Navigation(),
+          new OpenLayers.Control.PanZoomBar(),
+          new OpenLayers.Control.LayerSwitcher(),
+          new OpenLayers.Control.Attribution()],
+        maxResolution: 'auto',
+      });
+
+      var lonLat = new OpenLayers.LonLat(lon, lat)
+        .transform(
+          new OpenLayers.Projection("EPSG:4326"),
+          map.getProjectionObject()
+        );
+
+      map.setCenter(lonLat, zoom);
+
+      var vector_layer = new OpenLayers.Layer.Vector("GeoJSON");
+
+      var geojson_format = new OpenLayers.Format.GeoJSON();
+
+      var geometry = geojson_format.parseGeometry(data);
+      geometry.transform(
+          new OpenLayers.Projection("EPSG:4326"),
+          map.getProjectionObject()
+      );
+
+      var feature = new OpenLayers.Feature.Vector(geometry);
+
+      vector_layer.addFeatures([feature]);
+
+      map.addLayer(vector_layer);
+    })
+});
+</script>
+</head>
+<body>
+<h1>OpenLayers GeoJSON example</h1>
+<p>Southampton, Itchen constituency boundary via <a href="http://mapit.mysociety.org/">MySociety</a>.
+<div id="map" style="width: 1000px; height: 500px; border: 1px solid black;"></div>
+<p>
+This database contains Ordnance Survey data © Crown copyright and database right 2010; Royal Mail data © Royal Mail copyright and database right 2010 (Code-Point Open); Office for National Statistics data © Crown copyright and database right 2010 (NSPD Open) and © Crown copyright 2004 (Super Output Areas). Great Britain non-SOA data may be used under the terms of the OS OpenData licence (PDF). Northern Ireland data may be used under the terms of the NSPD Open licence (Word). Super Output Area data may presumably be used under OS OpenData and the Open Government Licence.
+</p>
+</body>
+</html>

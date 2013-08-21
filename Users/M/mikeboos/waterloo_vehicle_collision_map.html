@@ -1,0 +1,68 @@
+<!DOCTYPE html>           
+<html>
+    <head>
+        <title>Waterloo Motor Vehicle Collision Reports</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false&libraries=visualization"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">           
+        var map;
+        $(function(){
+            var myOptions = {
+                zoom: 10,
+                center: new google.maps.LatLng(0, 0),
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+            $.ajax({
+                url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=wrps_incident_reports&query=select%20*%20from%20%60swdata%60%20where%20%60type%60%20like%20'Motor%25'%20limit%201000",
+//%20and%20%60text%60%20like%20'%25%20cycl%25'
+                dataType: 'json',
+                success: function(data){ drop_markers(data); }
+            });
+            function drop_markers(data){
+                var points = []
+                bounds = new google.maps.LatLngBounds();
+                //marker = []
+                //infowindow = []
+                for(i = 0; i < data.length; i++){
+                    if(data[i].lat > 43) {
+                        myLatLng = new google.maps.LatLng(data[i].lat, data[i].lon);
+                        markerOptions = {position: myLatLng, map: map, title: data[i].locationString, 
+                            html: '<h3>' + data[i].type + '</h3><p>' + data[i].text + '</p><a href="' + data[i].url + '">Report</a>'};
+                        var marker = new google.maps.Marker(markerOptions);
+                        bounds.extend(myLatLng);
+                        map.fitBounds(bounds);
+                        var infowindow  = new google.maps.InfoWindow({
+                            content: data[i].text
+                        });
+                        google.maps.event.addListener(marker, 'click', function() {
+                          infowindow.setContent(this.html);
+                          infowindow.open(map,this);
+                        });
+                        points.push(new google.maps.LatLng(data[i].lat, data[i].lon))
+                    }
+                }
+                pointArray = new google.maps.MVCArray(points);
+
+                heatmap = new google.maps.visualization.HeatmapLayer({
+                  data: pointArray, radius: 20
+                });
+        
+                heatmap.setMap(map);
+            }
+        });
+    </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>

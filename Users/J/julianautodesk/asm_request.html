@@ -1,0 +1,29 @@
+<html>
+<head>
+<script src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<style>
+</style>
+
+<script>
+var url = "http://remcnu249bb9l.ads.autodesk.com:9003/"; 
+
+function main() {
+    $.ajax({url:url+"listfiles", dataType:"jsonp", success:function(tdata) {
+        console.log(tdata); 
+    }}); 
+}
+$(window).ready(main); 
+
+</script>
+</head>
+
+<body>
+
+<h2>Basic ASM request thing</h2>
+<div id="workspace">
+</div>
+
+
+</body>
+</html>
+

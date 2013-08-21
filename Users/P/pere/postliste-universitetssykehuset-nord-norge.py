@@ -1,0 +1,96 @@
+# -*- coding: UTF-8 -*-
+
+
+import scraperwiki
+import json
+from BeautifulSoup import BeautifulSoup
+import datetime
+import dateutil.parser
+import lxml.html
+import urlparse
+import re
+
+# Make sure Scraperwiki believe this is the source from this database
+scraperwiki.scrape("http://www.unn.no/offentlig-postjournal/category8944.html")
+
+lazycache=scraperwiki.swimport('lazycache')
+postlistelib=scraperwiki.swimport('postliste-python-lib')
+
+agency = 'Universitetssykehuset Nord-Norge'
+
+def report_errors(errors):
+    if 0 < len(errors):
+        print "Errors:"
+        for e in errors:
+            print e
+        raise ValueError("Something went wrong")
+
+def out_of_cpu(arg, spent, hard, soft):
+    report_errors(arg)
+
+def process_pdf(parser, pdfurl, errors):
+    postlistelib.exit_if_no_cpu_left(0, out_of_cpu, errors)
+    try:
+        pdfcontent = scraperwiki.scrape(pdfurl)
+        parser.preprocess(pdfurl, pdfcontent)
+        pdfcontent = None
+    except ValueError, e:
+        errors.append(e)
+    except IndexError, e:
+        errors.append(e)
+
+def process_page_queue(parser, errors):
+    try:
+        parser.process_pages()
+        postlistelib.exit_if_no_cpu_left(0, out_of_cpu, errors)
+    except scraperwiki.CPUTimeExceededError, e:
+        errors.append("Processing pages interrupted")
+
+def process_journal_pdfs(parser, listurl, errors):
+#    print "Finding PDFs on " + listurl
+#    u = urllib.parse.urlparse(listurl)
+    html = scraperwiki.scrape(listurl)
+    root = lxml.html.fromstring(html)
+    html = None
+    for ahref in root.cssselect("div.month-entry-title a"):
+        href = ahref.attrib['href']
+        url = urlparse.urljoin(listurl, href)
+        print url
+        if -1 != href.find("file://"):
+#            print "Skipping non-http URL " + url
+            continue
+        subhtml = scraperwiki.scrape(url)
+        subroot = lxml.html.fromstring(subhtml)
+        subhtml = None
+        for subahref in subroot.cssselect("div.related-attachements a"):
+            subhref = subahref.attrib['href']
+            suburl = urlparse.urljoin(url, subhref)
+            if -1 == suburl.find(".pdf"):
+                continue
+            if parser.is_already_scraped(suburl):
+                True
+#                print "Skipping already scraped " + url
+            else:
+#                print "Will process " + url
+                process_pdf(parser, suburl, errors)
+
+def test_small_pdfs(parser):
+    # Test with some smaller PDFs
+    errors = []
+    process_pdf(parser, "http://www.unn.no/getfile.php/UNN-Internett/Media/Postjournal/UNN%20offentlig%20journal%202007/200807.pdf", errors)
+    process_page_queue(parser, errors)
+    report_errors(errors)
+    exit(0)
+
+errors = []
+parser = postlistelib.PDFJournalParser(agency=agency)
+
+#test_small_pdfs(parser)
+
+process_page_queue(parser, errors)
+process_journal_pdfs(parser, "http://www.unn.no/offentlig-postjournal/category8944.html", errors)
+for year in range(2011, 2007, -1):
+    process_journal_pdfs(parser, "http://www.unn.no/offentlig-postjournal/category8944.html?year=" + str(year), errors)
+process_page_queue(parser, errors)
+report_errors(errors)
+

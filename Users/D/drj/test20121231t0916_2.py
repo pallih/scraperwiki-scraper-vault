@@ -1,0 +1,3 @@
+import scraperwiki
+
+"python rules"

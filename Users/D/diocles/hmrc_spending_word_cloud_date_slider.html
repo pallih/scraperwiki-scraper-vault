@@ -1,0 +1,68 @@
+<link rel="stylesheet" href="http://media.scraperwiki.com/css/jquery-ui-1.8.12.css">  
+<link rel="stylesheet" href="http://media.scraperwiki.com/css/jqrangeslider.css">  
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-ui-1.8.12.custom.min.js"></script>
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery.mousewheel.js"></script>
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jQRangeSlider.js"></script>
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jQDateRangeSlider.js"></script>
+<script type="text/javascript">
+function formatCurrency(num) {
+    num = Math.round(num).toString()
+    if(isNaN(num))
+        num = "0";
+
+    var sign = (num == (num = Math.abs(num)));
+
+    num = num.toString();
+
+    for (var i = 0; i < Math.floor((num.length-(1+i))/3); i++)
+        num = num.substring(0,num.length-(4*i+3)) + ',' + num.substring(num.length-(4*i+3));
+
+    return (((sign)?'':'-') + num);
+}
+</script>
+
+<h1>Word Cloud of HMRC Spending</h1>
+
+<h2>Date Slider: move the bar and adjust the beginning and end dates</h2>
+
+<div id="sliderBox">
+  <div id="slider"/>
+</div>
+
+<div id="content"/>
+
+<script type="text/javascript">
+$("#slider").dateRangeSlider(
+    {
+        defaultValues:{min:new Date(2011,2,1), max:new Date(2011,2,31)},
+        bounds:{min:new Date(2010,3,1), max:new Date(2011,3,30)},
+    }
+  ).bind("valuesChanged", function(event, ui){ 
+   var start = $.datepicker.formatDate("yy-mm-dd", ui.values.min);
+   var end = $.datepicker.formatDate("yy-mm-dd", ui.values.max);
+
+   $.getJSON("http://api.scraperwiki.com/api/1.0/datastore/sqlite",
+        "format=jsonlist&name=hmrc_spending&query=SELECT%20Supplier%2C%20sum(Amount)%20as%20Total%20FROM%20Refined%20WHERE%20Date%20%3E%3D%20'" + start + "'%20AND%20Date%20%3C%3D%20'" + end + "'%20GROUP%20BY%20Supplier&callback=?",
+     function(data, textStatus, jqXHR){
+        var suppliers = data.data;
+
+        var output = "";
+        var total = 0;
+
+        for (i=0;i<suppliers.length;i++) {
+            supplier = suppliers[i][0];
+            value = suppliers[i][1];
+
+            total += value;
+            output += "<font size='" + Math.log(value) / Math.LN10 + "' title='&pound;" + formatCurrency(value) + "'>" + supplier + ",</font>";
+        }
+
+        var totaloutput = "<h2>Total: &pound;" + formatCurrency(total) + "</h2>";
+
+        $('#content').html(totaloutput + output);
+     }
+   );
+});
+
+</script>

@@ -1,0 +1,160 @@
+<head>
+<script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+<script src="http://media.scraperwiki.com/js/json-min.js"></script>
+<style>
+   body {font-family: helvetica;}
+   code { margin:10px; 
+          background: #f4f4f4; 
+          color: #222; 
+          display:block; 
+          font-family: monospace; 
+          white-space:pre; 
+          font-size:120%; 
+          overflow: auto;
+          padding:10px; 
+          border: solid 2px #aaa;
+          -webkit-border-radius: 4px;
+          -moz-border-radius: 4px;
+          border-radius: 4px; }
+   textarea { margin-left:10px; width:100%;background:black; color: white; display:block; font-family: monospace; white-space:pre; font-size:120%; overflow:none }
+   p { margin-bottom:0px; }
+   #scraperwikipane {display:none}
+</style>
+</head>   
+
+<body>
+<h2>Mechanize cheat sheet</h2>
+<p>Use <a href="http://wwwsearch.sourceforge.net/mechanize/">mechanize</a> 
+when navigating through web-forms.  This library efficiently manages all the form fields 
+(including the invisible ones) and any cookies</p>
+
+<p># Create a browser object and give it some optional settings (mostly these need to be applied for aspx pages).</p>
+<code>import mechanize
+
+br = mechanize.Browser()
+br.set_all_readonly(False)    # allow everything to be written to
+br.set_handle_robots(False)   # no robots
+br.set_handle_refresh(False)  # can sometimes hang without this
+br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
+</code>
+
+<p># Open a webpage and inspect its contents</p>
+<code>response = br.open(url)
+print response.read()      # the text of the page
+
+response1 = br.response()  # get the response again
+print response1.read()     # can apply lxml.html.fromstring()
+</code>
+
+<p># List the forms that are in the page</p>
+<code>for form in br.forms():
+    print "Form name:", form.name
+    print form
+</code>
+
+<p># To go on the mechanize browser object must have a form selected</p>
+<code>br.select_form("form1")         # works when form has a name
+br.form = list(br.forms())[0]  # use when form is unnamed
+</code>
+
+<p># Iterate through the controls in the form.</p>
+<code>for control in br.form.controls:
+    print control
+    print "type=%s, name=%s value=%s" % (control.type, control.name, br[control.name])
+</code>
+
+<p># Controls can be found by name</p>
+<code>control = br.form.find_control("controlname")
+</code>
+
+<p># Having a select control tells you what values can be selected</p>
+<code>if control.type == "select":  # means it's class ClientForm.SelectControl
+    for item in control.items:
+    print " name=%s values=%s" % (item.name, str([label.text  for label in item.get_labels()]))
+</code>
+
+<p># Because Select type controls can have multiple selections, they must be set with a list, 
+even if it is one element.</p>
+<code>print control.value
+print control  # selected value is starred
+control.value = ["ItemName"]
+print control
+br[control.name] = ["ItemName"]  # equivalent and more normal
+</code>
+
+<p># Text controls can be set as a string</p>
+<code>if control.type == "text":  # means it's class ClientForm.TextControl
+    control.value = "stuff here"
+br["controlname"] = "stuff here"  # equivalent
+</code>
+
+<p># Controls can be set to readonly and disabled (sometimes necessary for superfluous submit buttons).</p>
+<code>control.readonly = False
+control.disabled = True
+
+# OR disable all of them like so
+
+for control in br.form.controls:
+   if control.type == "submit":
+       control.disabled = True
+</code>
+
+
+<p># When your form is complete you can submit</p>
+<code>response = br.submit()
+print response.read()
+br.back()   # go back
+</code>
+
+
+<p># To find out what mechanize is going to send out, try the following</p>
+<code>import cgi
+import mechanize
+
+request = br.click()
+for k,v in cgi.parse_qsl(request.get_data()):
+   print (k,v)
+</code>
+
+
+<p># inspect the values that are being posted back.  You can verify them against what you can preview on the net tab in firebug,</p>
+<code>request = br.click()
+for k,v in cgi.parse_qsl(request.get_data()):
+    print (k,v)
+response = br.open(request)
+html = response.read()
+print html
+</code>
+
+
+<p># You can get a request object in order to use another browser (though you will probably need to share cookie jars).
+This helps if you are going down numerous links from the same page.</p>
+<code>request = br.click()  # creates the request object
+cj = mechanize.CookieJar()
+br2 = mechanize.Browser()
+br2.set_cookiejar(cj)
+br2.open(request)
+</code>
+
+<p># Following links in mechanize is a hassle because you need the have the link object.  
+Sometimes it is easier to get them all and find the link you want from the text.</p>
+<code>for link in br.links():
+    print link.text, link.url
+</code>
+
+<p># Follow link and click links is the same as submit and click</p>
+<code>request = br.click_link(link)
+response = br.follow_link(link)
+print response.geturl()
+</code>
+
+<p># Hard aspx problem: In cases where the EVENTTARGET and EVENTARGUMENT are missing you will have to add them in, 
+(though when the page is missing these controls it's because you need to set the User-agent to something the server 
+understands)></p>
+<code>br.form.new_control('hidden', '__EVENTTARGET', {'value':''})
+br.form.new_control('hidden', '__EVENTARGUMENT', {'value':''})
+br.form.fixup()
+</code>
+
+
+</body>

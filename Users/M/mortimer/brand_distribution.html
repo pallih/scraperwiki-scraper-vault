@@ -1,0 +1,726 @@
+<html>
+<head>
+<title>Flickr Camera Usage Statistics &mdash; More than the Camera Finder</title>
+  <script src="//media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+  <script src="//media.scraperwiki.com/js/json-min.js"></script>
+    <script type="text/javascript" src="//www.google.com/jsapi"></script>
+
+  <style>
+h1 {
+border-bottom:1px solid #FF0084;
+color:#0063DC;
+font-size:300%;
+margin:0 0 0.5em;
+padding-bottom:2px;
+font-variant: small-caps;
+text-align: center;
+font-weight: bold;
+}
+
+#beta {
+color: #FF0084;
+font-size: 50%;
+font-weight:bold;
+position:relative;
+left: -1em;
+top: .2em;
+}
+
+h2 { 
+color:#0063DC;
+border-bottom:1px solid #FF0084;
+font-size: 150%;
+font-weight: bold;
+margin-top: 4em;
+width: 12em;
+ }
+
+h3 {
+color:#0063DC;
+font-size: 110%;
+margin-top: 4em;
+font-weight: bold;
+ }
+
+body {
+color:#3E3E40;
+font-family:Arial,Helvetica,sans-serif;
+font-size:14pt;
+padding: 0 5em;
+width: 50em;
+text-align: justify;
+}
+
+table {
+margin-left: auto;
+margin-right: auto;
+    border-width: 0px;
+    border-bottom-width: 2px;
+    border-top-width: 2px;
+    border-spacing: 0 ;
+    border-style: outset;
+    border-color: black;
+    border-collapse: separate;
+    background-color: white;
+}
+
+table caption { 
+margin-bottom: 10px;
+ }
+
+table th {
+border: 0px;
+border-bottom-width: 1px;
+    padding: 5px;
+    border-style: solid;
+    border-color: gray;
+    background-color: white;
+}
+table td {
+    border-width: 0px;
+    padding: 5px;
+    padding-left: 20px;
+    border-style: solid;
+    border-color: gray;
+    background-color: white;
+}
+
+#footer { 
+font-size: 50%;
+margin-top: 10em;
+border-top:2px solid #FF0084;
+clear:both;
+ }
+
+.graph {
+padding: 1em;
+}
+
+.raw {
+font-size: 70%;
+}
+
+#daytotal {
+font-size: small;
+}
+
+#totalsparkl {
+float: left;
+margin-right: .5em;
+}
+
+#toc {
+    list-style: none;
+    margin-bottom: 20px;
+text-align: justify;
+}
+#toc li {
+    overflow: hidden;
+    padding-bottom: .5em;
+}
+#toc a {
+border-bottom:1px solid #FF0084;
+text-decoration: none;
+color: black;
+}
+
+  </style>
+</head>
+<body>
+<script type="text/javascript" >
+
+google.load('visualization', '1', {'packages':['corechart', 'annotatedtimeline']});
+
+var brandquery = "select sum(photo_count), brands.name, date from brands, cameras, camera_stats where brands.url=cameras.brand_url and cameras.url=camera_stats.camera_url and  date=(select distinct date from camera_stats order by date desc limit 1) and  group by brands.url";
+var brandtypequery = "select sum(photo_count) as count, brands.name, camera_type, date from brands, cameras, camera_stats where brands.url=cameras.brand_url and cameras.url=camera_stats.camera_url and  date=(select distinct date from camera_stats order by date desc limit 1) group by camera_type, brands.url";
+
+var brandtimelineq = "select brands.name, date, sum(photo_count) as cnt from camera_stats, cameras, brands where cameras.brand_url=brands.url and camera_stats.camera_url=cameras.url and date(date) > date('now', '-3 month') group by brands.url, date order by date asc";
+var typetimelineq = "select camera_type, date, sum(photo_count) as cnt from camera_stats, cameras where camera_stats.camera_url=cameras.url and date(date) > date('now', '-3 month')  group by camera_type, date";
+
+var avgusertotalq = "select camera_type, avg(daily_users) as du from camera_stats, cameras where camera_stats.camera_url=cameras.url and daily_users is not null and group by camera_type order by du asc";
+var avgusertimelineQ = "select camera_type, avg(daily_users), date from camera_stats, cameras where camera_stats.camera_url=cameras.url and daily_users is not null and date(date) > date('now', '-3 month') group by date, camera_type"
+
+var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+var dbname= "flickr_camera_finder";
+
+function cleanUpType(name) {
+    var type=name;
+    if(type == null || type == 'null' || !/\D/.test(type)) {
+      type = 'Unknown';
+    }
+    return type.replace('&amp;', '&').replace(/^\s*/g,'').replace(/\s*$/g,'');
+}
+
+function userstimelinePlot()
+{
+    var adata = {name:dbname, query:avgusertimelineQ, format:"jsonlist"};
+    $("#usertimeline .timeline_div").html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        data.addColumn('date', 'Date');
+        var dates = {};
+        var types = {};
+        var rows = [ ];
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var name = cleanUpType(tdata.data[i][0]);
+            var sdate = tdata.data[i][2];
+            var count = tdata.data[i][1];
+            if(dates[sdate] == undefined) {
+                dates[sdate]  = {};
+            }
+            if(dates[sdate][name] == undefined) {
+                dates[sdate][name] = 0;
+            }
+            dates[sdate][name] += count;
+             if(types[name] == undefined) {
+                 types[name]  = {};
+             }
+            if(types[name][sdate] == undefined) {
+                 types[name][sdate] = 0;
+            }
+            types[name][sdate]++;
+         }
+         for(ty in types) {
+            data.addColumn('number', ty);
+            data.addColumn('string', 'title1');
+            data.addColumn('string', 'text1');  
+        }
+
+        var last = {};
+        var cumul = 0;
+
+        for(sdate in dates) {
+            var date = parseDate(sdate);
+
+            var cols = [date];
+            for(ty in types) {
+                var val = Math.ceil(dates[sdate][ty]/types[ty][sdate]);
+                cumul += val;
+                cols.push(cumul);
+                cols.push(undefined);
+                cols.push(undefined);
+                last[ty] = val;
+            }
+            rows.push(cols);
+        }    
+
+        data.addRows(rows);
+
+        var chart = new google.visualization.AnnotatedTimeLine($('#usertimeline .timeline_div')[0]);
+        chart.draw(data, {displayAnnotations: true, scaleType:'maximized',legendPosition: 'newRow'});
+   }});
+}
+
+function plotAvgUserBox() {  
+var adata = {name:dbname, query:avgusertotalq, format:"jsonlist"};
+    $("#boxplotchart").html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Type');
+        data.addColumn('number', 'Daily Users');
+        var rows = [ ];
+        var types = {};
+        var typesCnt = {};
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var type = cleanUpType(tdata.data[i][0]);
+            var count = tdata.data[i][1];
+            if(types[type] == undefined) {
+                types[type] = 0;
+                typesCnt[type] = 0;
+            }
+            types[type] += count;
+            typesCnt[type]++;
+        }
+        for(var t in types) {
+            rows.push([t, Math.ceil(types[t]/typesCnt[t])]);
+        }
+        data.addRows(rows);
+      var options = {'title':'Average Daily Users',
+                     'width':800,
+                     'height':600};
+
+        var chart = new google.visualization.ColumnChart(document.getElementById('boxplotchart'));
+        chart.draw(data, options);
+
+    }});
+}
+
+function plotSumSparkl(sums, bigSum) {
+    var min = undefined;
+    var max = undefined;
+    var values = "";
+    var bg=false;
+    for(i=0;i<sums.length;i++) {
+        var val = sums[i];
+        if(isNaN(val)) val =0;
+        if(min == undefined || min>val)
+            min = val;
+        if(max == undefined) 
+            max = val;
+        if(max<val)
+            max = val;
+        values += ','+val;
+    }
+    if(max != undefined) {
+            values=values.substring(1);
+        var imgtxt = "http://chart.apis.google.com/chart?"
+                + "cht=ls"
+            + "&chds="+(min-(min*90/100))+','+max
+            + "&chs=200x32"
+            + "&chd=t:"+values
+                + "&chco=78A2FF"
+            + "&chls=1,1,0"
+            + "&chm=o,990000,0,81,4"
+                + "&chxt=r"
+            + "&chxs=1,990000,1,0,_"
+            + "&chxl=0:|"+addCommas(bigSum)
+            + "&chxp=0,"+(val*100/max);
+        console.log(imgtxt);
+        $("#totalsparkl").attr('src',imgtxt);
+    }
+}
+
+function typetimelinePlot()
+{
+    var adata = {name:dbname, query:typetimelineq, format:"jsonlist"};
+    $("#typetimeline .timeline_div").html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        data.addColumn('date', 'Date');
+        var dates = {};
+        var types = {};
+        var rows = [ ];
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var name = cleanUpType(tdata.data[i][0]);
+            var sdate = tdata.data[i][1];
+            var count = tdata.data[i][2];
+            if(dates[sdate] == undefined) {
+                dates[sdate]  = {};
+            }
+            dates[sdate][name] = count;
+            types[name]=1;
+         }
+         for(ty in types) {
+            data.addColumn('number', ty);
+            data.addColumn('string', 'title1');
+            data.addColumn('string', 'text1');  
+        }
+
+        var last = {};
+        var cumul = 0;
+        for(sdate in dates) {
+
+            var date = parseDate(sdate);
+
+            var cols = [date];
+            for(ty in types) {
+                var val = dates[sdate][ty];
+                if(val < last[ty]) val = last[ty];
+                cumul += val;
+                cols.push(cumul);
+                cols.push(undefined);
+                cols.push(undefined);
+                last[ty] = val;
+            }
+            rows.push(cols);
+        }    
+
+        data.addRows(rows);
+
+        var chart = new google.visualization.AnnotatedTimeLine($('#typetimeline .timeline_div')[0]);
+        chart.draw(data, {displayAnnotations: true, scaleType:'maximized', legendPosition: 'newRow'});
+   }});
+}
+
+function parseDate(sdate) {
+            var year = parseInt(sdate.substring(0, 4));
+            var smonth = sdate.substring(5, 7);
+            var month = parseInt(smonth.substring(0, 1) == '0' ? smonth.substring(1) : smonth)-1;   // octal parseInt notation!!!
+            var sday = sdate.substring(8, 10);
+            var day = parseInt(sday.substring(0, 1) == '0' ? sday.substring(1) : sday);
+            return new Date(year, month, day);
+}
+
+function dateToString(date) {
+    var d_names = new Array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");  
+    var m_names = new Array("January", "February", "March",  "April", "May", 
+                "June", "July", "August", "September",  "October", "November", "December");  
+    var curr_day = date.getDay(); 
+    var curr_date = date.getDate(); 
+    var sup = "";
+     if (curr_date == 1 || curr_date == 21 || curr_date ==31)    {
+            sup = "st";   
+     } else if (curr_date == 2 || curr_date == 22)    { 
+           sup = "nd";   
+     } else if (curr_date == 3 || curr_date == 23)    { 
+           sup = "rd";    
+    } else    {   
+         sup = "th";    
+    }
+    var curr_month = date.getMonth(); 
+    var curr_year = date.getFullYear();
+    return d_names[curr_day] + " " + curr_date + "<SUP>" + sup + "</SUP> " + m_names[curr_month] + " " + curr_year; 
+}
+
+function brandtimelinePlot()
+{
+    var adata = {name:dbname, query:brandtimelineq, format:"jsonlist"};
+    $("#brandtimeline .timeline_div").html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        data.addColumn('date', 'Date');
+        var dates = {};
+        var brands = {};
+        var rows = [ ];
+        var sums = [];
+    console.log(apiurl, adata, data);
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var name = tdata.data[i][0];
+            var sdate = tdata.data[i][1];
+            var count = tdata.data[i][2];
+            if(dates[sdate] == undefined) {
+                dates[sdate]  = {};
+            }
+            dates[sdate][name] = count;
+            brands[name]=1;
+         }
+         for(br in brands) {
+            data.addColumn('number', br);
+            data.addColumn('string', 'title1');
+            data.addColumn('string', 'text1');  
+        }
+
+        var last = {};
+        var bigSum = 0;
+
+        for(sdate in dates) {
+                bigSum = 0;
+                var date = parseDate(sdate);
+                
+                var cols = [date];
+                var sum = 0;
+                for(br in brands) {
+                    var val=dates[sdate][br];
+                    if(val==undefined) {
+                        val = last[br];
+                    } 
+                    bigSum += val;
+                    if(val < last[br]) val = last[br]; 
+                    sum +=val-last[br];
+                    cols.push(val);
+                    cols.push(undefined);
+                    cols.push(undefined);
+                    last[br] = val;
+                }
+                sums.push(sum);
+                rows.push(cols);
+        }    
+
+        data.addRows(rows);
+
+        var chart = new google.visualization.AnnotatedTimeLine($('#brandtimeline .timeline_div')[0]);
+        chart.draw(data, {displayAnnotations: true,scaleType:'maximized', legendPosition: 'newRow'});
+        plotSumSparkl(sums, bigSum);
+    }});
+}
+
+function brandColumnTimeline() {
+    var adata = {name:dbname, query:brandtimelineq, format:"jsonlist"};
+    $('#brandcolumn .column_div').html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Date');
+        var dates = {};
+        var brands = {};
+        var rows = [ ];
+        var sum = {};
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var name = tdata.data[i][0];
+            var sdate = tdata.data[i][1];
+            var count = tdata.data[i][2];
+            if(dates[sdate] == undefined) {
+                dates[sdate]  = {};
+            }
+            dates[sdate][name] = count;
+            if(sum[sdate]  == undefined) {
+                sum[sdate] = 0;
+            }
+            sum[sdate] += count;
+            brands[name]=1;
+         }
+         for(br in brands) {
+            data.addColumn('number', br);
+        }
+
+        last = {};
+        for(sdate in dates) {
+                var date = parseDate(sdate);
+                
+                var cols = [date.toDateString()];
+                for(br in brands) {
+                    var val=dates[sdate][br];
+                    if(val==undefined) {
+                        val = last[br];
+                    } 
+                    cols.push(val*100/sum[sdate]);
+                    last[br] = val;
+                }
+                rows.push(cols);
+        }    
+
+        data.addRows(rows);
+
+        var chart = new google.visualization.ColumnChart($('#brandcolumn .column_div')[0]);
+      var options = {'title':'Maker over Time',
+                     'width':800,
+                     'height':600,
+                     'isStacked':true,
+                      'vAxes': [{
+                         'viewWindowMode':'explicit',
+                         'viewWindow': {max: 100, min: 0},
+                         'maxValue': 100}]
+      };
+        chart.draw(data, options);
+    }});
+
+}
+
+function brandTypePlot()
+{
+    var adata = {name:dbname, query:brandtypequery, format:"jsonlist"};
+    $("#brandtype_div").html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var brands = {};
+        var types = {};
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Type');
+        var rows = [ ];
+        var sum = 0;
+        var date;
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var count = tdata.data[i][0];
+            var brand = unescape(tdata.data[i][1]).replace('&amp;', '&');
+            var type = cleanUpType(tdata.data[i][2]);
+            date = tdata.data[i][3];
+            if(!/\D/.test(type)) {
+              type="Unknown";
+            }
+            brands[brand]=1;
+            if(types[type]==undefined) {
+                types[type] = {};
+            }
+            types[type][brand] = count;
+            sum += count;
+        }
+        for(var brand in brands){ 
+            data.addColumn('number', brand);
+        }
+        for(var type in types) {
+            var val = [type];
+            for(var br in brands){
+                if(types[type][br] != undefined) {
+                    val.push(types[type][br]*100/sum);
+                } else {
+                    val.push(0);
+                }
+            }
+            rows.push(val);
+        }
+        data.addRows(rows); 
+
+      var options = {'title':'Camera Type per Brand on the '+date+' (%)',
+                     'width':800,
+                     'height':600,
+                     'isStacked':true,
+                      'vAxes': [{
+                         'viewWindowMode':'explicit',
+                         'viewWindow': {max: 100, min: 0},
+                         'maxValue': 100}]
+      };
+        var chart = new google.visualization.ColumnChart(document.getElementById('brandtype_div'));
+        chart.draw(data, options);
+    }});
+}
+
+function brandPlot()
+{
+    var adata = {name:dbname, query:brandquery, format:"jsonlist"};
+    $("#brand_div").html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var brands = [];
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Maker');
+        data.addColumn('number', 'Photos');
+        var rows = [ ];
+        var date;
+        var sum = 0;
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            date = tdata.data[i][2];
+            var name = tdata.data[i][1];
+            var count = tdata.data[i][0];
+            sum+=count;
+            rows.push([name, count]);
+            brands.push(name);
+        }
+        data.addRows(rows);
+
+      var options = {'title':'Brand Share on the '+date,
+                     'width':600,
+                     'height':600,
+                      'pieSliceText':'label',
+                     'sliceVisibilityThreshold':2/100};
+
+        var chart = new google.visualization.PieChart(document.getElementById('brand_div'));
+        chart.draw(data, options);
+
+        $('#daytotal').html(" photos counted on Flickr as of "+dateToString(parseDate(date)));
+        $('#totalsparkl').attr('alt', addCommas(sum));
+        $('.date').html(dateToString(parseDate(date)));
+    }});
+}
+
+function addCommas(str) {
+    var amount = new String(str);
+    amount = amount.split("").reverse();
+
+    var output = "";
+    for ( var i = 0; i <= amount.length-1; i++ ){
+        output = amount[i] + output;
+        if ((i+1) % 3 == 0 && (amount.length-1) !== i)output = ' ' + output;
+    }
+    return output;
+}
+
+$(window).ready(function()
+{
+    brandPlot();
+   brandTypePlot();
+    brandtimelinePlot();
+brandColumnTimeline();
+typetimelinePlot();
+plotAvgUserBox();
+userstimelinePlot()
+});
+</script>
+
+<div id="body">
+<h1>Flickr Camera Usage <span id="beta">beta</span></h1>
+
+<p>This is a rough estimate of the cameras used on <a href="http://www.flickr.com/">Flickr</a>. The data is crawled from the <a href="http://www.flickr.com/cameras/">Flickr Camera Finder</a> and thus only represents the view that the data available on these pages provides.</p>
+
+<p>While the data should give an overall view of the camera usage on Flickr, their is no details on the accuracy of the data they provide, except from this comment:
+<blockquote cite="http://www.flickr.com/cameras/">
+&ldquo;The graphs are only accurate to the extent that we can automatically detect the camera used to take the photo or shoot the video (about 2/3rds of the time). That is not usually possible with cameraphones, therefore they are under-represented.&rdquo;
+</blockquote>
+</p>
+
+<div id="total"><img src="#" id="totalsparkl"/><span id="daytotal"/></div>
+
+<h3>Jump to:</h3>
+<ul id="toc">
+     <li>
+        <a href="#camerabrands"><span>Camera Brands on Flickr</span></a>
+    </li>
+     <li>
+        <a href="#cameratypes"><span>Camera Types on Flickr</span>
+        </a>
+    </li>
+      <li>
+        <a href="#dailyusers"> <span>Average Daily Users</span>
+         </a>
+     </li>
+</ul>
+
+<hr/>
+
+<h2 id="camerabrands">Camera Brands on Flickr</h2>
+<p><small>you can hover on each graph to see details.</small></p>
+<!--
+<select id="brandselect">
+<option value="-1">ALL</option>
+</select>
+
+<br clear="both"/>
+-->
+<div id="brand" class="graph">
+<div id="brand_div"></div>
+<div class="raw">
+<h4>View the brand  raw data</h4>
+<a href="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=htmltable&name=flickr_camera_finder&query=select%20sum(photo_count)%20as%20count%2C%20brands.name%2C%20date%20from%20brands%2C%20cameras%2C%20camera_stats%20where%0Abrands.url%3Dcameras.brand_url%20and%20cameras.url%3Dcamera_stats.camera_url%0Aand%0A%20date%3D(select%20distinct%20date%20from%20camera_stats%20order%20by%20date%20desc%20limit%201)%0Agroup%20by%20brands.url">HTML</a>
+<a href="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=csv&name=flickr_camera_finder&query=select%20sum(photo_count)%20as%20count%2C%20brands.name%2C%20date%20from%20brands%2C%20cameras%2C%20camera_stats%20where%0Abrands.url%3Dcameras.brand_url%20and%20cameras.url%3Dcamera_stats.camera_url%0Aand%0A%20date%3D(select%20distinct%20date%20from%20camera_stats%20order%20by%20date%20desc%20limit%201)%0Agroup%20by%20brands.url">CSV</a>
+</div>
+</div>
+
+<div id="brandtimeline" class="graph">
+<h3>Camera brands over time</h3>
+<div class='timeline_div' style='width: 900px; height: 500px;'></div>
+</div>
+
+ <div id="brandcolumn" class="graph">
+ <h3>Camera brands over time</h3>
+ <div class='column_div'></div>
+ </div>
+
+
+<h2 id="cameratypes">Camera Types on Flickr</h2>
+
+
+<div id="brandtype" class="graph">
+<div id="brandtype_div"></div>
+<div class="raw">
+<h4>View the camera types raw data</h4>
+<a href="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=htmltable&name=flickr_camera_finder&query=select%20sum(photo_count)%20as%20count%2C%20brands.name%2C%20camera_type%2C%20date%20from%20brands%2C%20cameras%2C%20camera_stats%20where%0Abrands.url%3Dcameras.brand_url%20and%20cameras.url%3Dcamera_stats.camera_url%0Aand%0A%20date%3D(select%20distinct%20date%20from%20camera_stats%20order%20by%20date%20desc%20limit%201)%0Agroup%20by%20camera_type%2C%20brands.url">HTML</a>
+<a href="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=csv&name=flickr_camera_finder&query=select%20sum(photo_count)%20as%20count%2C%20brands.name%2C%20camera_type%2C%20date%20from%20brands%2C%20cameras%2C%20camera_stats%20where%0Abrands.url%3Dcameras.brand_url%20and%20cameras.url%3Dcamera_stats.camera_url%0Aand%0A%20date%3D(select%20distinct%20date%20from%20camera_stats%20order%20by%20date%20desc%20limit%201)%0Agroup%20by%20camera_type%2C%20brands.url">CSV</a>
+</div>
+</div>
+
+<div id="typetimeline" class="graph">
+<h3>Camera Type over time</h3>
+<div class='timeline_div' style='width: 900px; height: 500px;'></div>
+</div>
+</div>
+
+<h2 id="dailyusers">Average Daily Users</h2>
+
+<p>Flickr provides the Avg. Daily Users with the following definition:
+<blockquote>&ldquo;This is the number of Flickr members who uploaded 1 or more photos yesterday.&rdquo;</blockquote>
+</p>
+<p>While the camera types and brands might have an historical advantage on flickr <small>(P&amp;S where more popular than DSLRs in the past and Cameraphone started having good cameras and storing metadata long after P&amp;S)</small>; the Average number of users posting on a day with a particular camera might give a better idea of the current state of the market.</p>
+
+<div id="userstotal" class="graph">
+<h3>Total Avg. Daily Users between October 2nd, 2011 and <span class="date"></span></h3>
+<div id='boxplotchart'></div>
+</div>
+
+
+<div id="usertimeline" class="graph">
+<h3>Avg. Daily Users over time</h3>
+<div class='timeline_div' style='width: 900px; height: 500px;'></div>
+</div>
+
+<div style="clear:both" id="footer">
+<p>The data comes from Flickr and has been crawled using <a href="https://scraperwiki.com/scrapers/flickr_camera_finder/">ScaperWiki</a>.</p>
+
+<p>The data crawling and its views haves been setup by Pierre Andrews.<p>
+
+<p>Interactive graphs thanks to <a href="http://code.google.com/apis/chart/interactive/docs/gallery.html">Google Visualization</a></p>
+
+<p>There is no chronological data available before October 1st, 2011</p>
+</div>
+
+</body>
+</html>

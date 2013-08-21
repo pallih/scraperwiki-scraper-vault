@@ -1,0 +1,250 @@
+<html>
+<head>
+  <script src="https://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+  <script src="https://media.scraperwiki.com/js/json-min.js"></script>
+  <style>
+     tr.even {background: #ff9 }
+     th,.th { background-color: #e0e0e0; font-weight: normal;}
+    .b { 
+        box-shadow: 0px 0px 3px #888; -moz-box-shadow: 0px 0px 3px #888; -webkit-box-shadow: 0px 0px 3px #888;
+        -webkit-border-radius: 6px; -moz-border-radius: 6px; border-radius: 6px;
+        font-size: 0.8em;
+    }
+    table.l { margin-right: 4px;  float:left;}
+   .trARM  { background-color: #CCFFFF }
+    .trUNAMA  { background-color: #99FF99 }
+    .trISAFInsurgents  { background-color: #FFCCFF }
+    .trISAFForces { background-color: #FFFFCC }
+    body {
+        font-size: 87%;
+        line-height: 1.4em;
+        font-family: helvetica, arial;
+        color: 333;
+    }
+    h3 { font-size: 1.0em; }
+    #gloss { font-size: 0.8em; }
+   </style>
+</head>
+<body>
+<h2>Afghan Civilian Casualty Figures from UNAMA, ARM and ISAF</h2>
+
+<p>To see the full dataset of Afghan civilian casualties from the Afghan Rights Monitor (ARM), United Nations Assistance Mission in Afghanistan (UNAMA) or the International Security Assistance Force (ISAF) click on the relative buttons. </p>
+<p>To look at accumulative from all sets select a year and month and hit 'Match'.</p>
+<h3>Regional Commands for provinces</h3>
+
+<div> 
+<table id='gloss' border="0" style='border:solid 1px #e0e0e0;'><tr><td> RCW </td><td> Herat , Badghis, Ghor, Farah </td></tr>
+<tr><td> RCN </td><td> Faryab, Jawzjan, Sari Pul, Balkh, Samangan, Kunduz, Baghlan, Takhar, Badakshan </td></tr><tr><td> RCC <td> Kabul </td></tr> 
+<tr><td> RCE </td><td> Paktika, Ghazni, Bamyan, Wardak, Parwan, Nuristan, Panjshir, Kunar, Kapisa, Laghman, Nangarhar, Logar, Paktya, Khost </td></tr>
+<tr><td> RCS (until 2008) </td><td> Kandahar, Uruzgan,  Zabul, Day Kundi, Nimroz, Helmand </td></tr>
+<tr><td> RCS (after 2008) </td><td> Kandahar, Uruzgan,  Zabul, Day Kundi </td></tr>
+<tr><td> RCSW </td><td> Nimroz, Helmand </td></tr>
+ </table></div>
+
+<br>
+
+<p><font size="2" color="gray">All the original data can be found <a href="http://www.sciencemag.org/content/331/6022/1256/suppl/DC1">here</a></font></p>
+
+<div>
+<input class="b" type="button" value="ARM" id="ARM"/>
+<input class="b" type="button" value="UNAMA" id="UNAMA"/>
+<input class="b" type="button" value="ISAF-Insurgents" id="ISAFInsurgents"/>
+<input class="b" type="button" value="ISAF-Forces" id="ISAFForces"/>
+<select name="Year" id="year">
+<option value="2008">2008</option>
+<option value="2009">2009</option>
+<option value="2010">2010</option>
+</select>
+<select name="Month" id="month">
+<option value="01">01</option>
+<option value="02">02</option>
+<option value="03">03</option>
+<option value="04">04</option>
+<option value="05">05</option>
+<option value="06">06</option>
+<option value="07">07</option>
+<option value="08">08</option>
+<option value="09">09</option>
+<option value="10">10</option>
+<option value="11">11</option>
+<option value="12">12</option>
+</select>
+
+<input type="button" class="b" style="background-color:F8F8F8" value="Match" id="Dateline"/>
+</div>
+
+
+
+<div style="width:4096px;">
+    <table class='l' id="tab" cellspacing="0" cellpadding="4"></table>
+    <table class='l' id="tabARM" cellspacing="0" cellpadding="4"></table>
+    <table class='l' id="tabUNAMA" cellspacing="0" cellpadding="4"></table>
+    <table class='l' id="tabISAFInsurgents" cellspacing="0" cellpadding="4"></table>
+    <table class='l' id="tabISAFForces" cellspacing="0" cellpadding="4"></table>
+</div>
+<script>
+
+var colors = {
+    ARM: ["#CCFFFF","#AACCCC"],
+    UNAMA: ["#99FF99","#77DD77"],
+    ISAFInsurgents: ["#FFCCFF","#DDAADD"],
+    ISAFForces: ["#FFFFCC","#DDDDAA"]
+}
+
+$('input#ARM').css('backgroundColor', colors.ARM[0]);
+$('input#UNAMA').css('background-color', colors.UNAMA[0]);
+$('input#ISAFInsurgents').css('background-color', colors.ISAFInsurgents[0]);
+$('input#ISAFForces').css('background-color', colors.ISAFForces[0]);
+
+$('input#ARM').css('border', 'solid 1px ' + colors.ARM[1]);
+$('input#UNAMA').css('border', 'solid 1px ' +colors.UNAMA[1]);
+$('input#ISAFInsurgents').css('border', 'solid 1px ' +colors.ISAFInsurgents[1]);
+$('input#ISAFForces').css('border', 'solid 1px ' +colors.ISAFForces[1]);
+
+
+function consumedata(tdata, name)
+{
+    console.log(tdata);
+    if (tdata.error)
+        alert(tdata.error); 
+
+    $("table#tabARM").empty();
+    $("table#tabUNAMA").empty();
+    $("table#tabISAFInsurgents").empty();
+    $("table#tabISAFForces").empty();
+
+    var keys = tdata["keys"]; 
+    var data = tdata["data"]; 
+
+    var tab = $("table#tab").empty(); 
+    tab.append($("<tr><th>"+keys.join("</th><th>")+"</th></tr>")); 
+    for (var i = 0; i < data.length; i++)
+        tab.append($('<tr class="tr'+ name + '"><td>'+data[i].join("</td><td>")+"</td></tr>")); 
+}
+
+
+
+$(window).ready(function() 
+{
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+    $.ajaxSetup({type:"GET", dataType: "jsonp", url:apiurl, error:function(jq, status) { alert(status); }}); 
+}); 
+
+$("#ARM").click(function()
+{
+   var sqlselect = "SELECT Date, `Location`, `Incident`, `Warring Party`, `Wounded`, `Killed`, `Gender`, `children`,  `Source 1`,  `Source 2 `  FROM swdata ORDER By Date"; 
+   $.ajax({data:{format:'jsonlist',name:"civilian_casualties_in_afghanistan_arm", query:sqlselect}, success:function(data){consumedata(data,"ARM");} }); 
+}); 
+
+$("#UNAMA").click(function()
+{
+   var sqlselect = "SELECT Date, `Province`, `District`, `Civilians Killed`, `Civilians Injured`, `Number of Incidents`, `Type of Attack` FROM swdata ORDER By Date"; 
+   $.ajax({data:{format:'jsonlist',name:"civilian_casualties_in_afghanistan_unama", query:sqlselect}, success:function(data){consumedata(data,"UNAMA");} }); 
+}); 
+
+$("#ISAFInsurgents").click(function()
+{
+   var sqlselect = "SELECT Date, `Type` AS `Regional Command`, `Casualty_type`, `DF` AS `Direct Fire`, `IDF` AS `Indirect Fire`, `ComplexAttack`, `IED`, `Other` FROM ByInsurgents ORDER By Date"; 
+   $.ajax({data:{format:'jsonlist',name:"civilian_casualties_in_afghanistan", query:sqlselect}, success:function(data){consumedata(data,"ISAFInsurgents");} }); 
+}); 
+
+$("#ISAFForces").click(function()
+{
+   var sqlselect = "SELECT Date, `Type` AS `Regional Command`, `Casualty_type`, `DF` AS `Direct Fire`,`IDF` AS `Indirect Fire`, `RTA` AS `Road Traffic Accident`,  `EOF ROE` AS `Escalation of Force/Rules of Engagement`, `CAS` AS `Close Air Support`, `CCA` AS `Close Combat Air`, `Unknown` FROM ByISAF ORDER By Date"; 
+   $.ajax({data:{format:'jsonlist',name:"civilian_casualties_in_afghanistan", query:sqlselect}, success:function(data){consumedata(data,"ISAFForces");} }); 
+});
+
+var dataUNAMA = null; 
+var dataARM = null;
+var dataISAFInsurgents = null;
+var dataISAFForces = null;
+
+var columns = ["Date","Location", "Incident", "Warring Party", "Wounded", "Killed", "Gender", "Children",
+"Province", "District", "Civilians Killed", "Civilians Injured", "Number of Incidents", "Type of Attack",
+"By", "Regional Command", "Casualty_type", "Direct Fire", "Indirect Fire", "ComplexAttack", "IED", "Road Traffic Accident", "Escalation of Force/Rules of Engagement ", "Close Air Support", "Other"];
+
+function initMergeTable() {
+    console.log('Initialising table display');
+/*    var t = $("table#tab1").empty(); 
+    var row = $('<tr>');
+    for ( var i in columns ) {
+        var c = columns[i];
+        var cell = $('<td class="th">');
+        cell.html( c );
+        row.append(cell);
+    }
+    t.append(row);
+  */      
+    console.log('Done');
+}
+
+function addToTable(name, tdata, sql) {
+    console.log(  name + ':' + sql);
+    console.log( tdata );
+
+    $("table#tab").empty();
+
+    if ( !tdata || tdata.length == 0 || !tdata.keys ) return;
+
+    var keys = tdata.keys;
+    var data = tdata.data;
+    var t = $("table#tab" + name).empty(); 
+
+    if ( data.length == 0 ) return;
+
+    var row = $('<tr>');
+    for (var i in keys) {
+        if ( i < 2 ) continue; // skip y and m in the dataset
+        var cell = $('<td class="th">');
+        cell.html( keys[i] );
+        row.append(cell);
+    }
+    t.append(row);
+
+    for (var i in data) {
+        var row = $('<tr class="tr' + name + '">');
+        var rowData = data[i];
+
+        for ( var p in rowData ) {
+            if ( p < 2 ) continue; // skip y and m in the dataset
+            var cell = $('<td>');
+            cell.html( rowData[p] );
+            row.append(cell);
+        }
+        t.append(row);
+    }
+    
+
+}
+
+$("#Dateline").click(function()
+{
+   dataIBC = null; 
+   dataLog = null; 
+
+   var year = $("#year").val();
+   var month = $("#month").val();
+    
+   initMergeTable();
+
+   var sqlselectARM = "select SUBSTR(Date,0,5) as y, SUBSTR(Date,6,2) as m, Date, `Location`, `Incident`, `Warring Party`, `Wounded`, `Killed`, `Gender`, `children` from swdata "+
+                   "where y='"+$("#year").val()+"' and m='"+$("#month").val()+"' order by Date"; 
+   $.ajax({data:{name:"civilian_casualties_in_afghanistan_arm", query:sqlselectARM, format: 'jsonlist'}, success: function(tdata) { addToTable('ARM', tdata, sqlselectARM); } }); 
+
+   var sqlselectUNAMA = "select SUBSTR(Date,0,5) as y, SUBSTR(Date,6,2) as m,Date, `Province`, `District`, `Civilians Killed`, `Civilians Injured`, `Number of Incidents`, `Type of Attack` from swdata "+
+                   "where y='"+$("#year").val()+"' and m='"+$("#month").val()+"'"; 
+    $.ajax({data:{name:"civilian_casualties_in_afghanistan_unama", query:sqlselectUNAMA, format: 'jsonlist'}, success: function(tdata) {  addToTable('UNAMA', tdata, sqlselectUNAMA); } }); 
+
+   var sqlselectISAFInsurgents = "select SUBSTR(Date,0,5) as y, SUBSTR(Date,6,2) as m,Date,`By`, `Type` AS `Regional Command`, `Casualty_type`, `DF` AS `Direct Fire`, `IDF` AS `Indirect Fire`, `ComplexAttack`, `IED`, `Other` from ByInsurgents "+ "where y='"+$("#year").val()+"' and m='"+$("#month").val()+"'"; 
+    $.ajax({data:{name:"civilian_casualties_in_afghanistan", query:sqlselectISAFInsurgents, format: 'jsonlist'}, success: function(tdata) {  addToTable('ISAFInsurgents', tdata, sqlselectISAFInsurgents); } }); 
+
+   var sqlselectISAFForces = "select SUBSTR(Date,0,5) as y, SUBSTR(Date,6,2) as m,Date, `By`, `Type` AS `Regional Command`, `Casualty_type`, `DF` AS `Direct Fire`,`IDF` AS `Indirect Fire`, `RTA` AS `Road Traffic Accident`,  `EOF ROE` AS `Escalation of Force/Rules of Engagement`, `CAS` AS `Close Air Support`, `CCA` AS `Close Combat Air`, `Unknown` from ByISAF "+ "where y='"+$("#year").val()+"' and m='"+$("#month").val()+"'"; 
+    $.ajax({data:{name:"civilian_casualties_in_afghanistan", query:sqlselectISAFForces, format: 'jsonlist'}, success: function(tdata) {  addToTable('ISAFForces', tdata,sqlselectISAFForces); } }); 
+
+}); 
+
+
+</script>
+
+</body>
+</html>

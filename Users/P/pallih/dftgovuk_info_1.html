@@ -1,0 +1,93 @@
+<html>
+<head>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<script type="text/javascript">
+var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+$(window).ready(function() {
+    $("ul.wbl li").each(function(i, el) {
+        var googledoclink = $(el).find("a").attr("href"); 
+        var googledoclinktab = $(el).find("a").text(); 
+        var scrapername = $(el).find("b").text(); 
+        if (!scrapername)  return; 
+        var sqlselect = $(el).find("em").text(); 
+        var sqlfrom = $(el).find("i").text(); 
+        var notes = $(el).find("u").text(); 
+        var sql = sqlselect+" "+sqlfrom; 
+
+        var params = [ "name="+encodeURIComponent(scrapername), "query="+encodeURIComponent(sql), "format=csv" ]; 
+        var res = [ '<li>', '<a href="'+googledoclink+'">', "googledoc: ", googledoclinktab, "</a>"]; 
+        res.push(' <a href="https://scraperwiki.com/views/'+scrapername+'"><i>scraper</i></a>'); 
+        res.push(' <a href="https://api.scraperwiki.com/api/1.0/datastore/sqlite?'+params.join("&")+'" class="csvd"><b>csv-download</b></a>'); 
+        res.push(' <span class="csvrecords"></span>'); 
+        //var params[1] = "query="+encodeURIComponent(sql+" LIMIT 10"); 
+        res.push(' <a href=https://views.scraperwiki.com/run/general_graphs/?'+params.join("&")+'">sql-preview</a>'); 
+        if (notes)
+            res.push(" <u>"+notes+"</u>")
+        res.push("</li>"); 
+        $(el).html(res.join("")); 
+        var qdata = {name:scrapername, query:"select count(*) "+sqlfrom, format:"jsonlist"}; 
+        $.ajax({url:apiurl, data:qdata, dataType:"jsonp", success:function(tdata) {
+            $(el).find("span.csvrecords").html("<em>("+tdata.data[0][0]+" records)</em>"); 
+        }}); 
+    }); 
+}); 
+</script>
+</head>
+
+<body>
+<h2>dft.gov uk info</h2>
+
+<h3>dft.gov.uk</h3>
+<ul class="wbl">
+  <li>
+    <a href="https://docs.google.com/a/kaninka.net/spreadsheet/ccc?key=0AmzVQh00DGqcdFdxajliRmttYUVPQjJUQkZ5SF9ZeEE#gid=0">News</a>
+    <b>dftgovuk</b>
+    <em>SELECT *</em> 
+    <i>FROM news</i>
+  </li>
+  <li>
+    <a href="https://docs.google.com/a/kaninka.net/spreadsheet/ccc?key=0AmzVQh00DGqcdFdxajliRmttYUVPQjJUQkZ5SF9ZeEE#gid=2">Speeches</a>
+    <b>dftgovuk</b>
+    <em>SELECT *</em> 
+    <i>FROM speeches</i>
+  </li>
+<li>
+    <a href="https://docs.google.com/a/kaninka.net/spreadsheet/ccc?key=0AmzVQh00DGqcdFdxajliRmttYUVPQjJUQkZ5SF9ZeEE#gid=4">Consultations</a>
+    <b>dftgovuk</b>
+    <em>SELECT *</em> 
+    <i>FROM consultations</i>
+  </li>
+<li>
+    <a href="https://docs.google.com/a/kaninka.net/spreadsheet/ccc?key=0AmzVQh00DGqcdFdxajliRmttYUVPQjJUQkZ5SF9ZeEE#gid=6">Publications</a>
+    <b>dftgovuk</b>
+    <em>SELECT *</em> 
+    <i>FROM publications</i>
+  </li>
+<li>
+    <a href="https://docs.google.com/a/kaninka.net/spreadsheet/ccc?key=0AmzVQh00DGqcdFdxajliRmttYUVPQjJUQkZ5SF9ZeEE#gid=8">FOIs</a>
+    <b>dftgovuk</b>
+    <em>SELECT *</em> 
+    <i>FROM fois</i>
+  </li>
+<li>
+    <a href="https://docs.google.com/a/kaninka.net/spreadsheet/ccc?key=0AmzVQh00DGqcdFdxajliRmttYUVPQjJUQkZ5SF9ZeEE#gid=10">SRs</a>
+    <b>dftgovuk</b>
+    <em>SELECT *</em> 
+    <i>FROM srs</i>
+  </li>
+<li>
+    <a href="https://docs.google.com/a/kaninka.net/spreadsheet/ccc?key=0AmzVQh00DGqcdFdxajliRmttYUVPQjJUQkZ5SF9ZeEE#gid=12">STs</a>
+    <b>dftgovuk</b>
+    <em>SELECT *</em> 
+    <i>FROM sts</i>
+  </li>
+
+
+</ul>
+
+
+</body>
+</html>
+
+

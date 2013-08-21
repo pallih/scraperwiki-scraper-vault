@@ -1,0 +1,124 @@
+<head>
+<script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+<script src="http://media.scraperwiki.com/js/json-min.js"></script>
+<style>
+   code { margin-left:10px; background:black; color: white; display:block; font-family: monospace; white-space:pre; font-size:120% }
+   textarea { margin-left:10px; width:100%;background:black; color: white; display:block; font-family: monospace; white-space:pre; font-size:120%; overflow:none }
+   p { margin-bottom:0px; }
+   #scraperwikipane {display:none}
+</style>
+</head>   
+
+<body>
+
+<h2>UK Postcodes</h2>
+
+<p>The <a href="http://en.wikipedia.org/wiki/Postcodes_in_the_United_Kingdom">UK postcode system</a> 
+is a very effective way for obtaining geodata from addresses and people 
+(who usually know their own postcode).  
+They are between six and eight characters long (including a single space separating the outward and inward parts of the code), 
+of the regexp form "[A-Z][A-Z]?[0-9][A-Z0-9]? ?[0-9][A-Z][A-Z]"</p>
+
+<p>Quick and dirty function to extract a postcode from an address field</p>
+<code>def extract_gb_postcode(address):
+    matches = re.findall(r'[A-Z][A-Z]?[0-9][A-Z0-9]? ?[0-9][ABDEFGHJLNPQRSTUWXYZ]{2}\b', string, re.IGNORECASE)
+    return matches and matches[-1] or None
+</code>
+
+<p>The UK postcode database (and separate Northern Ireland database) was released under an open license in May 2010, 
+as explained at <a href="http://www.freepostcodes.org.uk/">freepostcodes.org.uk</a>.  
+
+<p>These two databases have been imported into ScraperWiki and can be accessed through the API:</p>
+<code>http://scraperwikiviews.com/run/uk_postcode_lookup/?postcode=SW1A0AA
+</code>
+
+<p>This returns (in the case of a UK postcode):</p>
+<code>{"Eastings": 530268, "Northings": 179545, "lat": 51.499840262348719, "lng": -0.12466267216331872, 
+"Postcode": "SW1A0AA", "Country_code": "064", "Country": "England", "Positional_quality_indicator": 10, 
+"NHS_regional_HA_code": "Y53", "Admin_district_code": "BK", "NHS_HA_code": 
+"Q36", "Admin_county_code": "00", "Admin_ward_code": "GQ"}
+</code>
+
+<p>And from a Northern Ireland postcode:</p>
+<code>{"Eastings": 234164, "Northings": 342061, "lat": 54.325965935510695, "lng": -7.4760857907459037, 
+"Postcode": "BT945SY", "Country_code": "152", "Country": "N Ireland", "Active": 0}
+</code>
+
+<p>There will be other scrapers that can decode the admin districts where they exist.</p>
+
+<p>For bulk fetching of postcodes it will be more efficient to attach to the database directly.</p>
+<code>scraperwiki.sqlite.attach('uk_postcodes_from_codepoint')
+lres = scraperwiki.sqlite.select('* from swdata where Postcode like ? limit 1', postcode)
+print (lres and lres[0] or None)
+</code>
+
+
+<h2>OS Eastings and Northings</h2>
+
+<p>Coordinate transforms (like text encoding) is hard for the same reasons:
+The data looks ambiguous, and representations of one coordinate system point in 
+another is not always faithful as it works with different shapes of the earth.</p>
+
+<p>These functions are not currently available in Ruby or PHP as they are mathematically encoded.  
+It might be possible to verify them properly, clean up the code and calculations, and 
+then port them into the other languages.</p>
+ 
+<p>It is possible to call them through a CGI, but as they are purely mathematical, there is a balance to be made.  
+CGI calls can be very inefficient if done one per record on a large dataset, for want of 50 lines of self-contained 
+mathematical code.</p>
+ 
+<p>There should be something in between the full boot up, execute parameters, and shutdown of a script for a single call 
+that is going to be made 10,000 times and importing a native library.  
+I'm thinking it could be a long-running service, like that proposed for the dataproxy, 
+that has the systems all loaded and ready.  This is where certain scripts stay running, waiting for the next call, 
+in the UML for a request within the next 20 seconds.  This could make fast response possible.  
+Maybe the whole of the UML in the controller could be based on Twisted.</p>
+
+<p>The other option is to allow batch calls 
+where we convert a list of 10,000 grid references or postcodes at once, though this 
+puts the effort of optimization unfairly on the user.</p>
+
+<p>What to do if you have <a href="http://en.wikipedia.org/wiki/Ordnance_Survey_National_Grid">Ordnance Survey grid coordinates</a>?</p>
+
+<p>Step 1: Convert from Eastings and Northings into OSGB36 datum</p>
+<code>oscoord = turn_eastingnorthing_into_osgb36(easting, northing)</code>
+
+<p>Step 2: Shift the datum to the more modern and widely used wgs84</p>
+<code>altitude = 200
+latlng = turn_osgb36_into_wgs84(oscoord[0], oscoord[1], height)
+</code>
+
+<p>In Ireland (including Northern Ireland) was mapped with a slightly different grid system, 
+so can be converted with the following two functions:</p>
+<code>oscoord = turn_eastingnorthing_into_osie36 (easting, northing)
+latlng = turn_osie36_into_wgs84(oscoord[0], oscoord[1], 200)
+</code>
+
+<p>There is a helper function to do in one go, but not recommended as you lose control over 
+the process and the height.</p>
+<code>os_easting_northing_to_latlng(easting, northing, grid='GB')   # or 'IE'
+</code>
+
+<p>If you have grid coordinates, like 'TM114525' or 'TM1140052500', then these can be converted 
+into Easting, Northing using:
+<code>easting, northing = osgb_to_eastnorth(osgb_str)
+</code>
+
+<p>It might be worth verifying agreement between the two libraries
+<code>osgb = "TM1140052500"
+latlng1 = osgb_to_lonlat(osgb)
+latlng2 = os_easting_northing_to_latlng(*osgb_to_eastnorth(osgb))
+latlng1 ~= latlng2 ?
+</code>
+
+<p>There are functions for converting back from wgs84 and to grid coordinates, but they are 
+not to be useful.</p>
+
+<p>The source code for these functions is <a href="https://bitbucket.org/ScraperWiki/scraperwiki/src/3dda4a362271/scraperlibs/scraperwiki/geo/">here</a>.
+The geo_helper.py module is mentioned and linked from <a href="http://stackoverflow.com/questions/953701/which-gps-library-would-you-recommend-for-python">here</a>.</p>
+
+<p>It is advised not to discard the original data fields and replace them with wgs84 in your records.  
+If the data is in Eastings and Northings, leave it like that.  If you need wgs84, then ideally convert them
+
+
+</body>

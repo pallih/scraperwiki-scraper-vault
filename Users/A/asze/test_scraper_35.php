@@ -1,0 +1,413 @@
+<?php
+$teaser_length = 10;
+
+$articles = array();
+$page_urlsX=array(
+"http://news.nationalgeographic.com/news/2013/05/130520-tornado-chaser-samaras-thunderstorm-science/",
+"http://news.nationalgeographic.com/news/2013/13/131320-penguin-evolution-science-flight-diving-swimming-wings/",
+"http://news.nationalgeographic.com/news/2013/13/130519-women-scientists-overlooked-dna-history-science/",
+"http://news.nationalgeographic.com/news/2013/13/130521-baby-bird-injured-nest-patrick-stewart/",
+"http://news.nationalgeographic.com/news/2013/13/130515-chytrid-fungus-origin-african-clawed-frog-science/"
+);
+
+$page_urls=array(
+"http://news.nationalgeographic.com/news/2013/13/130517-billion-year-old-water-mine-canada-ancient-microbes-science/",
+"http://news.nationalgeographic.com/news/2013/13/130515-belize-pyramid-destroyed-archeology-maya-nohmul-world-road/",
+"http://news.nationalgeographic.com/news/2013/04/130514-sea-monster-new-species-paleontology-science-evolution/",
+"http://news.nationalgeographic.com/news/2013/13/130514-dogs-domestication-humans-genome-science/",
+"http://news.nationalgeographic.com/news/2013/13/130509-brazilian-atlantis-lost-continents-geography-world/",
+"http://news.nationalgeographic.com/news/2013/13/130503-gunflintia-bacteria-early-earth-rotten-egg-smell/",
+"http://news.nationalgeographic.com/news/2013/13/130501-jamestown-cannibalism-archeology-science/",
+"http://news.nationalgeographic.com/news/2013/13/130425-indus-civilization-discoveries-harappa-archaeology-science/",
+"http://news.nationalgeographic.com/news/2013/13/130425-maya-origins-olmec-pyramid-ceibal-inomata-archaeology-science/",
+"http://news.nationalgeographic.com/news/2013/13/130424-dinosaurs-birds-flight-paleontology-evolution-science/",
+"http://news.nationalgeographic.com/news/2013/13/130423-european-genetic-history-dna-archaeology-science/",
+"http://news.nationalgeographic.com/news/2013/13/130419-israel-archaeology-byzantine-church-model-science-christianity/",
+"http://news.nationalgeographic.com/news/2013/13/130418-hobbit-homo-floresiensis-brain-size-hominin-human-evolution/",
+"http://news.nationalgeographic.com/news/2013/04/130414-hell-underworld-archaeology-mount-olympus--greece/",
+"http://news.nationalgeographic.com/news/2013/13/130411-homo-ancestor-hominin-skeleton-lucy-australopithecus-sediba-science/",
+"http://news.nationalgeographic.com/news/2013/04/130411-parking-lot-construction-richard-iii-mammoth-viking-graves-knight-chapel-whales/",
+"http://news.nationalgeographic.com/news/2013/13/130410-lufengosaurus-oldest-baby-dinosaur-embryo-paleontology/",
+"http://news.nationalgeographic.com/news/2013/04/130405-jurassic-park-tyrannosaurus-rex-dinosaur-science/",
+"http://news.nationalgeographic.com/news/2013/04/130403-picture-bailout-cyprus-banks-eu-weaving/",
+"http://news.nationalgeographic.com/news/2013/03/130327-trilobite-spots-marine-paleontology-science/",
+"http://news.nationalgeographic.com/news/2013/03/130321-mummies-diseases-ancient-archaeology-science/",
+"http://news.nationalgeographic.com/news/2013/03/130321-triassic-mass-extinction-volcano-paleontology-science/",
+"http://news.nationalgeographic.com/news/2013/13/130321-vectidraco-daisymorrisae-pterosaurs-dinosaurs-science-animals/",
+"http://news.nationalgeographic.com/news/behind-the-cover-extinct-animals/",
+"http://news.nationalgeographic.com/news/behind-the-cover-babies/",
+"http://news.nationalgeographic.com/news/2013/03/130313-ancient-egypt-akhenaten-amarna-cemetery-archaeology-science-world/",
+"http://news.nationalgeographic.com/news/failure-to-hunt-rabbits-part-of-neanderthals--demise-/",
+"http://news.nationalgeographic.com/news/2013/03/130306-finders-keepers-treasure-hunting-law-uk-us/",
+"http://news.nationalgeographic.com/news/2013/03/130306-neanderthal-genome-extinction-cloning-hominid-science/",
+"http://news.nationalgeographic.com/news/2013/13/130228-duckbill-tyrannosaurus-dinosaur-wound-scar-science/",
+"http://news.nationalgeographic.com/news/2013/02/130225-microcontinent-earth-mauritius-geology-science/",
+"http://news.nationalgeographic.com/news/2013/13/130219-new-baleen-whale-ancestors-oceans-california-paleontology/",
+"http://news.nationalgeographic.com/news/2013/13/130212--chicxulub-asteroid-dinosaurs-volcano-mass-extinction-environment-science/",
+"http://news.nationalgeographic.com/news/2013/13/130206-richardiii-king-england-archeology-bones-parking-lot/",
+"http://news.nationalgeographic.com/news/2013/13/130206-mexico--xaltocan-human-sacrifice-skulls-drought-archeology/",
+"http://news.nationalgeographic.com/news/2013/13/130129-mali-timbuktu-manuscripts-islamists-fighting-geography-culture/",
+"http://news.nationalgeographic.com/news/2013/13/130129-roman-italy-graffiti-colosseum-archeology-photo/",
+"http://news.nationalgeographic.com/news/2013/13/130128-sicilian-mummies-archeology-italy/",
+"http://news.nationalgeographic.com/news/2013/130107-long-beaked-echidna-animals-science/",
+"http://news.nationalgeographic.com/news/2013/01/130107-sea-monster-new-species-paleontology-science-nevada/",
+"http://news.nationalgeographic.com/news/2012/12/121219-sea-monster-new-species-freshwater-paleontology-science/",
+"http://news.nationalgeographic.com/news/a-110-million-year-old-trash-collector/",
+"http://news.nationalgeographic.com/news/2012/12/121207-timbuktu-mali-al-qaeda-world-politics-cultures/",
+"http://news.nationalgeographic.com/news/2012/12/121205-oldest-dinosaur-found-tanzania-science-archaeology/",
+"http://news.nationalgeographic.com/news/2012/12/121204-giant-panda-cousin-bear-animals-spain/",
+"http://news.nationalgeographic.com/news/2012/11/121130-rare-rhino-fossil-created-by-volcanic-explosion/",
+"http://news.nationalgeographic.com/news/2012/11/121116-stone-spear-tips-science-human-neanderthal-hunting/",
+"http://news.nationalgeographic.com/news/2012/11/121109-maya-civilization-climate-change-belize-science/",
+"http://news.nationalgeographic.com/news/2012/11/121102-gigantism-ancient-skeleton-archaeology-history-science-rome/",
+"http://news.nationalgeographic.com/news/2012/11/121109-dinosaurs-paleontology-xenoceratops-science-canada/",
+"http://news.nationalgeographic.com/news/2012/11/121107-toba-supervolcano-antarctica-ice-eruption-science/",
+"http://news.nationalgeographic.com/news/2012/11/121107-europe-oldest-town-bulgaria-walls-science/",
+"http://news.nationalgeographic.com/news/2012/11/121106-sauron-new-dinosaur-lord-of-the-rings-science-t-rex/",
+"http://news.nationalgeographic.com/news/2012/11/121105-microraptor-dinosaurs-flying-wings-paleontology-science/",
+"http://news.nationalgeographic.com/news/2012/10/121031-alps-tsunami-geneva-nature-geoscience-science/",
+"http://news.nationalgeographic.com/news/2012/10/121026-human-cooking-evolution-raw-food-health-science/",
+"http://news.nationalgeographic.com/news/2012/10/121026-australopithecus-afarensis-human-evolution-lucy-scapula-science/",
+"http://news.nationalgeographic.com/news/2012/10/121026-coelacanth-texas-fossils-paleontology-science-new-species/",
+"http://news.nationalgeographic.com/news/2012/10/121024-purgatorius-earliest-primate-evolution-science-squirrel/",
+"http://news.nationalgeographic.com/news/2012/10/121019-viking-outpost-second-new-canada-science-sutherland/",
+"http://news.nationalgeographic.com/news/2012/10/121018-triassic-extinctions-hot-global-warming-science-environment/",
+"http://news.nationalgeographic.com/news/2012/10/121012-neanderthals-science-paabo-dna-sex-breeding-humans/",
+"http://news.nationalgeographic.com/news/2012/10/121004-tomb-maya-warrior-queen-science-archaeology/",
+"http://news.nationalgeographic.com/news/2012/10/121003-new-dinosaur-species-fanged-sereno-science/",
+"http://news.nationalgeographic.com/news/2012/09/120927-nazi-buddhist-meteorite-science-iron-man-meteoritics-statue/",
+"http://news.nationalgeographic.com/news/2012/09/120919-coptic-jesus-christ-wife-papyrus-ancient-world-science/",
+"http://news.nationalgeographic.com/news/2012/09/120918-ancient-mollusk-reconstruction-3d-animals/",
+"http://news.nationalgeographic.com/news/2012/09/120907-men-women-see-differently-science-health-vision-sex/",
+"http://news.nationalgeographic.com/news/2012/09/120605-inca-peru-priestess-tomb-water-cult-science/",
+"http://news.nationalgeographic.com/news/2012/08/120830-maya-prince-tomb-drinking-vessel-science/",
+"http://news.nationalgeographic.com/news/2012/08/120817-syria-lebanon-world-archaeology-conflict-damage-treasures/",
+"http://news.nationalgeographic.com/news/2012/08/120808-human-evolution-fossils-homo-nature-science-meave-leakey-flat/",
+"http://news.nationalgeographic.com/news/2012/08/120802-ancient-rodents-south-america-evolution-animals-science/",
+"http://news.nationalgeographic.com/news/2012/07/120720-maya-temple-el-zotz-masks-faces-science-houston/",
+"http://news.nationalgeographic.com/news/2012/07/120720-neanderthals-herbs-humans-medicine-science/",
+"http://news.nationalgeographic.com/news/2012/07/120717-palmyra-roman-city-syria-science-farming-world-ancient/",
+"http://news.nationalgeographic.com/news/2012/07/120713-friday-the-13th-superstitions-triskaidekaphobia-third-maximum/",
+"http://news.nationalgeographic.com/news/2012/07/120712-human-ancestor-fossils-sediba-science-berger-live/",
+"http://news.nationalgeographic.com/news/2012/07/120711-lost-viking-town-germany-archaeology-science/",
+"http://news.nationalgeographic.com/news/2012/07/120702-squirrel-tail-feathers-dinosaurs-fossil-science-proceedings/",
+"http://news.nationalgeographic.com/news/2012/06/120627-sediba-teeth-fossils-bark-human-evolution-max-planck-nature/",
+"http://news.nationalgeographic.com/news/2012/06/120627-worlds-oldest-purse-dog-teeth-science-handbag-friederich/",
+"http://news.nationalgeographic.com/news/2012/06/120622-easter-island-statues-moved-hunt-lipo-science-rocked/",
+"http://news.nationalgeographic.com/news/2012/06/120621-fossils-turtles-mating-joyce-biology-letters-science/",
+"http://news.nationalgeographic.com/news/2012/07/120706-bog-mummies-body-parts-frankenstein-ancient-science/",
+"http://news.nationalgeographic.com/news/2012/06/120620-green-antarctica-trees-global-warming-science-ancient/",
+"http://news.nationalgeographic.com/news/2012/06/120618-john-the-baptist-bones-jesus-christ-bible-bulgaria-science-higham/",
+"http://news.nationalgeographic.com/news/2012/06/120614-neanderthal-cave-paintings-spain-science-pike/",
+"http://news.nationalgeographic.com/news/2012/06/120607-time-capsule-shipwreck-war-of-1812-us-british-navy-cultures/",
+"http://news.nationalgeographic.com/news/2012/06/120601-insects-birds-giant-prehistoric-clapham-proceedings-science-bugs/",
+"http://news.nationalgeographic.com/news/2012/05/120523-tetrapod-walk-flopped-nature-science-ichthyostega/",
+"http://news.nationalgeographic.com/news/2012/05/120523-oxygen-life-earth-atmosphere-magma-volcanoes-science/",
+"http://news.nationalgeographic.com/news/2012/05/120521-squid-cuttlefish-ink-sacs-fossils-melanin-science-simon/",
+"http://news.nationalgeographic.com/news/2012/05/120514-giant-panda-cousin-bear-animals-spain-science/",
+"http://news.nationalgeographic.com/news/2012/05/120510-maya-2012-doomsday-calendar-end-of-world-science/",
+"http://news.nationalgeographic.com/news/2012/05/120509-howard-carter-google-doodle-tutankhamun-tomb-king-tut-science/",
+"http://news.nationalgeographic.com/news/2012/05/120508-biggest-crocodile-early-humans-science-animals/",
+"http://news.nationalgeographic.com/news/2012/05/120507-dinosaurs-methane-farts-burps-global-warming-environment-science-flatulence/",
+"http://news.nationalgeographic.com/news/2012/05/120502-oldest-blood-otzi-iceman-mummy-oetzi-zink-science/",
+"http://news.nationalgeographic.com/news/2012/04/120419-female-gladiator-statue-topless-science-ancient-rome/",
+"http://news.nationalgeographic.com/news/2012/04/120404-yutyrannus-feathers-dinosaur-science-nature-biggest/",
+"http://news.nationalgeographic.com/news/2012/120328-lucy-fossil-foot-science-australopithecus-trees-evolution/",
+"http://news.nationalgeographic.com/news/2012/03/120321-mice-vikings-mouse-dna-europe-science-genetics/",
+"http://news.nationalgeographic.com/news/2012/03/120319-great-wall-of-china-mongolia-science-lindesay/",
+"http://news.nationalgeographic.com/news/2012/03/120314-new-human-species-chinese-plos-science-red-deer-cave/",
+"http://news.nationalgeographic.com/news/2012/03/120313-horned-dinosaurs-paleontology-science-animals-alberta-canada/",
+"http://news.nationalgeographic.com/news/2012/03/120312-leonardo-da-vinci-mural-lost-painting-florence-science-world/",
+"http://news.nationalgeographic.com/news/2012/03/120305-prehistoric-camels-panama-science-cute-crocodile-fossils/",
+"http://news.nationalgeographic.com/news/2012/02/120229-leap-year-day-february-29-calendar-cultures-science/",
+"http://news.nationalgeographic.com/news/2012/120228-t-rex-bite-bates-science-biology-letters-dinosaurs/",
+"http://news.nationalgeographic.com/news/2012/02/120227-new-giant-penguins-species-science-ksepka-new-zealand/",
+"http://news.nationalgeographic.com/news/2012/02/120221-oldest-seeds-regenerated-plants-science/",
+"http://news.nationalgeographic.com/news/2012/02/120213-first-life-land-mud-darwin-evolution-animals-science/",
+"http://news.nationalgeographic.com/news/2012/02/120210-vampire-bat-fly-amber-malaria-parasites-animals-science/",
+"http://news.nationalgeographic.com/news/2012/120207-oldest-animals-sponges-earliest-science-evolution/",
+"http://news.nationalgeographic.com/news/2012/01/120207-guinea-pigs-europe-south-america-pets-animals/",
+"http://news.nationalgeographic.com/news/2012/01/120203-native-americans-siberia-genes-dna-science/",
+"http://news.nationalgeographic.com/news/2012/02/120203-mammals-evolution-body-size-science-elephants-mice/",
+"http://news.nationalgeographic.com/news/2011/11/111109-shieldcroc-crocodiles-fossils-science-aegisuchus-witmeri/",
+"http://news.nationalgeographic.com/news/2012/120127-stonehenge-ness-brodgar-scotland-science/",
+"http://news.nationalgeographic.com/news/2012/01/120124-dinosaurs-feathers-archaeopteryx-science-wings/",
+"http://news.nationalgeographic.com/news/2012/01/120119-national-popcorn-day-corn-peru-archaeology-food-science/",
+"http://news.nationalgeographic.com/news/2011/12/111228-mass-sacrifice-beer-headless-sican-pyramid-tomb-ancient-science/",
+"http://news.nationalgeographic.com/news/2011/12/111223-christmas-angels-evolution-science-history-christianity/",
+"http://news.nationalgeographic.com/news/2011/12/111222-stonehenge-bluestones-wales-match-glacier-ixer-ancient-science/",
+"http://news.nationalgeographic.com/news/2011/12/111221-gold-panama-cano-chiefs-tombs-science/",
+"http://news.nationalgeographic.com/news/2011/12/111220-end-of-world-2012-maya-calendar-explained-ancient-science/",
+"http://news.nationalgeographic.com/news/2011/12/111213-walking-fish-walk-lungfish-science-lungfish/",
+"http://news.nationalgeographic.com/news/2011/11/111212-shrimp-vision-eyes-predator-ancient-animals-science-oceans/",
+"http://news.nationalgeographic.com/news/2011/12/111208-dead-sea-bible-biblical-salt-dry-science/",
+"http://news.nationalgeographic.com/news/2011/11/111208-oldest-mattress-africa-archaeology-science/",
+"http://news.nationalgeographic.com/news/2011/12/111205-native-americans-europeans-population-dna-genetics-science/",
+"http://news.nationalgeographic.com/news/2011/11/111125-neanderthals-sex-humans-dna-science-extinct/",
+"http://news.nationalgeographic.com/news/2011/11/111122-ancient-humans-violence-skull-blunt-trauma-china-science/",
+"http://news.nationalgeographic.com/news/2011/11/111121-great-dying-permian-mass-extinction-science/",
+"http://news.nationalgeographic.com/news/2011/11/111121-dinosaurs-gondwana-ancient-rocks-science/",
+"http://news.nationalgeographic.com/news/2011/11/111116-antarctica-whales-oldest-evolution-animals-science/",
+"http://news.nationalgeographic.com/news/2011/11/111111-vikings-sunstones-crystals-navigation-science/",
+"http://news.nationalgeographic.com/news/2011/11/111111-sahara-libya-lost-civilization-science-satellites/",
+"http://news.nationalgeographic.com/news/2011/11/111109-shieldcroc-crocodiles-prehistoric-paleontology-science-animals/",
+"http://news.nationalgeographic.com/news/travelnews/2011/11/111107-pompeii-italy-science-travel-collapse-eu/",
+"http://news.nationalgeographic.com/news/2011/10/101102-saber-toothed-squirrel-fossils-paleontology-dinosaurs-science/",
+"http://news.nationalgeographic.com/news/2011/11/111101-conquistador-america-de-soto-science-spanish-glass/",
+"http://news.nationalgeographic.com/news/2011/11/111101-humans-mating-denisovans-neanderthals-southeast-asia-science/",
+"http://news.nationalgeographic.com/news/2011/10/111027-dinosaurs-migrated-nature-science-sauropods/",
+"http://news.nationalgeographic.com/news/2011/10/111018-fossil-tiger-skull-panthera-science-oldest-china-evolution/",
+"http://news.nationalgeographic.com/news/2011/10/111013-oldest-art-studio-early-humans-science-archaeology/",
+"http://news.nationalgeographic.com/news/2011/10/111012-plague-black-death-yersinia-pestis-genetics-nature-health/",
+"http://news.nationalgeographic.com/news/2011/10/111011-kraken-sea-monster-ichthyosaurs-science/",
+"http://news.nationalgeographic.com/news/2011/10/111010-roman-empire-shoes-fort-britain-archaeology-science/",
+"http://news.nationalgeographic.com/news/2011/10/111006-new-dinosaur-tracks-arkansas-paleontology-science/",
+"http://news.nationalgeographic.com/news/2011/10/111006-tar-toxic-pollution-chumash-health-indians-science-heads/",
+"http://news.nationalgeographic.com/news/news/2011/11/110930-cannibalism-cannibals-mexico-xiximes-human-bones-science/",
+"http://news.nationalgeographic.com/news/2011/09/110921-new-raptor-dinosaur-fossils-talon-toe-killing-utah-science/",
+"http://news.nationalgeographic.com/news/2011/09/110916-prehistoric-crocodile-new-species-largest-snake-titanoboa-science/",
+"http://news.nationalgeographic.com/news/2011/09/110913-gladiator-school-austria-roman-ancient-walmarts-science/",
+"http://news.nationalgeographic.com/news/2011/09/110912-ancient-fish-arctic-predator-devonian-fossils-animals-science/",
+"http://news.nationalgeographic.com/news/2011/09/110909-baby-sharks-teeth-nursery-lakes-animals-science/",
+"http://news.nationalgeographic.com/news/2011/09/110908-apes-humans-evolution-australopithecus-sediba-lee-berger-science/",
+"http://news.nationalgeographic.com/news/2011/08/110825-daddy-longlegs-spider-fossils-harvestmen-3d-animals-science/",
+"http://news.nationalgeographic.com/news/2011/08/110824-placental-mammal-shrew-fossil-earliest-ancestor-evolution-science/",
+"http://news.nationalgeographic.com/news/2011/08/110824-sea-monster-antarctica-plesiosaur-science-animals/",
+"http://news.nationalgeographic.com/news/2011/08/110819-dogs-wolves-russia-domestication-animals-science-evolution/",
+"http://news.nationalgeographic.com/news/2011/08/110815-texas-antarcica-connected-supercontinent-rodinia-science/",
+"http://news.nationalgeographic.com/news/2011/08/110811-plesiosaurs-live-birth-fossils-young-science-chiappe-dinosaurs-fetus/",
+"http://news.nationalgeographic.com/news/2011/08/110808-ancient-insects-bugs-giants-oxygen-animals-science/",
+"http://news.nationalgeographic.com/news/2011/08/110801-three-cat-carving-felines-triad-olmec-mexico-science/",
+"http://news.nationalgeographic.com/news/2011/07/110721-machu-picchu-100th-anniversary-archaeology-science/",
+"http://news.nationalgeographic.com/news/2011/07/110719-wasps-eggs-dinosaurs-titanosaurs-ancient-animals-science/",
+"http://news.nationalgeographic.com/news/2011/06/110629-ancient-tomb-otters-scotland-stone-age-science/",
+"http://news.nationalgeographic.com/news/2011/06/110623-iceman-mummy-otzi-meal-goat-stomach-science/",
+"http://news.nationalgeographic.com/news/2011/06/110623-ancient-rome-human-waste-herculaneum-science-diet-excrement-italy/",
+"http://news.nationalgeographic.com/news/2011/06/110622-mammoth-bone-oldest-art-americas-science/",
+"http://news.nationalgeographic.com/news/2011/06/110614-arizona-fire-wallow-archaeological-sites-science-nation/",
+"http://news.nationalgeographic.com/news/2011/05/110531-africa-mummies-parasites-schistosomiasis-science/",
+"http://news.nationalgeographic.com/news/2011/05/110526-giant-sea-fossils-science-nature-briggs-anomalocaridids/",
+"http://news.nationalgeographic.com/news/2011/05/110513-neanderthals-last-stand-science-tool-kit-russia-slimak-tools/",
+"http://news.nationalgeographic.com/news/2011/05/110513-friday-the-13th-superstitions-triskaidekaphobia/",
+"http://news.nationalgeographic.com/news/2011/05/110505-ichthyosaur-sea-monsters-battle-science-acta-bite-dinosaurs/",
+"http://news.nationalgeographic.com/news/2011/04/110426-maya-lost-city-holtun-science-guatemala-ancient/",
+"http://news.nationalgeographic.com/news/2011/04/110415-saints-murdered-chrysanthus-daria-science-rome-roman-christians/",
+"http://news.nationalgeographic.com/news/2011/04/110415-ancient-egypt-mummies-princess-heart-disease-health-science/",
+"http://news.nationalgeographic.com/news/2011/04/110414-maya-volcanoes-eruptions-ash-tikal-science-volcanic/",
+"http://news.nationalgeographic.com/news/2011/04/110413-new-species-dinosaur-bucktoothed-evil-spirit-fossils-animals-science/",
+"http://news.nationalgeographic.com/news/2011/04/110406-oldest-brain-britain-archaeology-science-world/",
+"http://news.nationalgeographic.com/news/2011/03/110330-oldest-writing-europe-tablet-greece-science-mycenae-greek/",
+"http://news.nationalgeographic.com/news/2011/03/110329-chocolate-turquoise-trade-prehistoric-peoples-archaeology/",
+"http://news.nationalgeographic.com/news/2011/03/110324-saber-toothed-sabertooth-vegetarian-science-evolution-tiarajudens/",
+"http://news.nationalgeographic.com/news/2011/03/110323-giant-rabbit-minorca-biggest-bunny-science-nuralagus-rex-largest/",
+"http://news.nationalgeographic.com/news/2011/03/110311-new-species-found-fossils-primates-tarsiers-thailand-science/",
+"http://news.nationalgeographic.com/news/2011/03/110309-tower-of-jericho-summer-solstice-first-skyscraper-science-christ/",
+"http://news.nationalgeographic.com/news/2011/03/110308-meteor-impact-crater-found-confirmed-congo-ferriere-science/",
+"http://news.nationalgeographic.com/news/2011/03/110301-himalayas-caves-defleshed-skeletons-science-nepal-mustang/",
+"http://news.nationalgeographic.com/news/2011/02/110224-ice-age-child-cremation-human-remains-alaska-science/",
+"http://news.nationalgeographic.com/news/2011/02/110223-thunder-thighs-new-dinosaur-species-fossils-science-brontomerus/",
+"http://news.nationalgeographic.com/news/2011/02/110223-walking-cactus-worm-new-species-fossils-animals/",
+"http://news.nationalgeographic.com/news/2011/02/110214-valentines-day-gifts-cards-history-facts/",
+"http://news.nationalgeographic.com/news/2011/02/110214-egypt-antiquities-missing-vin-video/",
+"http://news.nationalgeographic.com/news/2011/02/110210-lucy-feet-walked-feet-science-afarensis-fossil/",
+"http://news.nationalgeographic.com/news/2011/02/110209-frogs-teeth-evolution-science/",
+"http://news.nationalgeographic.com/news/2011/02/110209-egypt-antiquities-museum-restore-vin-video/",
+"http://news.nationalgeographic.com/news/2011/02/110203-new-dinosaur-triceratops-father-science-titanoceratops/",
+"http://news.nationalgeographic.com/news/2011/02/110203-biggest-bear-largest-giant-short-faced-animals-science/",
+"http://news.nationalgeographic.com/news/2011/02/100201-egypt-antiquities-looting-apvin-video/",
+"http://news.nationalgeographic.com/news/2011/01/110131-egypt-egyptian-museum-zahi-hawass-mubarak-science-world-cairo-tombs/",
+"http://news.nationalgeographic.com/news/2011/01/110127-out-of-africa-earlier-early-humans-left-science-climate-stone-tools/",
+"http://news.nationalgeographic.com/news/2011/01/110124-new-dinosaur-one-fingered-linhenykus-xu-xing-science-t-rex/",
+"http://news.nationalgeographic.com/news/2011/01/110120-pterosaurs-eggs-mother-shells-crests-darwinopterus-animals-science/",
+"http://news.nationalgeographic.com/news/2011/01/110118-oldest-domestic-dogs-north-america-eaten-texas-cave-science-animals/",
+"http://news.nationalgeographic.com/news/2011/01/110113-transylvanians-gold-bracelets-treasure-dracula-vampires-science/",
+"http://news.nationalgeographic.com/news/2011/01/110113-eodromaeus-dinosaur-discovery-vin-video/",
+"http://news.nationalgeographic.com/news/2011/01/110111-oldest-wine-press-making-winery-armenia-science-ucla/",
+"http://news.nationalgeographic.com/news/2011/01/110104-fossil-bird-wings-nunchucks-weapons-jamaica-science-animals-evolution/",
+"http://news.nationalgeographic.com/news/2010/12/101230-new-prehistoric-crocodile-science-paleontology/",
+"http://news.nationalgeographic.com/news/2010/12/101223-child-sacrifices-bloodletting-archaeology-science/",
+"http://news.nationalgeographic.com/news/2010/12/101222-new-human-species-dna-nature-science-evolution-fossil-finger/",
+"http://news.nationalgeographic.com/news/2010/12/101217-mummified-forest-canada-science-environment/",
+"http://news.nationalgeographic.com/news/2010/12/101216-maya-acoustics-speakers-audio-sound-archaeology-science/",
+"http://news.nationalgeographic.com/news/2010/12/101213-new-balloon-headed-dolphin-science-animals/",
+"http://news.nationalgeographic.com/news/2010/12/101210-dice-gaming-gambling-native-american-indian-casinos-science/",
+"http://news.nationalgeographic.com/news/2010/12/101210-stonehenge-balls-ball-bearings-science-rolled/",
+"http://news.nationalgeographic.com/news/2010/12/101207-new-dinosaurs-utah-fossils-horse-dragon-science/",
+"http://news.nationalgeographic.com/news/2010/11/101130-best-news-videos-2010-science-nature-watch/",
+"http://news.nationalgeographic.com/news/2010/11/101123-native-american-indian-vikings-iceland-genetic-dna-science-europe/",
+"http://news.nationalgeographic.com/news/2010/11/101112-gigapan-science-panoramas-technology/",
+"http://news.nationalgeographic.com/news/2010/11/101108-cities-immune-system-tuberculosis-tb-evolution-dna-genetics-science/",
+"http://news.nationalgeographic.com/news/2010/11/101103-giant-shrimp-sea-predator-paleontology-science/",
+"http://news.nationalgeographic.com/news/2010/11/101102/pompeii-mount-vesuvius-science-died-instantly-heat-bodies/",
+"http://news.nationalgeographic.com/news/2010/10/101028-headless-skeletons-ancient-romans-england-exotic-science/",
+"http://news.nationalgeographic.com/news/2010/10/101025-oldest-human-fossil-china-out-of-africa-science/",
+"http://news.nationalgeographic.com/news/2010/10/101021-moche-pyramid-peru-science-sacrifice-archaeology-ancient/",
+"http://news.nationalgeographic.com/news/2010/10/101015-urine-pee-rock-hyrax-climate-science-ancient-prehistoric/",
+"http://news.nationalgeographic.com/news/2010/10/101015-t-rex-cannibals-paleontology-science/",
+"http://news.nationalgeographic.com/news/2010/10/101015-science-giant-pterosaurs-longest-nonstop-flight-distance-record/",
+"http://news.nationalgeographic.com/news/2010/10/101013-stonehenge-burials-boy-science-mediterranean/",
+"http://news.nationalgeographic.com/news/2010/10/101006-new-dinosaur-north-america-science/",
+"http://news.nationalgeographic.com/news/2010/09/100930-giant-penguin-discovery-vin-video/",
+"http://news.nationalgeographic.com/news/2010/09/100930-new-penguin-species-discovered-feathers-science-water-king/",
+"http://news.nationalgeographic.com/news/2010/09/100929-trampling-stone-age-artifacts-dating-goats-science/",
+"http://news.nationalgeographic.com/news/2010/01/100922-volcanoes-eruptions-neanderthals-science-volcanic-humans/",
+"http://news.nationalgeographic.com/news/2010/09/100922-new-species-dinosaurs-horned-utah-fossils-science/",
+"http://news.nationalgeographic.com/news/2010/09/100916-tyrannosaurs-t-rex-human-size-science-dinosaurs/",
+"http://news.nationalgeographic.com/news/2010/09/100915-oldest-skeleton-underwater-cave-science/",
+"http://news.nationalgeographic.com/news/2010/09/100908-hunchback-dinosaur-science-nature-concavenator-corcovatus/",
+"http://news.nationalgeographic.com/news/2010/08/100831-cannibalism-cannibal-cavemen-human-meat-science/",
+"http://news.nationalgeographic.com/news/2010/08/100830-first-feast-science-proceedings-israel-shaman-sorcerer-tortoise/",
+"http://news.nationalgeographic.com/news/2010/08/100819-terror-birds-muhammad-ali-ax-hatchet-fought-science-dinosaurs-skulls/",
+"http://news.nationalgeographic.com/news/2010/08/100813-friday-the-13th-superstitions-triskaidekaphobia/",
+"http://news.nationalgeographic.com/news/2010/08/100812-worlds-oldest-rocks-magma-earth-nature-science/",
+"http://news.nationalgeographic.com/news/2010/08/100811-lucy-human-tools-meat-eating-nature-science/",
+"http://news.nationalgeographic.com/news/2010/08/100810-thor-thors-hammer-viking-graves-thunderstones-science/",
+"http://news.nationalgeographic.com/news/2010/08/100810-science-archaeology-ancient-mexico-human-bones-teotihuacan/",
+"http://news.nationalgeographic.com/news/2010/08/100804-nsf-ancient-croc-vin-video/",
+"http://news.nationalgeographic.com/news/2010/08/100804-new-crocodile-fossil-pakasuchus-nature-science-mammal-teeth/",
+"http://news.nationalgeographic.com/news/2010/07/100727-who-wrote-dead-sea-scrolls-bible-science-tv/",
+"http://news.nationalgeographic.com/news/2010/07/100723-stonehenge-woodhenge-twin-timber-circle-gaffney-science/",
+"http://news.nationalgeographic.com/news/2010/07/100721-maya-tomb-human-fingers-king-guatemala-science/",
+"http://news.nationalgeographic.com/news/2010/07/100720-woodhenge-stonehenge-ohio-fort-ancient-science/",
+"http://news.nationalgeographic.com/news/2010/07/100719-science-technology-computers-lost-languages-translate-bible-hebrew/",
+"http://news.nationalgeographic.com/news/2010/07/100716-sperm-gene-600-million-years-evolution-male-pill-science/",
+"http://news.nationalgeographic.com/news/2010/07/100711-humans-monkeys-brains-evolution-science/",
+"http://news.nationalgeographic.com/news/2010/06/100630-belize-maya-pools-vin-video/",
+"http://news.nationalgeographic.com/news/2010/06/100629-science-dinosaurs-t-rex-nerves-elephants/",
+"http://news.nationalgeographic.com/news/2010/06/100628-science-ancient-maya-aztec-rubber-balls-beheaded/",
+"http://news.nationalgeographic.com/news/2010/06/100622-science-environment-wildfires-cooling-ice-age-extinctions/",
+"http://news.nationalgeographic.com/news/2010/06/100621-lucy-early-humans-walking-upright-science/",
+"http://news.nationalgeographic.com/news/2010/06/100614-neanderthals-cave-lions-predators-science/",
+"http://news.nationalgeographic.com/news/2010/06/100610-giant-sea-reptiles-warm-blooded-science/",
+"http://news.nationalgeographic.com/news/2010/06/100609-worlds-oldest-leather-shoe-armenia-science/",
+"http://news.nationalgeographic.com/news/2010/06/100608-sticky-rice-mortar-china-science/",
+"http://news.nationalgeographic.com/news/2010/06/100604-mammoths-extinctions-methane-cooling-ice-age-humans-science/",
+"http://news.nationalgeographic.com/news/2010/06/100602-early-humans-evolution-crocodiles-big-brains-science/",
+"http://news.nationalgeographic.com/news/2010/05/100528-pagan-altar-israel-science/",
+"http://news.nationalgeographic.com/news/2010/05/100528-oldest-pterosaur-science-sahara/",
+"http://news.nationalgeographic.com/news/2010/05/100526-science-homo-gautengensis-human-species/",
+"http://news.nationalgeographic.com/news/2010/05/100519-science-ancient-egypt-cleopatra-tomb-marc-antony/",
+"http://news.nationalgeographic.com/news/2010/05/100518-oldest-pyramid-tomb-zoque-mexico-science/",
+"http://news.nationalgeographic.com/news/2010/05/100506-science-neanderthals-humans-mated-interbred-dna-gene/",
+"http://news.nationalgeographic.com/news/2010/04/100428-new-dinosaur-feathers-change-age/",
+"http://news.nationalgeographic.com/news/2010/04/100428-noahs-ark-found-in-turkey-science-religion-culture/",
+"http://news.nationalgeographic.com/news/2010/04/100428-new-species-pterosaur-dinosaurs-dallas-texas/",
+"http://news.nationalgeographic.com/news/2009/04/100412-chile-oldest-mummies-poison-arsenic/",
+"http://news.nationalgeographic.com/news/2010/04/100408-fossils-australopithecus-sediba-missing-link-new-species-human/",
+"http://news.nationalgeographic.com/news/2010/04/100407-ice-age-extinction-comet-meteor-shower/",
+"http://news.nationalgeographic.com/news/first-african-amber-pictures--thunder-fly--wasps--more/",
+"http://news.nationalgeographic.com/news/2010/03/100331-roadrunner-dinosaur-new-species/",
+"http://news.nationalgeographic.com/news/2010/03/100329-roman-sarcophagus-gladiator-lead-burrito/",
+"http://news.nationalgeographic.com/news/2010/03/100325-new-human-species-x-woman-pinky-finger-denisova-dna-nature/",
+"http://news.nationalgeographic.com/news/2010/03/100325-new-dinosaur-t-rex-southern-tyrant-australia/",
+"http://news.nationalgeographic.com/news/2010/03/100323-giant-croc-crocodile-dinosaurs-deinosuchus-feces-poop/",
+"http://news.nationalgeographic.com/news/2010/03/100319-new-dinosaur-species-raptor-killer-claw/",
+"http://news.nationalgeographic.com/news/2010/03/100317-hobbits-flores-stone-tools-million/",
+"http://news.nationalgeographic.com/news/2010/03/100317-st-patricks-day-2010-irish-shamrock-shortage/",
+"http://news.nationalgeographic.com/news/2010/03/100315-headless-vikings-england-execution-pit/",
+"http://news.nationalgeographic.com/news/2010/03/100315-new-fossil-amphibian-fedex/",
+"http://news.nationalgeographic.com/news/2010/03/100312-headless-bonampak-tomb-maya-torture-mural/",
+"http://news.nationalgeographic.com/news/2010/03/100310-us-sarcophagus-repatriation-video/",
+"http://news.nationalgeographic.com/news/2010/03/100309-double-burials-mexico-graves/",
+"http://news.nationalgeographic.com/news/2010/03/100304-snowball-earth-ice-global-warming/",
+"http://news.nationalgeographic.com/news/2010/03/100303-liberals-atheists-smarter-evolution-evolved/",
+"http://news.nationalgeographic.com/news/2010/03/100303-dinosaurs-older-than-thought-10-million/",
+"http://news.nationalgeographic.com/news/2010/03/100301-snake-eats-dinosaurs-fossils-sanejeh-indicus-scitech/",
+"http://news.nationalgeographic.com/news/2010/02/100226-king-solomon-wall-jerusalem-bible/",
+"http://news.nationalgeographic.com/news/2010/02/100226-vampires-venice-plague-skull-witches/",
+"http://news.nationalgeographic.com/news/2010/02/100225-new-horned-crocodile-early-humans/",
+"http://news.nationalgeographic.com/news/2010/02/100224-new-giant-dinosaur-species-skulls-utah/",
+"http://news.nationalgeographic.com/news/2010/02/100217-crete-primitive-humans-mariners-seafarers-mediterranean-sea/",
+"http://news.nationalgeographic.com/news/2010/02/100217-health-king-tut-bone-malaria-dna-tutankhamun/",
+"http://news.nationalgeographic.com/news/2010/02/100216-king-tut-malaria-bones-inbred-tutankhamun/",
+"http://news.nationalgeographic.com/news/2010/02/100210-valentines-day-gifts-cards-history-facts/",
+"http://news.nationalgeographic.com/news/2010/02/100205-worlds-largest-snake-crocodile-new-species-titanoboa/",
+"http://news.nationalgeographic.com/news/2001/01/dinostory_2001-01-29/",
+"http://news.nationalgeographic.com/news/2010/02/100203-lost-codex-gregorianus-roman-law-book/",
+"http://news.nationalgeographic.com/news/2010/01/10201-extinct-giant-birds-flight-dinosaurs/",
+"http://news.nationalgeographic.com/news/2010/01/100128-new-dinosaur-destroyer-t-rex/",
+"http://news.nationalgeographic.com/news/2010/01/100127-dinosaur-feathers-colors-nature/",
+"http://news.nationalgeographic.com/news/2010/01/100120-mammals-madagascar-rafting-lemurs/",
+"http://news.nationalgeographic.com/news/2010/01/100119-dinosaur-fossil-death-pits-footprints/",
+"http://news.nationalgeographic.com/news/2010/01/100114-cleopatra-eye-makeup-ancient-egyptians/",
+"http://news.nationalgeographic.com/news/2010/01/100114-alligators-dinosaurs-birds-lungs-breathing/",
+"http://news.nationalgeographic.com/news/2010/01/100112-modern-human-behavior/",
+"http://news.nationalgeographic.com/news/2009/12/091222-top-ten-dinosaurs-2009-fossils/",
+"http://news.nationalgeographic.com/news/2009/12/091223-whale-dwarf-australia-sucker-fossil/",
+"http://news.nationalgeographic.com/news/2010/01/100106-tetrapod-tracks-oldest-footprints-nature-evolution-walking-land/",
+"http://news.nationalgeographic.com/news/2010/01/100104-amazon-lost-civilization-circles/",
+"http://news.nationalgeographic.com/news/2009/12/091221-venomous-dinosaur-venom-dinosaurs-snakes/",
+"http://news.nationalgeographic.com/news/2009/12/091212-pygmy-sea-cow/",
+"http://news.nationalgeographic.com/news/2009/12/091209-ancient-tablets-decoded/",
+"http://news.nationalgeographic.com/news/2009/12/091207-top-ten-archaeology-finds-2009/"
+);
+
+function scrape_NG_news_article($art_url) {
+    $html = scraperWiki::scrape($art_url);
+    require_once 'scraperwiki/simple_html_dom.php';
+    $dom = new simple_html_dom();
+    $dom->load($html);
+    foreach($dom->find("div#page_head h1") as $data){ $art_title = $data->innertext; }
+    foreach($dom->find("div#page_head h2") as $data){ $art_subtitle = $data->innertext; }
+
+    $art_text_array = array();
+    $art_paragraph_count = 0;
+    $art_text_full = "";
+    $art_teaser50 = "";
+    $art_teaser100 = "";
+    foreach($dom->find("div#content div.article_text p") as $data){
+        $art_paragraph_count++;
+        $tmp = str_get_html($data)->plaintext;
+//        $art_text_array[$art_paragraph_count] = $tmp;
+        $art_text_full .= $tmp." #".$art_paragraph_count."# ";
+        //if ($art_paragraph_count == 1) $art_teaser = $tmp;
+    }
+    $art_teaserS = word_teaser($art_text_full, 60);
+    $art_teaserM = word_teaser($art_text_full, 120);
+
+/*  print $art_text_full;                             show_article($art_title,$art_subtitle,$art_text_array);
+    for($i=0;$i<count($art_text_array);$i++) {        $art_text_full .= $art_text_array[$i]." #".$i."# ";    }
+    $art_text_full = $art_text_full->plaintext;       $art_teaser = $art_text_array[0]->plaintext;   */
+    // $record = array("Title" => $art_title, "Subtitle" => $art_subtitle, "TeaserS" => $art_teaserS, "TeaserM" => $art_teaserM, "Text" => $art_text_full, "URL" => $art_url);
+    $record = array("TeaserM" => $art_teaserM, "URL" => $art_url);
+    scraperwiki::save(array('URL'), $record);
+    return $record;
+}
+
+function show_article($art_title,$art_subtitle,$art_text_array) {
+    print "TITLE:      ".$art_title."\n";
+    print "SUBTITLE:   ".$art_subtitle."\n";
+    print "ARTICLE TEXT:\n";
+    for($i=0;$i<count($art_text_array);$i++) {
+        echo $art_text_array[$i]."\n";
+    }
+}
+
+function word_teaser($orig_string, $count){
+  $words = explode(' ', $orig_string);
+  if (count($words) > $count){
+    $beg_words = array_slice($words, 0, $count);
+    $beg_string = implode(' ', $beg_words);
+    $end_words = array_slice($words, $count);
+    $end_string = implode(' ', $end_words);
+    $end_sentence = strstr($end_string, ".", TRUE);
+    $string = $beg_string . " " . $end_sentence . ".";
+    //$string = $trim($beg_string) . " " . $trim($end_sentence) . ".";
+    //$string = preg_replace('/\s+/', ' ', $string);
+  } else return $orig_string;
+  return $string;
+}
+
+/* ============= */
+
+for($n=0;$n<count($page_urlsX);$n++) {    
+    $articles[$n] = scrape_NG_news_article($page_urls[$n]);
+    print "OK -- " . json_encode($articles[$n]) . "\n";
+   // scraperwiki::save(array('URL'), $articles);
+//break;
+}
+
+
+
+
+?>

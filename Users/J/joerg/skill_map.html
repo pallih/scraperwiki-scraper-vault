@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Skills and Technology Map</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+            #search_box {
+                background: none repeat scroll 0 0 #EEEEFF;
+                border: thin solid #AAAAFF;
+                display: block;
+                font-size: 10pt;
+                margin: 0;
+                padding: 6pt;
+                position: fixed;
+                left: 90px;
+                top: 10px;
+                z-index: 8675309;
+            }
+            #result {
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            #resultValue {
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript" src="https://google-maps-utility-library-v3.googlecode.com/svn/tags/markerclustererplus/2.0.12/src/markerclusterer_packed.js"></script>
+
+<script type="text/javascript">
+    var map;
+    var markers= [] //new Array();
+    var markerClusterer = null;
+    var markerCluster = null;
+    var infoWindows = new Array();
+    var keyword = "Grails"
+//    $(function(keyword){
+    $(function(){
+        var myOptions = {
+            zoom: 6,
+            center: new google.maps.LatLng(51.0, 10.0),
+            mapTypeId: google.maps.MapTypeId.TERRAIN //SATELLITE HYBRID TERRAIN ROADMAP
+        };
+        map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+
+        $.ajax({
+            url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=completegeolocation&query=select%20*%20from%20company_data5%20where%20skills%20like%20%22%25' + keyword + '%25%22%0A',
+//            url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=completegeolocation&query=select%20*%20from%20%60company_data3%60%20where%20skills%20like%20%22%25' + keyword + '%25%22',
+            dataType: 'json',
+            success: function(data){ 
+                var resultValue= document.getElementById('resultValue');
+                resultValue.innerHTML = data.length
+                drop_markers(data); 
+            }
+        });
+    });
+        function drop_markers(data){
+            bounds = new google.maps.LatLngBounds();
+            for(i = 0; i < data.length; i++){
+                // FIXME: Get LatLng but spread them to handle multiple pins on the exact same position
+                var randomLat = parseFloat((5 - Math.random()*10)/500);  // random number will fall between 100-1000 (meters)
+                var randomLng = parseFloat((5 - Math.random()*10)/500);  // random number will fall between 100-1000 (meters)
+                var lat = parseFloat(data[i].latitude) + randomLat
+                var lng = parseFloat(data[i].longitude) + randomLng
+                myLatLng = new google.maps.LatLng(lat, lng);
+                markerOptions = {
+                    position: myLatLng, 
+                    map: map, 
+                    icon: "https://dl.dropboxusercontent.com/u/1881197/Map%20Pins%20and%20Cluster/Map%20Icons/Pin_Hole_Red_40px.png",
+                    title: data[i].region
+                };
+                
+                var marker = new google.maps.Marker(markerOptions)
+                marker.index = i
+                markers.push(marker);
+//                markers[i] = new google.maps.Marker(markerOptions);
+//                markers[i].index = i
+
+                bounds.extend(myLatLng);
+//                map.fitBounds(bounds);
+//                var html = "<a href='"+data[3]+"'>"+data[2]+"</a><br />"+data[4]
+                var location = (data[i].region  != null) ? data[i].region : ""
+                var logoURL  = (data[i].logoURL != null) ? data[i].logoURL.split(',')[0] : ""
+                var skills = data[i].skills.replace("[","").replace("]","").trim().split(",")
+                var skillList = ""
+                var separator = ""
+                for (var id in skills) {
+                    var skill = skills[id].replace(/'/g,"")
+                    if (skill != null && skill != "") {
+                        skillList = skillList + '<span class="skill">' + separator + skill +'</span>'
+                        separator = ", "
+                    }
+                }
+                infoWindows[i] = new google.maps.InfoWindow({
+                    maxWidth: 400
+                });
+                infoWindows[i].setContent('\
+                    ' + (logoURL ? '<img style="float: right; width: 100px; margin-right: 5px;" src="' + logoURL.substring(2, logoURL.length - 2) + '" />' : "") + '\
+                    <span style="font-family:Helvetica,Arial,sans-serif;"><strong>' + data[i].company + '</strong></span>\
+                    <div class="location" style="font-size:80%;font-style: italic; font-weight: normal; font-family:Helvetica,Arial,sans-serif; margin-bottom: 5px;">' + location + '</div>\
+                    <div class="skills" style="font-size:80%;font-family:Helvetica,Arial,sans-serif; margin-bottom: 5px;">' + skillList + '</div>\
+                ');
+                google.maps.event.addListener(markers[i], "click", function() {
+                    for (var id in infoWindows) {
+                        infoWindows[id].close()
+                    }
+                    infoWindows[this.index].open(map, this);
+                });
+            }
+            // Add marker clustering
+            //set style options for marker clusters (these are the default styles)
+            mcOptions = {
+                gridSize: 50,
+                minimumClusterSize: 5,
+                styles: [{
+                    textColor: "#fff",
+                    url: "https://dl.dropboxusercontent.com/u/1881197/Map%20Pins%20and%20Cluster/Map%20Icons/Cluster_4Rings_40px.png",
+                    height: 40,
+                    width:  40
+                },
+                {
+                    textColor: "#fff",
+                    url: "https://dl.dropboxusercontent.com/u/1881197/Map%20Pins%20and%20Cluster/Map%20Icons/Cluster_4Rings_50px.png",
+                    height: 50,
+                    width:  50
+                },
+                {
+                    textColor: "#fff",
+                    url: "https://dl.dropboxusercontent.com/u/1881197/Map%20Pins%20and%20Cluster/Map%20Icons/Cluster_4Rings_60px.png",
+                    height: 60,
+                    width:  60
+                },
+                {
+                    textColor: "#fff",
+                    url: "https://dl.dropboxusercontent.com/u/1881197/Map%20Pins%20and%20Cluster/Map%20Icons/Cluster_4Rings_70px.png",
+                    height: 70,
+                    width:  70
+                },
+                {
+                    textColor: "#fff",
+                    url: "https://dl.dropboxusercontent.com/u/1881197/Map%20Pins%20and%20Cluster/Map%20Icons/Cluster_4Rings_80px.png",
+                    height: 80,
+                    width:  80
+                }],
+                calculator: function(markers, numStyles) {
+                    // Custom style can be returned here
+                    if (markers.length > 250) return {text: markers.length, index: 5};
+                    if (markers.length > 100) return {text: markers.length, index: 4};
+                    if (markers.length >  50) return {text: markers.length, index: 3};
+                    if (markers.length >  10) return {text: markers.length, index: 2};
+                                              return {text: markers.length, index: 1};
+                }
+            }
+//            var markerCluster = new MarkerClusterer(map, markers);
+            markerCluster = new MarkerClusterer(map, markers, mcOptions);
+
+        }
+
+    $(function(){
+        var addressField = document.getElementById('search_skill');
+        addressField.value = keyword;
+    });
+    function search() {
+        var addressField = document.getElementById('search_skill');
+        keyword = addressField.value.split(" ");
+        var queryURL = 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=completegeolocation&query=select%20*%20from%20company_data5%20where%20skills%20like%20%22%25' + keyword[0] + '%25%22';
+//        var queryURL = 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=completegeolocation&query=SELECT%20*%20FROM%20%60company_data3%60%20WHERE%20tags%20LIKE%20%22%25' + keyword[0] + '%25%22';
+        for (var i = 1; i < keyword.length; i++) {
+            queryURL = queryURL + '%20OR%20skills%20LIKE%20%22%25' + keyword[i] + '%25%22' 
+        }
+        queryURL = queryURL + '%0A'
+
+        markerCluster.clearMarkers() 
+        if(markers && markers.length !== 0){
+            for(var i = 0; i < markers.length; ++i){
+                markers[i].setMap(null);
+                markers[i] = null;
+            }
+        }
+//        markers.pop().setMap(null);
+        markers = []
+
+        $.ajax({
+            url: queryURL,
+            dataType: 'json',
+            success: function(data){ 
+                var resultValue= document.getElementById('resultValue');
+                resultValue.innerHTML = data.length
+                drop_markers(data); 
+            }
+        });
+    };
+    function runScript(e) {
+        if (e.keyCode == 13) {
+            search();
+            return false;
+        }
+    }
+
+    var QueryString = function () {
+      // This function is anonymous, is executed immediately and 
+      // the return value is assigned to QueryString!
+      var query_string = {};
+      var query = window.location.search.substring(1);
+//      console.log(query)
+
+      var vars = query.split("&");
+      for (var i=0;i<vars.length;i++) {
+        var pair = vars[i].split("=");
+            // If first entry with this name
+        if (typeof query_string[pair[0]] === "undefined") {
+          query_string[pair[0]] = pair[1];
+          query_string["q"] = keyword;
+            // If second entry with this name
+        } else if (typeof query_string[pair[0]] === "string") {
+          var arr = [ query_string[pair[0]], pair[1] ];
+          query_string[pair[0]] = arr;
+            // If third or later entry with this name
+        } else {
+          query_string[pair[0]].push(pair[1]);
+        }
+      }
+      return query_string;
+    } ();
+
+    keyword = QueryString.q
+</script>
+
+    </head>
+    <body>
+        <div id="search_box">
+            <input type="text" id="search_skill" value="" onkeypress="return runScript(event)"/>
+            <button onclick="search();">Search</button>
+            <span id="result">Found: <span id="resultValue">...</span></span>
+        </div>
+        <div id="map_canvas"></div>
+    </body>
+<html>

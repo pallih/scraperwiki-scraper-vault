@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Alan Carpenter's Pacific Crest Trail Map (2013)</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+            $(function(){
+                var myOptions = {
+                    zoom: 5,
+                    center: new google.maps.LatLng(39.8, -121.3),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+
+                $.ajax({
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=alans_pct_hike&query=select%20*%20from%20%60swdata%60%20where%20latitude%20is%20not%200',
+                    dataType: 'json',
+                    success: function(data){ drop_markers(data); }
+                });
+                function drop_markers(data){
+                    var infoWindows = [];
+                    bounds = new google.maps.LatLngBounds();
+                    for(i = 0; i < data.length; i++){
+                        var myLatLng = new google.maps.LatLng(data[i].latitude, data[i].longitude);
+                        infoWindows[i] = new google.maps.InfoWindow({
+                            content: "<a href='"+data[i].url+"'>"+data[i].title+"</a><br/>"+data[i].date+" after "+data[i].miles_today+" miles"
+                        });
+                        var marker = new google.maps.Marker({
+                            position: myLatLng,
+                            icon: "http://chart.googleapis.com/chart?chst=d_map_pin_icon&chld=camping|ADDE63",
+                            map: map,
+                            title:data[i].title,
+                            infoWindowIndex : i
+                        });
+                        google.maps.event.addListener(marker, 'click', function() { infoWindows[this.infoWindowIndex].open(map, this); });
+                        bounds.extend(myLatLng);
+                    }
+                    map.fitBounds(bounds);
+
+                    //This fails because the document is too large
+                    var kmlLayer = new google.maps.KmlLayer('http://quartermaester.info/PCT.kmz', {preserveViewport:true, map:map});
+                    google.maps.event.addListener(kmlLayer, 'status_changed', function(){ console.log('KMZ status: ' + kmlLayer.getStatus()); });
+                }
+            }); 
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>

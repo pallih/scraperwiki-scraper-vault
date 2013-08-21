@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Testing 1 2 3</title>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+            var srcname = "profcoachscraper_1";
+            var sqlselect = "select t1.team_name, t1.team_round, t1.team_totalscore as current_rndscore, t2.team_totalscore as previous_rndscore from pcteams t1 join pcteams t2 on t1.team_id = t2.team_id and t2.team_round in (select t2.team_round from pcteams t2 where t2.team_id == t1.team_id order by CAST(replace(t2.team_round, 'speelronde ', '') AS SIGNED) desc limit 1 offset 1) where t1.team_round in ( select distinct t3.team_round from pcteams t3 order by CAST(replace(t3.team_round, 'speelronde ', '') AS SIGNED) desc limit 1 ) limit 20";
+            $.ajax({url:apiurl, data:{name:srcname, query:sqlselect, format:"jsonlist"}, dataType:"jsonp", success:ProcessTeamInfo, error: ProcessError }); 
+
+            function ProcessTeamInfo(tdata) {
+                var data = tdata.data;
+                
+                // Sort on previous rank.
+                var sorted = data.sort(function(a, b) {
+                    return b[3] - a[3];
+                });
+                // Add extra column.
+                var extraColumn = sorted.map(function(arrayRow, index) {
+                    arrayRow[arrayRow.length] = index + 1;
+                    return arrayRow;
+                });
+                // Sort on current rank.
+                var secondsort = extraColumn.sort(function(a, b) {
+                    return b[2] - a[2];
+                });
+                // Add extra extra column.
+                var secondColumn = secondsort.map(function(arrayRow, index) {
+                    arrayRow[arrayRow.length] = index + 1;
+                    return arrayRow;
+                });
+                // Add count/diff column.
+                var diffColumn = secondsort.map(function(arrayRow, index) {
+                    arrayRow[arrayRow.length] = arrayRow[4]-arrayRow[5];
+                    return arrayRow;
+                });
+                console.log(secondColumn);
+
+
+                // Turn rows into HTML table rows.
+                var result = diffColumn.map(function(row) {
+                    return '<tr><td>' + row[0] + '</td><td>' + row[3] + '</td><td>' + row[4] + '</td><td>' + row[2] + '</td><td>' + row[5] + '</td><td>' + row[6] + '</td></tr>';
+                });
+                
+                // A bit of jQuery to output the result.
+                $('table#output tbody').html(result.join(''));
+
+            }
+
+            function ProcessError() {
+                alert('foutje');
+            }
+        </script>
+        <style type='text/css'>
+            table#output { border: 1px solid #000 }
+        </style>
+    </head>
+
+    <body>
+        <h3>Voorbeeld output (sorted with javascript)</h3>
+        <div id="sorted">
+            <table id="output">
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>Previous Points</th>
+                        <th>Previous Position</th>
+                        <th>Current Points</th>
+                        <th>Current Position</th>
+                        <th>Pointdiff</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Here comes output from JS. -->
+                </tbody>
+            </table>
+        </div>
+    </body>
+
+<html>

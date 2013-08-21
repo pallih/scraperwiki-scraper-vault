@@ -1,0 +1,50 @@
+<html>
+<head>
+<script src="http://media.scraperwiki.com/js/raphael-1.5.2.min.js"></script>
+<script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+<script src="http://media.scraperwiki.com/js/json-min.js"></script>
+<style>
+    td { background:#eef; border: thin black solid }
+    th { background:black; color:white }
+    table { border-collapse: collapse }
+    span#q { background:#eef; }
+</style>
+</head>
+
+<body>
+<h2>Untitled</h2>
+<p>Your query is: <span id="q"></span></p>
+<table id="t"></table>
+
+<script>
+var sourcescraper = "skl_-_kommuner"; 
+var query = "select * from swdata limit 10"; 
+
+function filltable(result, tel)
+{ 
+    var keys = result["keys"]; 
+    var data = result["data"]; 
+    tel.html(''); 
+    tel.append($("<tr><th>"+keys.join("</th><th>")+"</th></tr>")); 
+    for (var i = 0; i < data.length; i++)
+        tel.append($('<tr><td class="col1">'+data[i].join("</td><td>")+"</td></tr>")); 
+}
+
+
+$(document).ready(function()
+{
+    $("span#q").text(query); 
+    var url = "http://api.scraperwiki.com/api/1.0/datastore/sqlite?name="+escape(sourcescraper)+
+                      "&query="+escape(query); 
+    $.ajax({url:url, dataType:"jsonp", success: function(sdata)
+    {
+        filltable(sdata[0], $("table#t")); 
+    },  
+    error: function(a,b) {alert(b)} 
+    }); 
+})
+
+</script>
+
+</body>
+</html>

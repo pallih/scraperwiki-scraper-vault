@@ -1,0 +1,5 @@
+import scraperwiki
+
+print "hello"
+
+
