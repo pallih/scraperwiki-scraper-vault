@@ -1,1 +1,1 @@
-puts ScraperWiki.scrape('https://views.scraperwiki.com/run/uk_postcode_lookup/?postcode=ch64%209pp')
+puts ScraperWiki.scrape('https://views.scraperwiki.com/run/uk_postcode_lookup/?postcode=ch64%209pp')puts ScraperWiki.scrape('https://views.scraperwiki.com/run/uk_postcode_lookup/?postcode=ch64%209pp')
