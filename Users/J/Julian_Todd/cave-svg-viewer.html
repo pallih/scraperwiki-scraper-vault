@@ -706,3 +706,180 @@ Click on name of scan to load into background.
 
 </body>
 </html>
+<html>
+<head>
+<script src="https://media.scraperwiki.com/js/raphael-1.5.2.min.js"></script>
+<script src="https://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+<script src="https://media.scraperwiki.com/js/json-min.js"></script>
+<script src="https://media.scraperwiki.com/js/json-min.js"></script>
+<script src="https://media.scraperwiki.com/js/jquery.mousewheel.js"></script>
+<style type="text/css" src="https://media.scraperwiki.com/svg/jquery.svg.css"></style> 
+<script type="text/javascript" src="https://media.scraperwiki.com/svg/jquery.svg.js"></script>
+<script type="text/javascript" src="https://media.scraperwiki.com/svg/jquery.svganim.js"></script>
+<style>
+    #backgroundimgdiv { display:inline-block; height:200px; width:230px; overflow: auto; margin: 0; padding: 0; background:#eee; float:right }
+    ul#backgroundimg li { list-style-type: none; color:#00a; }
+    ul#backgroundimg li.selected { background: #fbb; }
+    #getwalls { color:#00a; }
+</style>
+
+<script>
+var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+var centrelinegroup; 
+
+function bindviewcontrols(svg, g2)
+{
+    var transx = 0, transy = 0; scale = 1.0; 
+    var dpageX, dpageY; 
+    $('#rstuff').mousedown(function(e) 
+    { 
+        dpageX = transx - e.pageX;  
+        dpageY = transy - e.pageY;
+        $(this).bind("mousemove", mousedrag); 
+    }); 
+    function mousedrag(e)
+    { 
+        transx =  e.pageX + dpageX; 
+        transy =  e.pageY + dpageY; 
+        g2.setAttribute("transform", "translate("+transx+", "+transy+") scale("+scale+")"); 
+    }; 
+    $('#rstuff').mouseup(function(e) 
+    {  $(this).unbind("mousemove", mousedrag); }); 
+    
+    $('#rstuff').bind('mousewheel', function(e, d) 
+    {
+        var sf = (d == 1 ? 1.5 : 0.75); 
+        scale *= sf;
+        rx = e.pageX - this.offsetLeft; 
+        ry = e.pageY - this.offsetTop; 
+            // solve (e.pageX - transx)/scale = (e.pageX - Newtransx)/newscale; 
+        transx = rx - (rx - transx)*sf; 
+        transy = ry - (ry - transy)*sf; 
+        svg.change(g2, {transform:"translate("+transx+", "+transy+") scale("+scale+")"}); 
+        $(centrelinegroup).children().each(function(i, el) 
+            { svg.change(el, {"stroke-width": 1.0/scale+"px"}); }); 
+        return false; 
+    });
+}
+
+$(document).ready(function()
+{
+    $('#rstuff').svg(); 
+    var svg = $('#rstuff').svg('get'); 
+    var maingroup = svg.group("maingroup"); 
+    bindviewcontrols(svg, maingroup); 
+    var imagesgroup = svg.group(maingroup, "imagesgroup"); 
+    getbackgroundimages(svg, imagesgroup ); 
+
+    centrelinegroup = svg.group(maingroup, "centrelinegroup"); 
+
+    var query = "select * from paths where linestyle='Cent' limit 50"; 
+    var jdata = { name:"cave-svg-loader", format:"jsondict", query:query }; 
+    $.ajax({url:apiurl, dataType:"jsonp", data:jdata, success:function(tdata)
+    {
+        for (var i = 0; i < tdata.length; i+=1)
+            svg.path(centrelinegroup , tdata[i]["d"], {fill:"none", stroke:"red", "stroke-linecap":"round"}); 
+    }})
+
+    var wallsgroup = svg.group(maingroup, "wallsgroup"); 
+    $("#getwalls").click(function()  { getwalls(svg, wallsgroup) }); 
+    var topgroup = svg.group(maingroup, "topgroup"); 
+    $("#gettop").click(function()  { gettop(svg, topgroup) }); 
+}); 
+
+
+function getbackgroundimages(svg, g2)
+{
+    var framedata = { info:"framedata" }; 
+    var backgroundimgs = { }; 
+    function togglebgi(bgi)
+    {
+        if (bgi["li"].hasClass("selected"))
+        {
+            svg.remove(bgi["node"]); 
+            bgi["node"] = undefined; 
+            bgi["li"].removeClass("selected"); 
+        }
+        else
+        {
+            var sketchframe = bgi["sketchframe"]; 
+            bgi["node"] = svg.image(g2, 0, 0, sketchframe["imagepixelswidth"], sketchframe["imagepixelsheight"],
+                                     sketchframe["sfsketch"], {transform:bgi["transform"], opacity:0.5});
+            bgi["li"].addClass("selected"); 
+        }
+    }
+
+    var query = "select * from sketchframes where imagepixelswidth>0 limit 50"; 
+    var jdata = { name:"cave-svg-loader", format:"jsondict", query:query }; 
+    $.ajax({url:apiurl, dataType:"jsonp", data:jdata, success:function(tdata)
+    {
+        for (var i = 0; i < tdata.length; i++) { (function(i) 
+        {
+            var sketchframe = tdata[i]; 
+            sketchframe["name"] = sketchframe["sfsketch"].replace(/.*\//, ""); 
+            var bgi = { sketchframe:sketchframe }; 
+            bgi["transform"] = "translate("+(sketchframe["rxtrans"])+","+(sketchframe["rytrans"])+") "+ 
+                               "rotate("+(-sketchframe["rotatedeg"])+") "+"scale("+1.0/sketchframe["scaledown"]+")";
+            backgroundimgs[i] = bgi; 
+            bgi["li"] = $("<li><span>"+i+"</span> "+sketchframe["name"]+"</li>"); 
+            bgi["rect"] = svg.rect(g2, 0, 0, sketchframe["imagepixelswidth"], sketchframe["imagepixelsheight"],
+                                   0, 0, {transform:bgi["transform"], stroke:"blue", fill:"none"});
+            $(bgi["rect"]).click(function() { togglebgi(backgroundimgs[i]); }); 
+            bgi["li"].click(function() { togglebgi(backgroundimgs[i]); }); 
+            $("ul#backgroundimg").append(bgi["li"]); 
+        })(i) }
+    }}); 
+}
+
+
+function getwalls(svg, g2)
+{
+    var query = "select * from paths where linestyle!='Cent' and linestyle!='Conn' limit 500"; 
+    var jdata = { name:"cave-svg-loader", format:"jsondict", query:query }; 
+    $.ajax({url:apiurl, dataType:"jsonp", data:jdata, success:function(tdata)
+    {
+        for (var i = 0; i < tdata.length; i++)
+        {
+            var settings = {fill:"none", stroke:"blue", "stroke-linecap":"round"}; 
+            settings["stroke-width"] = (tdata[i].linestyle == "Wall" ? "2px" : "1px"); 
+            settings["stroke"] = (tdata[i].linestyle == "Invs" ? "green" : "#128"); 
+            svg.path(g2, tdata[i]["d"], settings); 
+        }
+    }})
+}
+
+function gettop(svg, g2)
+{
+    var jdata = { name:"cave-svg-loader" }; 
+// should this be https - problems in chrom vs firefox
+    $.ajax({url:'http://views.scraperwiki.com/run/top_file_to_svg', dataType:"jsonp", data:jdata, success:function(tdata)
+    {
+        for (var i = 0; i < tdata.length; i++)
+        {
+            var settings = {fill:"none", stroke:tdata[i].colour, "stroke-linecap":"round"}; 
+            settings["stroke-width"] = (tdata[i].colour == "black" ? "2px" : "1px"); 
+            svg.path(g2, tdata[i]["d"], settings); 
+        }
+    }})
+}
+
+
+
+</script>
+</head>
+<body>
+<h4>Interact with cave survey <span style="background:#fbb">in a browser</span></h4>
+<p><b>Drag</b>: Left mouse down in drawing panel and drag.<br/>
+<b>Zoom</b>: Roll the middle mouse scrollwheel.
+<br/>Click on <a href="#" id="getwalls">Get Walls</a> to load the rest of the survey outline
+<br/>Click on <a href="#" id="gettop">Get Top</a> to demo top parser</p>
+
+<div id="backgroundimgdiv">
+Click on name of scan to load into background.
+<ul id="backgroundimg"></ul>
+</div>
+
+<div id="rstuff" style="width:700px; height:400px;background:#eee;border:thick blue solid; overflow:none"></div>
+
+</body>
+</html>

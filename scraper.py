@@ -89,14 +89,14 @@ def scrape_user_scrapers(username):
         pass
 
 def write_readme_file():
-    stat_string = 'Count of file extensions\n'
+    stat_string = 'Count of file extensions<br>'
     extensions = collections.defaultdict(int)
     for path, dirs, files in os.walk(BASEDIR+'/Users/'):
         for filename in files:
             extensions[os.path.splitext(filename)[1].lower()] += 1
 
     for key,value in extensions.items():
-        stat_string = stat_string + 'Extension: ' + str(key) + ' ' + str(value) + '\n' #+ ' ' + value, +' items'
+        stat_string = stat_string + 'Extension: ' + str(key) + ' ' + str(value) + '<br>' #+ ' ' + value, +' items'
     return stat_string
 
 todo = scraperwiki.sqlite.select('* from usernames where done=0')
@@ -108,12 +108,12 @@ for username in todo:
 
 print 'All done'
 
-intro = 'This repository contains code for all public scrapers at scraperwiki.com, as of \n'\
+intro = 'This repository contains code for all public scrapers at scraperwiki.com, as of <br>'\
         + datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")\
-        + '\n\n'\
+        + '<br><br>'\
         + 'It was created by pallih @ gogn.in / twitter.com/pallih' \
-        + '\n\n'\
-        + 'Some statistics: \n\n'
+        + '<br><br>'\
+        + 'Some statistics: <br><br>'
 
 file_stats = write_readme_file()
 users = scraperwiki.sqlite.select('* from usernames')
@@ -126,15 +126,15 @@ print 'Writing readme'
 with open(BASEDIR+'/readme.md', 'w') as the_file:
     the_file.write(intro)
     the_file.write(file_stats)
-    the_file.write('\n\n')
+    the_file.write('<br><br>')
     the_file.write('User stats:')
-    the_file.write('\n\n')
+    the_file.write('<br><br>')
     the_file.write('Number of users: ' + str(usercount))
-    the_file.write('\n\n')
-    the_file.write('Users with over 100 scrapers:\n')
+    the_file.write('<br><br>')
+    the_file.write('Users with over 100 scrapers:<br>')
     for user in over_100:
-        the_file.write(user['username'] +' ' + user['scrapercount'] + '\n')
-    the_file.write('\n\n')
-    the_file.write('Usernames that retrieval failed for:\n')
+        the_file.write(user['username'] +' ' + user['scrapercount'] + '<br>')
+    the_file.write('<br><br>')
+    the_file.write('Usernames that retrieval failed for:<br>')
     for user in failed:
-        the_file.write(user['username'] + '\n')
+        the_file.write(user['username'] + '<br>')
