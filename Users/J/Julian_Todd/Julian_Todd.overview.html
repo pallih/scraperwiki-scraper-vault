@@ -334,4 +334,52 @@
 </dl>
 
 
+</div><div class="inline">
+
+<p>Some working scrapers that are worth looking at, among the many that I have created.</p>
+
+<h2>Outer space affairs</h2>
+<p>The United Nations Office of Outer Space Affairs runs a register of man-made objects.</p>
+<dl>
+<dt><a href="http://scraperwiki.com/scrapers/outer_space_objects_scrapedownloader/">outer_space_objects_scrapedownloader</a></dt>
+<dd>Download all the index pages from the database</dd>
+<dt><a href="http://scraperwiki.com/scrapers/outer_space_objects_parsecollector/">outer_space_objects_parsecollector</a></dt>
+<dd>Load from the database above and parse into a clean database.  Still needs to do the country iso identification</dd>
+<dt><a href="http://scraperwiki.com/views/outer_space_objects_view/full/">outer_space_objects_view</a></dt>
+<dd>Curious circle visualization of number of satellite per country.</dd>
+</dl>
+
+<h2>North sea oil wells</h2>
+<p>DECC have a database of all oil wells drilled since 1964 which is easy to scrape.</p>
+<dl>
+<dt><a href="http://scraperwiki.com/scrapers/northsea_oilwell_scrapedownload/">northsea_oilwell_scrapedownload</a></dt>
+<dd>Does the download of each page into the database</dd>
+<dt><a href="http://scraperwiki.com/scrapers/northsea_oilwell_parse/">northsea_oilwell_parse</a></dt>
+<dd>Here we parse the downloaded data into clean data in a database</dd>
+<dt><a href="http://scraperwiki.com/views/northsea_oilwell_server/">northsea_oilwell_server</a></dt>
+<dd>Serves interrogations from the frontend of the database.</dd>
+<dt><a href="http://scraperwikiviews.com/run/northsea_oilwell_view/?">northsea_oilwell_view</a></dt>
+<dd>Crude map view that slightly animates the drilling in the sea for each year</dd>
+</dl>
+
+<h2>Sqlite technology</h2>
+<p>We can create a UI that allows for easy interrogation of any database kept by a scraper</p>
+<dl>
+<dt><a href="http://scraperwikiviews.com/run/general_sqlite_view/?">general_sqlite_view</a></dt>
+<dd>Front end HTML page that allows building up the SQL command from its components</dd>
+<dt><a href="http://scraperwiki.com/views/general_sqlite_interrogator/">general_sqlite_interrogator</a></dt>
+<dd>This provides the backend that executes the SQL query against the database</dd>
+</dl>
+
+<h2>Cave mapping</h2>
+<dl>
+<dt><a href="http://scraperwiki.com/views/cave-svg-viewer/">cave-svg-viewer</a></dt>
+<dd>Preview the map using jquery.svg technology.  Under development</dd>
+<dt><a href="http://scraperwiki.com/scrapers/cave-svg-server/">cave-svg-server</a></dt>
+<dd>Serve out the map for the front end to use.  Needs to handle regions of interest</dd>
+<dt><a href="http://scraperwiki.com/scrapers/survex-cave-data-loader/">survex-cave-data-loader</a></dt>
+<dd>Intended as a complete parsing for a svx file</dd>
+</dl>
+
+
 </div>

@@ -228,3 +228,118 @@
   </body>
 </html>
 
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>GraffitiMapper</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <style type="text/css">
+      html, body, #map_canvas {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      body {
+        position: relative;
+      }
+      #toolbar {
+        position: absolute;
+        z-index: 1000;
+        top: 27px;
+        left: 90px;
+        background-color: white;
+        padding: 7px 10px 4px 10px;
+        font-size: 20px;
+        line-height: 20px;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        border: 1px solid #888;
+        -webkit-box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        -moz-box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        font-family: "Myriad Pro", Myriad, Calibri, Helvetica, Arial, sans-serif;
+      }
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript">
+
+        var map;
+
+        function drop_pin(lat, lng, title, date){
+            myLatLng = new google.maps.LatLng(lat, lng);
+            var image = new google.maps.MarkerImage(
+                'http://files.zarino.co.uk/scraperwiki/red_cross/image.png',
+                new google.maps.Size(16,16),
+                new google.maps.Point(0,0),
+                new google.maps.Point(8,8)
+            );
+            var shadow = new google.maps.MarkerImage(
+                'http://files.zarino.co.uk/scraperwiki/red_cross/shadow.png',
+                new google.maps.Size(28,16),
+                new google.maps.Point(0,0),
+                new google.maps.Point(8,8)
+            );
+            var shape = {
+                coord: [12,1,13,2,14,3,14,4,14,5,13,6,12,7,12,8,13,9,14,10,14,11,14,12,13,13,12,14,11,15,4,15,3,14,2,13,1,12,1,11,1,10,2,9,3,8,3,7,2,6,1,5,1,4,1,3,2,2,3,1,12,1],
+                type: 'poly'
+            };
+            markerOptions = {
+                position: myLatLng,
+                icon: image,
+                shadow: shadow,
+                shape: shape,
+                map: map,
+                title: title
+            };
+            new google.maps.Marker(markerOptions);
+            $('#toolbar').text(date + ': ' + title);
+        }
+
+        $(function(){
+            map = new google.maps.Map(
+                document.getElementById('map_canvas'),
+                    {zoom: 2, center: new google.maps.LatLng(0, 0), mapTypeId: google.maps.MapTypeId.TERRAIN}
+                );
+            /*$.ajax({
+                url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=BedBugMapper&query=select%20*%20from%20%60locations%60%20where%20latitude%20!%3D''%20order%20by%20the_date",
+                dataType: 'json',
+                success: function(data){
+                    for(i = 0; i < data.length; i++){
+                        //if(typeof(first_date) == 'undefined'){
+                        //    first_date = Date.parse(data[i].start_date);
+                       // }
+                        //this_date = Date.parse(data[i].start_date);
+                        //diff = (parseInt(this_date) - parseInt(first_date)) / 1000;
+                        //setTimeout('drop_pin("' + data[i].latitude + '", "' + data[i].longitude + '", "' + data[i].address + '", "' + data[i].the_date + '")');
+            /*        }
+                },
+                error: function(jqXHR, textStatus){
+                    alert('Error loading ScraperWiki API: ' + textStatus);
+                }
+            });*/
+            $.ajax({ url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=graffitiscraper&query=select%20*%20from%20%60graffiti%60%20where%20addressLatitude%20is%20not%20null', dataType: 'json', success: function(data){ drop_markers(data); } });
+        
+            function drop_markers(data){
+                bounds = new google.maps.LatLngBounds();
+                    for(i = 0; i < data.length; i++){
+                        myLatLng = new google.maps.LatLng(data[i].addressLatitude, data[i].addressLongitude);
+                        markerOptions = {position: myLatLng, map: map, title: data[i].address, center: new google.maps.LatLng(49.2505, 123.1119)};
+                        new google.maps.Marker(markerOptions);
+                        bounds.extend(myLatLng);
+                        map.fitBounds(bounds);
+                    }
+            }
+        });
+    </script>
+
+
+  </head>
+  <body>
+    <div id="toolbar"></div>
+    <div id="map_canvas"></div>
+  </body>
+</html>
+

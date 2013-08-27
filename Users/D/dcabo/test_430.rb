@@ -482,3 +482,245 @@ companies.each do |id, company_name|
     end
 end
 
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+require 'rubygems'
+require 'mechanize'
+require 'csv'
+require 'nokogiri'
+require 'open-uri'
+require 'iconv'
+
+def company_page_url(id)
+    "http://cnmv.es/Portal/Consultas/DerechosVoto/PS_AC_INI.aspx?nif=#{id}"
+end
+
+def number_to_english(s)
+    s.gsub('.','').gsub(',', '.')
+end
+
+def parse(file_content)
+    # Some weird encoding issue going on CNMV site, not fully sure about this
+    content = Iconv.conv('iso-8859-1', 'utf-8', file_content)  # Convert to UTF-8
+    
+    doc = Nokogiri::HTML(content)
+    company_name = doc.css('#ctl00_lblSubtitulo').text
+    board = doc.css('#ctl00_ContentPrincipal_gridConsejo')
+    members = board.css('tr')[1..-2]    # skip first and last: header/footer
+
+    members.each do |member|
+        columns = member.css('td').map{|s| s.text.strip}
+        data = {
+          'empresa' => company_name,
+          'nombre' => columns[0],
+          'cargo' => columns[3],
+          'porcentaje votos' => number_to_english(columns[1])
+        }
+        ScraperWiki::save_sqlite(['empresa', 'nombre', 'cargo'], data=data) 
+    end
+end
+
+# List of companies in CNMV as of 20110819. Extracted through http://cnmv.es/portal/Consultas/Busqueda.aspx?id=7
+companies = [
+['A-41002288',"ABENGOA, S.A."],
+['A-08209769',"ABERTIS INFRAESTRUCTURAS, S.A."],
+['A-08001851',"ACCIONA, S.A."],
+['A-28250777',"ACERINOX, S.A."],
+['A-28004885',"ACS, ACTIVIDADES DE CONSTRUCCION Y SERVICIOS, S.A."],
+['Q-2801660H',"ADMINISTRADOR DE INFRAESTRUCTURAS FERROVIARIAS"],
+['A-32104226',"ADOLFO DOMINGUEZ, S.A."],
+['A-58410804',"AGROFRUSE-MEDITERRANEAN AGRICULTURAL GROUP, S.A."],
+['A-46000477',"AGUAS DE VALENCIA, S.A."],
+['A-28203198',"AHORRO FAMILIAR, S.A."],
+['A-58869389',"ALMIRALL, S.A."],
+['A-07040223',"ALZA REAL ESTATE, S.A."],
+['A-84236934',"AMADEUS IT HOLDING, S.A."],
+['A-60258704',"AMCI HABITAT, S.A."],
+['A-28079226',"AMPER, S.A."],
+['A-78839271',"ANTENA 3 DE TELEVISION, S.A."],
+['N-0181056C',"ARCELOR MITTAL, S.A."],
+['A-28004240',"AYCO GRUPO INMOBILIARIO, S.A."],
+['A-31065618',"AZKOYEN, S.A."],
+['A-85973857',"BANCA CIVICA, S.A."],
+['A-48265169',"BANCO BILBAO VIZCAYA ARGENTARIA, S.A."],
+['A-08000143',"BANCO DE SABADELL, S.A."],
+['A-46002036',"BANCO DE VALENCIA, S.A."],
+['A-28000032',"BANCO ESPAÑOL DE CREDITO, S.A."],
+['A-15000128',"BANCO PASTOR, S.A."],
+['A-28000727',"BANCO POPULAR ESPAÑOL, S.A."],
+['A-39000013',"BANCO SANTANDER, S.A."],
+['A-14010342',"BANKIA, S.A"],
+['A-28157360',"BANKINTER, S.A."],
+['A-20043717',"BANKOA, S.A."],
+['A-31153703',"BARON DE LEY, S.A."],
+['A-80689052',"BEFESA MEDIO AMBIENTE, S.A."],
+['A-18550111',"BIOSEARCH, S.A."],
+['A-48001721',"BODEGAS BILBAINAS, S.A."],
+['A-26000398',"BODEGAS RIOJANAS, S.A."],
+['A-83246314',"BOLSAS Y MERCADOS ESPAÑOLES, SDAD HOLDING DE MDOS Y STMAS FIN., S.A."],
+['A-08663619',"CAIXABANK, S.A."],
+['G-03046562',"CAJA DE AHORROS DEL MEDITERRANEO"],
+['A-09000928',"CAMPOFRIO FOOD GROUP, S.A."],
+['A-28130938',"CARTERA INDUSTRIAL REA, S.A."],
+['A-08017535',"CEMENTOS MOLINS, S.A."],
+['A-31000268',"CEMENTOS PORTLAND VALDERRIVAS, S.A."],
+['A-20014452',"CIE AUTOMOTIVE, S.A."],
+['A-08328171',"CIRCULO DE VALORES MOBILIARIOS, S.A."],
+['A-80240427',"CLINICA BAVIERA, S.A."],
+['A-82110453',"CODERE, S.A."],
+['A-08071664',"COMPANYIA D´AIGÜES DE SABADELL, S.A."],
+['A-28079267',"COMPAÑIA DE INVERSIONES CINSA, S.A."],
+['A-08177305',"COMPAÑIA DE INVERSIONES MOBILIARIAS BARCINO, S.A."],
+['A-28003119',"COMPAÑIA ESPAÑOLA DE PETROLEOS, S.A."],
+['A-28218543',"COMPAÑIA ESPAÑOLA DE VIVIENDAS EN ALQUILER, S.A."],
+['A-08007932',"COMPAÑIA ESPAÑOLA PARA LA FABRICACION MECANICA DEL VIDRIO, S.A."],
+['A-46004131',"COMPAÑIA LEVANTINA DE EDIFICACION Y OBRAS PUBLICAS, S.A."],
+['A-28018380',"COMPAÑIA LOGISTICA DE HIDROCARBUROS CLH, S.A."],
+['A-48002893',"COMPAÑIA VINICOLA DEL NORTE DE ESPAÑA, S.A."],
+['A-20001020',"CONSTRUCCIONES Y AUXILIAR DE FERROCARRILES, S.A"],
+['A-46126017',"CORPORACION DERMOESTETICA, S.A."],
+['A-28060903',"CORPORACION FINANCIERA ALBA, S.A."],
+['A-48012009',"DEOLEO, S.A."],
+['A-28356830',"DESARROLLO MOBILIARIO, S.A."],
+['A-58348038',"DESARROLLOS ESPECIALES DE SISTEMAS DE ANCLAJES, S.A."],
+['A-81862724',"DINAMIA CAPITAL PRIVADO, S.A., SCR"],
+['A-28164754',"DISTRIBUIDORA INTERNACIONAL DE ALIMENTACION, S.A."],
+['A-08276651',"DOGI INTERNATIONAL FABRICS, S.A."],
+['A-28004026',"DURO FELGUERA, S.A."],
+['A-47412333',"EBRO FOODS, S.A."],
+['A-43777119',"ECCOWOOD INVEST, S.A."],
+['A-74219304',"EDP RENOVAVEIS, S.A."],
+['A-48027056',"ELECNOR, S.A."],
+['A-28294726',"ENAGAS, S.A."],
+['A-28023430',"ENDESA, S.A."],
+['N-9022122G',"ENEL GREEN POWER S.P.A."],
+['A-08000630',"ERCROS, S.A."],
+['A-28038990',"ESPAÑOLA DEL ZINC, S.A."],
+['A-08016057',"ESTABANELL Y PAHISA, S.A."],
+['N-0032826J',"EUROPEAN AERONAUTIC DEFENCE AND SPACE COMPANY EADS, N.V."],
+['A-48004360',"FAES FARMA, S.A."],
+['A-60454360',"FERGO AISA, S.A."],
+['A-81939209',"FERROVIAL, S.A."],
+['A-62338827',"FERSA ENERGIAS RENOVABLES, S.A."],
+['A-46075255',"FINANZAS E INVERSIONES VALENCIANAS, S.A."],
+['A-17728593',"FLUIDRA, S.A."],
+['A-28037224',"FOMENTO DE CONSTRUCCIONES Y CONTRATAS, S.A."],
+['A-04128732',"FUNESPAÑA, S.A."],
+['A-01011253',"GAMESA CORPORACION TECNOLOGICA, S.A."],
+['A-08015497',"GAS NATURAL SDG, S.A."],
+['A-83443556',"GENERAL DE ALQUILER DE MAQUINARIA, S.A."],
+['A-58389123',"GRIFOLS, S.A."],
+['A-08168064',"GRUPO CATALANA OCCIDENTE, S.A."],
+['A-28212264',"GRUPO EMPRESARIAL ENCE, S.A."],
+['A-36046993',"GRUPO EMPRESARIAL SAN JOSE, S.A."],
+['A-28085207',"GRUPO EZENTIS, S.A."],
+['A-20000162',"GRUPO TAVEX, S.A."],
+['A-48010615',"IBERDROLA, S.A."],
+['A-21248893',"IBERPAPEL GESTION, S.A."],
+['A-08266934',"INDO INTERNACIONAL, S.A."],
+['A-28599033',"INDRA SISTEMAS, S.A."],
+['A-15075062',"INDUSTRIA DE DISEÑO TEXTIL, S.A."],
+['A-08113417',"INDUSTRIAS DEL ACETATO DE CELULOSA, S.A."],
+['A-46010476',"INDUSTRIAS DEL CURTIDO, S.A."],
+['A-28027399',"INMOBILIARIA COLONIAL, S.A."],
+['A-41002205',"INMOBILIARIA DEL SUR, S.A."],
+['A-58846312',"INMOFIBAN, S.A."],
+['A-28183713',"INMOLEVANTE, S.A."],
+['A-85845535',"INTERNATIONAL CONSOLIDATED AIRLINES GROUP, S.A."],
+['A-58246810',"INVERFIATC, S.A."],
+['A-08644601',"INVERPYME, S.C.R. DE REGIMEN COMUN, S.A."],
+['A-28249977',"INYPSA INFORMES Y PROYECTOS, S.A."],
+['N-0067816I',"JAZZTEL, PLC."],
+['A-17018052',"JOAQUIM ALBERTI, S.A."],
+['A-08010571',"LA SEDA DE BARCELONA, S.A."],
+['A-28041283',"LABORATORIOS FARMACEUTICOS ROVI, S.A."],
+['A-08119042',"LEFA, S.A."],
+['A-28374445',"LEUCAN, S.A."],
+['A-46007449',"LIBERTAS 7, S.A."],
+['A-47007109',"LINGOTES ESPECIALES, S.A."],
+['A-30015382',"LIWE ESPAÑOLA, S.A."],
+['A-08055741',"MAPFRE, S.A."],
+['A-80163587',"MARTINSA-FADESA, S.A."],
+['A-79075438',"MEDIASET ESPAÑA COMUNICACION, S.A."],
+['A-78304516',"MELIA HOTELS INTERNATIONAL S.A."],
+['A-28017804',"METROVACESA, S.A."],
+['A-48008502',"MINERALES Y PRODUCTOS DERIVADOS, S.A."],
+['A-08020729',"MIQUEL Y COSTAS &amp; MIQUEL, S.A."],
+['A-08348740',"MOBILIARIA MONESA, S.A."],
+['A-28294700',"MONTEBALITO, S.A."],
+['A-46014528',"NATRA, S.A."],
+['A-96184882',"NATRACEUTICAL, S.A."],
+['A-28027944',"NH HOTELES, S.A."],
+['A-28041317',"NICOLAS CORREA, S.A."],
+['A-08074320',"NYESA VALORES CORPORACION, S.A."],
+['A-48010573',"OBRASCON HUARTE LAIN, S.A."],
+['A-34158824',"PAPELES Y CARTONES DE EUROPA, S.A."],
+['A-36603587',"PESCANOVA, S.A."],
+['A-61931952',"PLARREGA INVEST 2000, S.A."],
+['A-28165587',"PRIM, S.A."],
+['A-28297059',"PROMOTORA DE INFORMACIONES, S.A."],
+['A-28430882',"PROSEGUR, COMPAÑIA DE SEGURIDAD, S.A."],
+['A-96911482',"QUABIT INMOBILIARIA, S.A."],
+['A-81787889',"REALIA BUSINESS, S.A."],
+['A-78003662',"RED ELECTRICA CORPORACION, S.A."],
+['N-0052494B',"RENO DE MEDICI, S.P.A."],
+['A-82473018',"RENTA 4 SERVICIOS DE INVERSION, S.A."],
+['A-62385729',"RENTA CORPORACION REAL ESTATE, S.A."],
+['A-78374725',"REPSOL YPF, S.A."],
+['A-28238988',"REYAL URBIS, S.A."],
+['A-28042984',"RUSTICAS, S.A."],
+['A-28204063',"S.A. RONSA"],
+['A-28013811',"SACYR VALLEHERMOSO, S.A."],
+['A-28354132',"SERVICE POINT SOLUTIONS, S.A."],
+['A-28013225',"SNIACE, S.A."],
+['A-08000820',"SOCIEDAD ANONIMA DAMM"],
+['A-24000960',"SOCIEDAD ANONIMA HULLERA VASCO-LEONESA"],
+['A-83511501',"SOLARIA ENERGIA Y MEDIOAMBIENTE, S.A."],
+['A-28110666',"SOTOGRANDE, S.A."],
+['A-28092583',"TECNICAS REUNIDAS, S.A."],
+['A-28191179',"TECNOCOM, TELECOMUNICACIONES Y ENERGIA, S.A."],
+['A-28015865',"TELEFONICA, S.A."],
+['A-08356727',"TESTA INMUEBLES EN RENTA, S.A."],
+['A-01003946',"TUBACEX, S.A."],
+['A-48011555',"TUBOS REUNIDOS, S.A."],
+['A-08483257',"UNION CATALANA DE VALORES, S.A."],
+['A-08149957',"UNION EUROPEA DE INVERSIONES, S.A."],
+['A-28414811',"UNIPAPEL, S.A."],
+['A-28037091',"URALITA, S.A."],
+['A-20017638',"URBAR INGENIEROS, S.A."],
+['A-08049793',"URBAS GUADAHERMOSA, S.A."],
+['A-84856947',"VERTICE TRESCIENTOS SESENTA GRADOS, S.A."],
+['A-01004324',"VIDRALA, S.A."],
+['A-31065501',"VISCOFAN, S.A."],
+['A-48001655',"VOCENTO, S.A."],
+['A-63422141',"VUELING AIRLINES, S.A."],
+['A-28011153',"ZARDOYA OTIS, S.A."],
+['A-36000602',"ZELTIA, S.A."]
+]
+
+agent = Mechanize.new
+
+companies.each do |id, company_name|
+    next if id.start_with? '#'
+
+    # Amazingly, the CNMV site uses the Referer header to decide which company we're interested in,
+    # so we have to fetch this page first, even if we don't care about its contents!
+    # PS: Actually, we could add a fake Referer via Mechanize, but it may be that the site
+    # is setting something in the session. Can't be bothered to check, this works.
+    page = agent.get(company_page_url(id))
+    # Sometimes they don't use the hyphen in the id, so we try both
+    if page.content.include?('No hay datos para mostrar')
+        page = agent.get(company_page_url(id.delete('-')))
+    end
+    
+    # Download the relevant sections
+    puts "Retrieving board members for #{company_name} (#{id})..."
+    board_link = page.link_with(:text => /Consejo/)
+    if board_link
+        parse(board_link.click.content)
+    else
+        puts "Warning: skipped! not found."
+    end
+end
+

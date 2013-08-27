@@ -366,4 +366,188 @@ $.extend($.expr[":"],
         </div>
         <div id="map_canvas"></div>
     </body>
+<html><!DOCTYPE html>           
+<html>
+    <head>
+        <title>POA Transporte - Mapa Ônibus</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+
+            #route {
+                float: left;
+                height: 100%;
+                overflow: auto;
+            }
+
+            #map_canvas {
+                height: 100%;
+            }
+
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+            var routes = {};
+            var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+            var busessrc = "poatransporte-buses";
+            $(function(){
+                var myOptions = {
+                    zoom: 7,
+                    center: new google.maps.LatLng(-30.079493,-51.132774),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+
+                $.ajax({
+                    url: apiurl, 
+                    dataType: "jsonp", 
+                    data:{
+                        name: busessrc, 
+                        query: "select id,codigo,nome,sentido from buses",
+                        format: "jsondict"
+                    }, 
+                    success: function(data){
+                        populate_table(data);
+                    }
+                });
+
+                function create_marker(myLatLng, label, name, code, direction, distance) {
+                        title = label + ": " + name + " (" + code + "-" + direction + ") - " + distance + " Km";
+                        markerOptions = {position: myLatLng, map: map, title: title };
+                        return new google.maps.Marker(markerOptions);
+                }
+
+                function drop_markers(id, data){
+                    var name = data.nome;
+                    var code = data.codigo;
+                    var direction = data.sentido;
+                    var distance = data.distancia;
+
+                    var route_arrow = {icon: {path: google.maps.SymbolPath.FORWARD_OPEN_ARROW}, offset: "10%", repeat: "200px"};
+                    var route_start = {icon: {path: google.maps.SymbolPath.CIRCLE}, offset: "0%", weight: 4};
+                    var route_end = {icon: {path: google.maps.SymbolPath.CIRCLE}, offset: "100%", weight: 4};
+
+                    var bounds = new google.maps.LatLngBounds();
+                    var route = [];
+                    var coordinates = data.rota.split(" ");
+                    for(i = 0; i < coordinates.length; i++){
+                        coord = coordinates[i].split(",");
+                        myLatLng = new google.maps.LatLng(coord[0], coord[1]);
+                        route[route.length] = myLatLng;
+                        bounds.extend(myLatLng);
+                    }
+
+                    var flightPath = new google.maps.Polyline({
+                        path: route,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 2,
+                        icons: [route_arrow, route_start, route_end]
+                      });
+                    
+                    routes[id] = {};
+                    routes[id].bounds = bounds;
+                    routes[id].route = route;
+                    routes[id].flightPath = flightPath;
+                    routes[id].start = create_marker(route[0], "Início", name, code, direction, distance);
+                    routes[id].end = create_marker(route[route.length-1], "Final", name, code, direction, distance);
+
+                    routes[id].flightPath.setMap(map);
+                    map.fitBounds(routes[id].bounds);
+                }
+
+                function load_route(id) {
+                    if (id in routes) {
+                        isVisible = routes[id].start.getVisible();
+                        routes[id].start.setVisible(!isVisible);
+                        routes[id].end.setVisible(!isVisible);
+                        // polyline setVisible is not working
+                        routes[id].flightPath.setMap(isVisible?null:map);
+
+                        if (!isVisible) map.fitBounds(routes[id].bounds);
+                    } else {
+                        $.ajax({
+                            url: apiurl,
+                            dataType: "jsonp",
+                            data:{
+                                name: busessrc,
+                                query: "select id,codigo,sentido,nome,rota,round(distancia,1) as distancia from buses where id=" + id,
+                                format: "jsondict"
+                            }, 
+                            success: function(data){
+                                //populate_table(data);
+                                drop_markers(id, data[0]);
+                            }
+                        });
+                    }
+                }
+                
+                function populate_table(data)
+                {
+                    var tab = $('#buses');
+                    for (var i = 0; i < data.length; i++){
+                        elem_id = 'bus-id-' + data[i].id;
+                        tab.append($('<tr id="' + elem_id + '"><td>' + data[i].codigo + "</td><td>" + data[i].nome + "</td><td>" + data[i].sentido + "</td></tr>"));
+                        $("#"+elem_id).click(function(){
+                            load_route(this.id.replace("bus-id-",""));
+                        });
+                    }
+                    tab.append($("</tbody>"));
+                }
+
+            });
+
+
+// modified from: http://blogs.digitss.com/javascript/jquery-javascript/implementing-quick-table-search-using-jquery-filter/
+// When document is ready: this gets fired before body onload :) 
+$(document).ready(function(){
+    // Write on keyup event of keyword input element
+    $("#kwd_search").keyup(function(){
+        // When value of the input is not blank
+        if( $(this).val() != "")
+        {
+            // Show only matching TR, hide rest of them
+            $("#buses tbody>tr").hide();
+            $("#buses td:contains-ci('" + $(this).val() + "')").parent("tr").show();
+        }
+        else
+        {
+            // When there is no input or clean again, show everything back
+            $("#buses tbody>tr").show();
+        }
+    });
+});
+// jQuery expression for case-insensitive filter
+$.extend($.expr[":"], 
+{
+    "contains-ci": function(elem, i, match, array) 
+    {
+        return (elem.textContent || elem.innerText || $(elem).text() || "").toLowerCase().indexOf((match[3] || "").toLowerCase()) >= 0;
+    }
+});
+
+        </script>
+    </head>
+    <body>
+        <div id="route">
+            <input type="text" id="kwd_search" class="searchfield" type="text" value="Filtrar por..." onfocus="if (this.value == 'Filtrar por...') {this.value = '';}" onblur="if (this.value == '') {this.value = 'Filtrar por...';}" />
+            <table id="buses" class="gridtable">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Sentido</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <div id="map_canvas"></div>
+    </body>
 <html>
