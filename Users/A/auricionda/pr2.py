@@ -193,3 +193,198 @@ while b !=142:
     scraperwiki.sqlite.save(unique_keys=['orden'],data={'orden':b,'id':str(a[b]),'Nombre':groupname,'Descripcion':groupdesc,'Categoria':groupcategoria,'Menciones':groupmenciones,'Origen ':origendelainiciativa,'Origen otro ':origendelainiciativaotro,'Estado de Avance':estadodelavance,'Necesidad':necesidad,'Solucion':explique,'Innovador Propuesta':innovadorpropuesta,'Innovador Donde':innovadordonde,'Diferenciacion':innovadordiff,'Esta a la Vanguardia':innovadorvanguardia,'Quien compra':quiencompra,'Como piensa vender':comovende,'Relacion con clientes':conseguirclientes,'Generar Ingresos':generaringresos,'Actividades':actividades,'Recursos':recursos,'Canales':canales,'Socios':conecciones,'Factores Criticos':factorescriticos,'Factores Criticos Otro ':factorescriticosotro,'Impacto':impacto,'Minimizar Impactos Negativos':minimizar,'Tiempo para Lanzamiento':tiempo,'Inversion para Lanzamiento':inversion,'Capital de Inversiones y Operativo':comentarios,'Equipo':equipo,'Beneficiarios':quienbeneficiara,'Necesidad Social':necesidadsocial,'Direccion del proyecto Social':dirigirnecesidad,'Medir el Impacto Social':impactosocial,'Areas de Accion':areasaccion,'Notificaciones via Correo':groupnotifymembers})
     b=b+1    
 
+import scraperwiki
+import mechanize
+import lxml.html
+a=[
+'http://www.innovabolivia.bo/grupos/good-finish/',
+'http://www.innovabolivia.bo/grupos/sistema-de-coleccion-y-filtracion-de-agua-de-lluvia-para-suministra-a-una-lavadora-de-ropa/',
+'http://www.innovabolivia.bo/grupos/supervision-control-y-adquisicion-de-datos-remotos-para-microempresas-con-altos-niveles-de-seguridad/',
+'http://www.innovabolivia.bo/grupos/creacion-de-la-escuela-nacional-de-tecnicos-en-emrgencias-medicas/',
+'http://www.innovabolivia.bo/grupos/diseno-de-una-planta-piloto-para-la-obtencion-de-negro-de-carbon-a-partir-del-gas-natural-en-la-localidad-de-caracollo/',
+'http://www.innovabolivia.bo/grupos/compostaje-de-residuos-solidos-organicos-en-un-sistema-tipo-tambor/',
+'http://www.innovabolivia.bo/grupos/comercio-movil/',
+'http://www.innovabolivia.bo/grupos/desarrollo-de-un-videojuego-educativo-para-la-formacion-de-nativos-digitales/',
+'http://www.innovabolivia.bo/grupos/tecnologia-aplicada-al-gas-natural/',
+'http://www.innovabolivia.bo/grupos/fabricacion-de-agua-destilada/',
+'http://www.innovabolivia.bo/grupos/creacion-y-desarrollo-de-videojuegos/',
+'http://www.innovabolivia.bo/grupos/crema-regeneradora-patitim/',
+'http://www.innovabolivia.bo/grupos/voto-digital/',
+'http://www.innovabolivia.bo/grupos/sistema-de-reutilizacion-de-aguas-grises/',
+'http://www.innovabolivia.bo/grupos/produccion-de-pizarras-digitales-interactivas/',
+'http://www.innovabolivia.bo/grupos/bordadora-computarizada-y-trazador-para-pymes/',
+'http://www.innovabolivia.bo/grupos/educacion-sin-exclusion/',
+'http://www.innovabolivia.bo/grupos/extraccion-selectiva-de-colorantes-del-achiote/',
+'http://www.innovabolivia.bo/grupos/generador-eolico-maglev/',
+'http://www.innovabolivia.bo/grupos/gustavo-antequera/',
+'http://www.innovabolivia.bo/grupos/estudio-del-contenido-de-fibra-almidon-resistente-y-contenido-de-polifenoles-asociados-a-fibra-dietetica-en-tuberculos-andinos-para-su-formulacion-como-alimentos-con-propiedades-hipoglicemian/',
+'http://www.innovabolivia.bo/grupos/eduteca-bolivia/',
+'http://www.innovabolivia.bo/grupos/deybby/',
+'http://www.innovabolivia.bo/grupos/biodegradacion-de-residuos-forestales-maderables-541712331/',
+'http://www.innovabolivia.bo/grupos/mi-botiquin/',
+'http://www.innovabolivia.bo/grupos/llamadas-entrantens-y-salientes-por-comandos-de-voz-para-telefonos-fijos/',
+'http://www.innovabolivia.bo/grupos/bee-fruit/',
+'http://www.innovabolivia.bo/grupos/empresa-de-obtencion-de-extractos-naturales/',
+'http://www.innovabolivia.bo/grupos/red-medicos/',
+'http://www.innovabolivia.bo/grupos/diseno-de-una-incubadora-neonatal/',
+'http://www.innovabolivia.bo/grupos/movilizacion-asistida-de-personas-invidentes/',
+'http://www.innovabolivia.bo/grupos/softchikhi/',
+'http://www.innovabolivia.bo/grupos/produccion-de-morera-en-el-occidente-del-pais/',
+'http://www.innovabolivia.bo/grupos/%E2%9D%A3%E2%8C%A8patrones-digitales-en-tela-sublimada%E2%9D%A3/',
+'http://www.innovabolivia.bo/grupos/placamani/',
+'http://www.innovabolivia.bo/grupos/conoce-mi-negocio/',
+'http://www.innovabolivia.bo/grupos/plantas-de-biogas-y-generadores-de-energia/',
+'http://www.innovabolivia.bo/grupos/maples-de-huevo-a-base-de-plumas-de-pollo-una-alternativa-para-el-medio-ambiente/',
+'http://www.innovabolivia.bo/grupos/colegio-viajero/',
+'http://www.innovabolivia.bo/grupos/yapa/',
+'http://www.innovabolivia.bo/grupos/generador-de-electricidad-gratuita/',
+'http://www.innovabolivia.bo/grupos/obtencion-de-probables-nuevas-variedades-de-papa-mejoradas-y-produccion-del-ferpap/',
+'http://www.innovabolivia.bo/grupos/hazlo-tu/',
+'http://www.innovabolivia.bo/grupos/respuestas/',
+'http://www.innovabolivia.bo/grupos/pasarela-de-pago-virtual/',
+'http://www.innovabolivia.bo/grupos/obtencion-y-purificacion-de-crudos-de-saponina/',
+'http://www.innovabolivia.bo/grupos/www-noencontrado-org/',
+'http://www.innovabolivia.bo/grupos/biogeos/',
+'http://www.innovabolivia.bo/grupos/energia-magnetica/',
+'http://www.innovabolivia.bo/grupos/jackpack/',
+'http://www.innovabolivia.bo/grupos/tu-papel-mi-pael/',
+'http://www.innovabolivia.bo/grupos/enriquecimiento-del-suero-lacteo-dulce-para-la-fabricacion-de-bebidas-hidratantes-y-energizantes/',
+'http://www.innovabolivia.bo/grupos/eficacia-de-un-enjuague-bucal-en-base-a-aloe-vera-a-diferentes-concentraciones/',
+'http://www.innovabolivia.bo/grupos/tmce-task-management-centered-email/',
+'http://www.innovabolivia.bo/grupos/divierte-tech/',
+'http://www.innovabolivia.bo/grupos/panales-que-cambian-de-color-cuando-estan-sucios/',
+'http://www.innovabolivia.bo/grupos/aditivos-nutricionales-a-partir-de-pseudocereales/',
+'http://www.innovabolivia.bo/grupos/maquinas-trotadoras-generadoras-de-energia-electrica/',
+'http://www.innovabolivia.bo/grupos/sistema-de-telemetria-para-el-monitoreo-de-la-condiciones-ambientales-del-area-rural/',
+'http://www.innovabolivia.bo/grupos/alternativa-sustentable-de-materiales-de-construccion-en-paneles-de-revestimiento-interior-a-partir-de-cemento-y-fibras-de-madera/',
+'http://www.innovabolivia.bo/grupos/codigo-postal-georeferenciado-en-santa-cruz/',
+'http://www.innovabolivia.bo/grupos/produccion-de-ladrillos-pet-y-cemento/',
+'http://www.innovabolivia.bo/grupos/sistema-de-emision-de-citas-medicas-via-web/',
+'http://www.innovabolivia.bo/grupos/jose-rodrigo/',
+'http://www.innovabolivia.bo/grupos/vivienda-social-comunitaria-para-personas-de-escasos-recursos/',
+'http://www.innovabolivia.bo/grupos/te-digestivo-a-partir-de-la-satureja-boliviana-353790063/',
+'http://www.innovabolivia.bo/grupos/produccion-de-la-goma-de-mascar-de-coca/',
+'http://www.innovabolivia.bo/grupos/produccion-de-baldosas-de-caucho-reciclado/',
+'http://www.innovabolivia.bo/grupos/estrategias-de-intervencion-psicologica-para-fortalecer-la-adherencia-al-tratamiento-antirretroviral-en-pacientes-con-vihsida-en-el-hospital-viedma-de-cochabamba/',
+'http://www.innovabolivia.bo/grupos/servicio-lavado-de-autos-en-seco/',
+'http://www.innovabolivia.bo/grupos/desarrollo-de-tecnicas-moleculares-para-la-deteccion-de-microorganismos-patogenos-en-castana-para-el-mejoramiento-en-la-calidad-de-exportacion-y-en-los-procesos-de-la-cadena-productiva/',
+'http://www.innovabolivia.bo/grupos/sawers-3d/',
+'http://www.innovabolivia.bo/grupos/afinador-y-metronomo-usb/',
+'http://www.innovabolivia.bo/grupos/estudio-tecnico-de-una-planta-obtencion-de-hidrogeno-a-partir-de-energia-solar-para-su-post-utilizacion-en-el-proceso-de-blending-con-gas-natural/',
+'http://www.innovabolivia.bo/grupos/productos-derivados-de-la-moringa/',
+'http://www.innovabolivia.bo/grupos/biorrediacion-del-agua-del-rio-choqueyapu/',
+'http://www.innovabolivia.bo/grupos/salsa-paltacream/',
+'http://www.innovabolivia.bo/grupos/carlos-ernesto-ibarra-ortuno-356244729/',
+'http://www.innovabolivia.bo/grupos/control-de-malezas-a-traves-de-coberturas-vegetales-en-banano/',
+'http://www.innovabolivia.bo/grupos/produccion-de-deshidratador-solar/',
+'http://www.innovabolivia.bo/grupos/produccion-de-cocina-solar/',
+'http://www.innovabolivia.bo/grupos/motor-de-aire-comprimido/',
+'http://www.innovabolivia.bo/grupos/purificador-de-agua-para-zonas-rurales/',
+'http://www.innovabolivia.bo/grupos/bebida-hidratante-y-energizante-a-partir-del-suero-lacteo-dulce/',
+'http://www.innovabolivia.bo/grupos/cuidar/',
+'http://www.innovabolivia.bo/grupos/generacion-de-energia-aparir-de-ion-litio/',
+'http://www.innovabolivia.bo/grupos/focos-led-de-alta-eficiencia-y-bajo-consumo/',
+'http://www.innovabolivia.bo/grupos/integracion-de-nuis-a-sistemas-de-entretenimiento-mediante-kinect-y-su-sdk/',
+'http://www.innovabolivia.bo/grupos/produccion-de-biocarbon/',
+'http://www.innovabolivia.bo/grupos/dennis-garcia-guerrero/',
+'http://www.innovabolivia.bo/grupos/conversion-a-dual-combustible-diesel-gas-natural-en-motores-estacionarios/',
+'http://www.innovabolivia.bo/grupos/kusisina-amparampi/',
+'http://www.innovabolivia.bo/grupos/sistema-de-control-automatizado-para-coadyuvar-a-la-policia-nacional-en-el-control-de-vehiculos-mediante-camaras-estacionarias-yo-modulos-moviles-en-las-trancas-bolivianas/',
+'http://www.innovabolivia.bo/grupos/portal-red-alas/',
+'http://www.innovabolivia.bo/grupos/brahian-german-franco-bley/',
+'http://www.innovabolivia.bo/grupos/diatoil/',
+'http://www.innovabolivia.bo/grupos/easy-vote/',
+'http://www.innovabolivia.bo/grupos/cocanex/',
+'http://www.innovabolivia.bo/grupos/%e2%97%beguay%e2%97%be-indumentaria-urbana-boliviana-%e2%96%ba/',
+'http://www.innovabolivia.bo/grupos/confia-ayuda-a-bolivia/',
+'http://www.innovabolivia.bo/grupos/hamagica/',
+'http://www.innovabolivia.bo/grupos/robots-de-dessarrollo-para-desarrollo-de-electromecanica/',
+'http://www.innovabolivia.bo/grupos/potabilizacion-de-aguas-servidas/',
+'http://www.innovabolivia.bo/grupos/generium-net/',
+'http://www.innovabolivia.bo/grupos/crunchis-productora-y-comercializadora-de-snacks-bolivianos/',
+'http://www.innovabolivia.bo/grupos/speedelo/',
+'http://www.innovabolivia.bo/grupos/base-de-datos-para-el-control-y-monitoreo-de-la-crianza-de-ganado-con-posibilidad-de-acceso-remoto/',
+'http://www.innovabolivia.bo/grupos/producto-adelgazante-organico-boliviano/',
+'http://www.innovabolivia.bo/grupos/alvaro-447974403/',
+'http://www.innovabolivia.bo/grupos/bio-arquitectura-pseudo-artificial/',
+'http://www.innovabolivia.bo/grupos/autos-electricos/',
+'http://www.innovabolivia.bo/grupos/ronald-vladimir-saire-yujra/',
+'http://www.innovabolivia.bo/grupos/obtencion-de-xilosa-y-xilooligosacaridos-a-partir-de-residuos-cerveceros/',
+'http://www.innovabolivia.bo/grupos/sistema-de-autoevaluacion-de-universidades/',
+'http://www.innovabolivia.bo/grupos/plantacion-en-vertical/',
+'http://www.innovabolivia.bo/grupos/powerheat/',
+'http://www.innovabolivia.bo/grupos/ensenar-aprender-compartir-tics-a-traves-de-la-deteccion-de-movimiento-y-realidad-aumentada/',
+'http://www.innovabolivia.bo/grupos/pizarra-digital-interactiva-a-bajo-costo/',
+'http://www.innovabolivia.bo/grupos/electricidad-de-la-tierra-aire-y-agua/',
+'http://www.innovabolivia.bo/grupos/tutor-de-ensenanza/',
+'http://www.innovabolivia.bo/grupos/cocina-ecologica/',
+'http://www.innovabolivia.bo/grupos/produccion-de-chlorella-vulgaris-un-suplemento-aimentario-de-primera-calidad/',
+'http://www.innovabolivia.bo/grupos/objeto-industrial-para-la-eliminacion-del-mosquito-aedes-aegypti-desde-el-exterior-de-una-vivienda/',
+'http://www.innovabolivia.bo/grupos/diseno-e-implementacion-de-un-sistema-de-telecontrol-domotica-por-medio-de-internet-y-un-telefono-movil/',
+'http://www.innovabolivia.bo/grupos/oportunidades-para-licenciados-en-derecho/',
+'http://www.innovabolivia.bo/grupos/bolsas-biodegradables/',
+'http://www.innovabolivia.bo/grupos/pirolisis-de-biomasa/',
+'http://www.innovabolivia.bo/grupos/motor-magnetico-autonomo/',
+'http://www.innovabolivia.bo/grupos/movilsificados-com/',
+'http://www.innovabolivia.bo/grupos/implementacion-de-centrales-microhidroelectricas-en-las-poblaciones-rurales-de-pando/',
+'http://www.innovabolivia.bo/grupos/proyecto-down/',
+'http://www.innovabolivia.bo/grupos/protesis-medica-brazo-robotico/',
+'http://www.innovabolivia.bo/grupos/centro-de-prevencion-y-atencion-psuicopedagogica/',
+'http://www.innovabolivia.bo/grupos/implementacion-de-la-materia-transversal-educacion-vial-en-el-curriculo-nacional-en-6-de-secundaria/',
+'http://www.innovabolivia.bo/grupos/innovate/',
+'http://www.innovabolivia.bo/grupos/el-enfoque-ludico-en-la-ensenanza-musical-inicial/',
+'http://www.innovabolivia.bo/grupos/videojuegos-historicos/',
+'http://www.innovabolivia.bo/grupos/aplicacion-para-emergencias/',
+'http://www.innovabolivia.bo/grupos/ecoworm/',
+'http://www.innovabolivia.bo/grupos/teja-ecologica-lucita/',
+]
+
+br = mechanize.Browser()
+response = br.open("http://www.innovabolivia.bo/wp-login.php")
+br.select_form(name="loginform")
+br["log"]="InnovaBolivia"
+br["pwd"]="1nn0v4b0l1v14"
+response2 = br.submit()
+
+b=0
+while b !=142:
+    response3=br.open(str(a[b])+"admin/edit-details/")
+    br.select_form(name="group-settings-form")
+    groupname=br["group-name"]
+    groupdesc=br["group-desc"]
+    groupcategoria=br["group-categoria"]
+    groupmenciones=br["group-menciones"]
+    origendelainiciativa=br["origendelainiciativa"]
+    origendelainiciativaotro=br["origendelainiciativaotro"]
+    estadodelavance=br["estadodelavance"]
+    necesidad=br["necesidad"]
+    explique=br["explique"]
+    innovadorpropuesta=br["innovadorpropuesta"]
+    innovadordonde=br["innovadordonde"]
+    innovadordiff=br["innovadordiff"]
+    innovadorvanguardia=br["innovadorvanguardia"]
+    quiencompra=br["quiencompra"]
+    comovende=br["comovende"]
+    conseguirclientes=br["conseguirclientes"]
+    generaringresos=br["generaringresos"]
+    actividades=br["actividades"]
+    recursos=br["recursos"]
+    canales=br["canales"]
+    conecciones=br["conecciones"]
+    factorescriticos=br["factorescriticos"]
+    factorescriticosotro=br["factorescriticosotro"]
+    impacto=br["impacto"]
+    minimizar=br["minimizar"]
+    tiempo=br["tiempo"]
+    inversion=br["inversion"]
+    comentarios=br["comentarios"]
+    equipo=br["equipo"]
+    quienbeneficiara=br["quienbeneficiara"]
+    necesidadsocial=br["necesidadsocial"]
+    dirigirnecesidad=br["dirigirnecesidad"]
+    impactosocial=br["impactosocial"]
+    areasaccion=br["areasaccion"]
+    groupnotifymembers=br["group-notify-members"]
+    scraperwiki.sqlite.save(unique_keys=['orden'],data={'orden':b,'id':str(a[b]),'Nombre':groupname,'Descripcion':groupdesc,'Categoria':groupcategoria,'Menciones':groupmenciones,'Origen ':origendelainiciativa,'Origen otro ':origendelainiciativaotro,'Estado de Avance':estadodelavance,'Necesidad':necesidad,'Solucion':explique,'Innovador Propuesta':innovadorpropuesta,'Innovador Donde':innovadordonde,'Diferenciacion':innovadordiff,'Esta a la Vanguardia':innovadorvanguardia,'Quien compra':quiencompra,'Como piensa vender':comovende,'Relacion con clientes':conseguirclientes,'Generar Ingresos':generaringresos,'Actividades':actividades,'Recursos':recursos,'Canales':canales,'Socios':conecciones,'Factores Criticos':factorescriticos,'Factores Criticos Otro ':factorescriticosotro,'Impacto':impacto,'Minimizar Impactos Negativos':minimizar,'Tiempo para Lanzamiento':tiempo,'Inversion para Lanzamiento':inversion,'Capital de Inversiones y Operativo':comentarios,'Equipo':equipo,'Beneficiarios':quienbeneficiara,'Necesidad Social':necesidadsocial,'Direccion del proyecto Social':dirigirnecesidad,'Medir el Impacto Social':impactosocial,'Areas de Accion':areasaccion,'Notificaciones via Correo':groupnotifymembers})
+    b=b+1    
+

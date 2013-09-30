@@ -65,3 +65,70 @@ $(window).ready(main);
 </body>
 </html>
 
+<html>
+<head>
+<script src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<style>
+  td { border: thin black solid; height: 40px; width: 40px; text-align: center }
+  table {border-collapse: collapse; border: thick #eee solid !important }
+</style>
+
+<script>
+function func(x) {
+    console.log(x); 
+}
+
+// http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-A6C9094
+function save() {
+    var k = $("#idkey").val(); 
+    var v = $("#idvalue").val(); 
+    var qs = "key="+encodeURIComponent(k)+"&value="+encodeURIComponent(v)+"&callback=func"; 
+    var url = "https://views.scraperwiki.com/run/simplekeyvalstore/?"+qs; 
+    var ns = document.createElement("script");
+    ns.type = "text/javascript";
+    ns.src = url;
+    document.head.appendChild(ns); 
+}
+
+function main() {
+    $("#idsave").click(save); 
+    $("#idfetch").click(fetch); 
+}
+
+function hhh() { alert("hi"); }
+
+$(window).ready(main); 
+
+</script>
+</head>
+<body>
+<table id="board">
+<tr>
+  <td id="00">X</td>
+  <td id="01">X</td>
+  <td id="02">X</td>
+</tr>
+<tr>
+  <td id="10">O</td>
+  <td id="11">X</td>
+  <td id="12"> </td>
+</tr>
+<tr>
+  <td id="20"> </td>
+  <td id="21"> </td>
+  <td id="22"> </td>
+</tr>
+</table>
+
+<input type="text" id="idkey" value="k">
+<input type="text" id="idvalue" value="v">
+<input type="button" id="idsave" value="save">
+
+<form action="">
+<input type="text" name="ddde" value="v   ///ddd">
+<input type="submit" name="idsave" value="sub">
+</form>
+
+</body>
+</html>
+

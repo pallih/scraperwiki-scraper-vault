@@ -105,3 +105,110 @@ with overlayed roads and placenames, and TERRAIN for a map of physical features
     </body>
 <html>
 
+<!-- 
+--   Making a map in a ScraperWiki View
+--
+--   The opens up in a new window, showing a map of the British Isles, centred on ScraperWiki HQ in Liverpool
+-->
+
+<!--
+We could always change the map’s central spot, zoom level, or style later using something like this:
+var pos = new google.maps.LatLng(52.11249, -2.61793);
+map.setCenter(pos);
+map.setZoom(2);
+map.setMapTypeId('TERRAIN');
+-->
+
+<!--
+Adding a marker at a specific point is just as easy, all you need is a latitude and a longitude:
+var pos = new google.maps.LatLng(52.11249, -2.61793);
+var marker = new google.maps.Marker({position:pos, map:map, animation: google.maps.Animation.DROP, title:"OHAI!"});
+-->
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>UK Universities and Colleges</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+
+        <!-- This CSS makes the map fill the whole window: -->
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+
+        <!-- Following two <script> tags pull in the Google Maps Javascript library (required to make the map), 
+             and the jQuery javascript library (will come in useful later) -->
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+
+
+        <script type="text/javascript">
+/*
+MAPPA VUOTA
+This bit of Javascript sets the location we’d like to centre our map on, and creates the map.
+Note how the options include the default zoom level, the location coordinates,
+and the style of map we’d like to see. Here we’re picking the ROADMAP style,
+but you could also use SATELLITE for a satellite image, HYBRID for a satellite image
+with overlayed roads and placenames, and TERRAIN for a map of physical features
+
+            var map;
+            $(function(){
+                var myOptions = {
+                    zoom: 7,
+                    center: new google.maps.LatLng(53.405092, -2.969876),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+            });
+*/
+
+            var map;
+            $(function(){
+                // Crea le opzioni della mappa
+                var myOptions = {
+                    zoom: 10,
+                    center: new google.maps.LatLng(0, 0),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                    };
+                // Istanzia la mappa
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+
+                // This little bit of code is all we need to get the locations of every UK university
+                // and college out of our datastore, and ready to plot on the map.
+                // Here we’re using the jQuery.ajax() function to call the ScraperWiki datastore
+                // and return a list of data points. Once jQuery has received the data, it passes it through
+                // a function we’re about to write called drop_markers().
+                $.ajax({ 
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=uk_universities_and_colleges&query=select%20*%20from%20%60universities%60%20where%20latitude%20is%20not%20null', 
+                    dataType: 'json', 
+                    success: function(data){ drop_markers(data); }
+                });
+    
+                // Putting data on the map: once the ScraperWiki datastore has returned our data points, 
+                // we need to get the Google Maps library to plot them on our map. To keep everything neat,
+                // we’ll do all of that in the drop_markers() function.
+                //The drop_markers() function takes our data points, extracts the latitude and longitude information from each, 
+                // and plots those points on the map. It then resizes the map to make sure all the points fit on at the same time.
+                function drop_markers(data){ 
+                    bounds = new google.maps.LatLngBounds(); 
+                    for(i = 0; i < data.length; i++){ 
+                        myLatLng = new google.maps.LatLng(data[i].latitude, data[i].longitude);
+                        markerOptions = {position: myLatLng, map: map, title: data[i].name};
+                        new google.maps.Marker(markerOptions);
+                        bounds.extend(myLatLng); 
+                        map.fitBounds(bounds);
+                    }
+                }
+            });
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>
+

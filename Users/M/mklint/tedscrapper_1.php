@@ -441,3 +441,446 @@ scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_AT.xml', 'Technology and 
 scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_AT.xml', 'Transport and Related Services');
 
 ?>
+<?php
+
+require 'scraperwiki/simple_html_dom.php';           
+
+  
+function scrapeTEDRSS($url, $sector){
+ print($url." ".$sector."\n");
+ // $xml = scraperWiki::scrape($url);  
+  $curl = curl_init($url);
+  curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+  curl_setopt($curl, CURLOPT_MAXREDIRS, 10);
+  curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+  curl_setopt($curl, CURLOPT_TIMEOUT, 20); // 10 second before aborting
+  // try CURLOPT_CONNECTTIMEOUT (in seconds)
+  // try CURLOPT_LOW_SPEED_LIMIT (to define what slow is, with):
+  // curl_setopt($curl, CURLOPT_LOW_SPEED_TIME, 10); (10 second at low speed before aborting
+  $xml = curl_exec($curl);
+  print (curl_error($curl)."\n");
+ $dom = new simple_html_dom();
+ $dom->load($xml);
+ 
+ $items = $dom->find("item");
+ foreach ($items as $item){
+   $guid = $item->find("guid");
+   $noticeURL = str_replace("TEXT", "DATA", $guid[0]->plaintext);
+   print($noticeURL." ".$sector." ".(memory_get_usage()/1000000)."MB"); echo "\n";
+   // $record = scrapeTEDDataPage ($noticeURL, $sector);
+   $record = array ('time' => microtime(true), 'sector' => $sector, 'url' => $noticeURL);
+   scraperwiki::save(array('sector', 'url'), $record); 
+   sleep(1);
+ }
+ $dom->__destruct();
+ unset($items); unset($dom); unset($xml);
+ print(((memory_get_usage()/1024)/1024)."MB\n");
+}
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_UK.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_UK.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_UK.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_UK.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_UK.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_UK.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_UK.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_UK.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_UK.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_UK.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_UK.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_UK.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_UK.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_UK.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_SK.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_SK.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_SK.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_SK.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_SK.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_SK.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_SK.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_SK.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_SK.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_SK.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_SK.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_SK.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_SK.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_SK.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_SI.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_SI.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_SI.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_SI.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_SI.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_SI.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_SI.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_SI.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_SI.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_SI.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_SI.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_SI.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_SI.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_SI.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_SE.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_SE.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_SE.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_SE.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_SE.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_SE.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_SE.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_SE.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_SE.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_SE.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_SE.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_SE.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_SE.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_SE.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_RO.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_RO.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_RO.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_RO.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_RO.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_RO.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_RO.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_RO.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_RO.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_RO.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_RO.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_RO.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_RO.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_RO.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_PT.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_PT.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_PT.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_PT.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_PT.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_PT.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_PT.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_PT.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_PT.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_PT.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_PT.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_PT.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_PT.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_PT.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_PL.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_PL.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_PL.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_PL.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_PL.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_PL.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_PL.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_PL.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_PL.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_PL.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_PL.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_PL.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_PL.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_PL.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_NL.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_NL.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_NL.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_NL.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_NL.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_NL.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_NL.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_NL.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_NL.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_NL.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_NL.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_NL.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_NL.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_NL.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_MT.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_MT.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_MT.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_MT.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_MT.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_MT.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_MT.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_MT.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_MT.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_MT.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_MT.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_MT.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_MT.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_MT.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_LV.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_LV.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_LV.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_LV.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_LV.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_LV.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_LV.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_LV.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_LV.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_LV.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_LV.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_LV.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_LV.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_LV.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_LU.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_LU.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_LU.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_LU.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_LU.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_LU.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_LU.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_LU.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_LU.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_LU.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_LU.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_LU.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_LU.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_LU.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_LT.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_LT.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_LT.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_LT.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_LT.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_LT.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_LT.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_LT.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_LT.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_LT.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_LT.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_LT.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_LT.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_LT.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_IT.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_IT.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_IT.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_IT.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_IT.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_IT.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_IT.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_IT.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_IT.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_IT.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_IT.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_IT.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_IT.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_IT.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_IE.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_IE.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_IE.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_IE.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_IE.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_IE.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_IE.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_IE.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_IE.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_IE.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_IE.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_IE.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_IE.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_IE.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_HU.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_HU.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_HU.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_HU.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_HU.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_HU.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_HU.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_HU.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_HU.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_HU.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_HU.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_HU.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_HU.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_HU.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_GR.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_GR.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_GR.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_GR.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_GR.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_GR.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_GR.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_GR.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_GR.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_GR.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_GR.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_GR.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_GR.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_GR.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_FR.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_FR.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_FR.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_FR.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_FR.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_FR.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_FR.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_FR.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_FR.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_FR.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_FR.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_FR.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_FR.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_FR.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_FI.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_FI.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_FI.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_FI.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_FI.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_FI.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_FI.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_FI.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_FI.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_FI.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_FI.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_FI.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_FI.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_FI.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_ES.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_ES.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_ES.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_ES.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_ES.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_ES.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_ES.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_ES.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_ES.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_ES.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_ES.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_ES.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_ES.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_ES.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_EE.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_EE.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_EE.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_EE.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_EE.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_EE.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_EE.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_EE.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_EE.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_EE.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_EE.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_EE.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_EE.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_EE.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_DK.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_DK.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_DK.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_DK.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_DK.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_DK.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_DK.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_DK.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_DK.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_DK.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_DK.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_DK.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_DK.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_DK.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_DE.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_DE.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_DE.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_DE.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_DE.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_DE.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_DE.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_DE.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_DE.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_DE.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_DE.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_DE.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_DE.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_DE.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_CZ.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_CZ.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_CZ.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_CZ.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_CZ.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_CZ.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_CZ.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_CZ.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_CZ.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_CZ.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_CZ.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_CZ.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_CZ.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_CZ.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_CY.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_CY.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_CY.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_CY.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_CY.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_CY.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_CY.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_CY.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_CY.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_CY.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_CY.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_CY.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_CY.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_CY.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_BG.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_BG.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_BG.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_BG.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_BG.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_BG.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_BG.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_BG.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_BG.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_BG.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_BG.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_BG.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_BG.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_BG.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_BE.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_BE.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_BE.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_BE.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_BE.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_BE.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_BE.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_BE.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_BE.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_BE.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_BE.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_BE.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_BE.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_BE.xml', 'Transport and Related Services');
+
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_agfo_AT.xml', 'Agriculture and Food');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_comp_AT.xml', 'Computer and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_core_AT.xml', 'Construction and Real Estate');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_educ_AT.xml', 'Education');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ener_AT.xml', 'Energy and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_ensa_AT.xml', 'Environment and Sanitation');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_fina_AT.xml', 'Finance and Related Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mapr_AT.xml', 'Materials and Products');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_mior_AT.xml', 'Mining and Ores');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_prpu_AT.xml', 'Printing and Publishing');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_reco_AT.xml', 'Research and Development');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_serv_AT.xml', 'Other Services');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_teeq_AT.xml', 'Technology and Equipment');
+scrapeTEDRSS('http://ted.europa.eu/TED/rss/en/RSS_tran_AT.xml', 'Transport and Related Services');
+
+?>

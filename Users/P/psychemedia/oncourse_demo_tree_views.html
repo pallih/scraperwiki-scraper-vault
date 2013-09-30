@@ -106,4 +106,112 @@ d3.select(self.frameElement).style("height", diameter + "px");
 
 </script>
 </body>
+</html><html>
+<head>
+<title></title>
+<script type="text/javascript" src="https://raw.github.com/mbostock/d3/master/d3.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script type="text/javascript">
+//---
+//http://jquery-howto.blogspot.com/2009/09/get-url-parameters-values-with-jquery.html
+$.extend({
+  getUrlVars: function(){
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+      hash = hashes[i].split('=');
+      vars.push(hash[0]);
+      vars[hash[0]] = hash[1];
+    }
+    return vars;
+  },
+  getUrlVar: function(name){
+    return $.getUrlVars()[name];
+  }
+});
+//---
+</script>
+<style>
+
+circle {
+  fill: rgb(31, 119, 180);
+  fill-opacity: .25;
+  stroke: rgb(31, 119, 180);
+  stroke-width: 1px;
+}
+
+.leaf circle {
+  fill: #ff7f0e;
+  fill-opacity: 1;
+}
+
+text {
+  font: 10px sans-serif;
+}
+
+</style>
+</head>
+
+<body>
+
+<script>
+
+var diameter = 960,
+    format = d3.format(",d");
+
+var pack = d3.layout.pack()
+    .size([diameter - 4, diameter - 4])
+    .value(function(d) { return d.size; });
+
+var svg = d3.select("body").append("svg")
+    .attr("width", diameter)
+    .attr("height", diameter)
+  .append("g")
+    .attr("transform", "translate(2,2)");
+
+if (!($.getUrlVar('progID')) )
+    q='?'
+  else
+    q="?progID="+escape($.getUrlVar('progID'))
+
+if (!($.getUrlVar('full')) )
+    q2=''
+  else
+    q2="&full="+escape($.getUrlVar('full'))
+
+if (!($.getUrlVar('awardID')) )
+    q3=''
+  else
+    q3="&awardID="+escape($.getUrlVar('awardID'))
+
+if (!($.getUrlVar('typ')) )
+    q4=''
+  else
+    q4="&typ="+escape($.getUrlVar('typ'))
+
+
+d3.json("https://views.scraperwiki.com/run/uni_of_lincoln_oncourse_tree_json/"+q+q2+q3+q4, function(error, root) {
+  var node = svg.datum(root).selectAll(".node")
+      .data(pack.nodes)
+    .enter().append("g")
+      .attr("class", function(d) { return d.children ? "node" : "leaf node"; })
+      .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+  node.append("title")
+      .text(function(d) { return d.name + (d.children ? "" : ": " + format(d.size)); });
+
+  node.append("circle")
+      .attr("r", function(d) { return d.r; });
+
+  node.filter(function(d) { return !d.children; }).append("text")
+      .attr("dy", ".3em")
+      .style("text-anchor", "middle")
+      .text(function(d) { return d.name.substring(0, d.r / 3); });
+});
+
+d3.select(self.frameElement).style("height", diameter + "px");
+
+</script>
+</body>
 </html>

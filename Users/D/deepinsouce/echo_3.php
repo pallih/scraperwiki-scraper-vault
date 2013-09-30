@@ -4,3 +4,9 @@ ehco 'hi';
 
 
 ?>
+<?php
+
+ehco 'hi';
+
+
+?>

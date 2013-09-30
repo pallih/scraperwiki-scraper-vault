@@ -147,3 +147,152 @@ OpenLayers.Protocol.Script.sqlite = OpenLayers.Class(OpenLayers.Protocol.Script,
         <div id="map" style="width: 1000px; height: 500px; border: 1px solid black;"></div>
     </body>
 </html>
+<html>
+    <head>
+        <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
+        <script type="text/javascript" src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+        <script type="text/javascript" src="http://trac.osgeo.org/openlayers/export/12196/trunk/openlayers/lib/OpenLayers/Protocol/Script.js"></script>
+        <script type="text/javascript">
+
+OpenLayers.Format.JSON.sqlite = OpenLayers.Class(OpenLayers.Format, {
+
+    defaultStyle:null,
+
+    extractStyles:true,
+
+    initialize: function(options) {
+        options = options || {};
+
+        if(options.extractStyles !== false) {
+            options.defaultStyle = {
+                'externalGraphic': OpenLayers.Util.getImagesLocation() +                                                               "marker.png",
+                'graphicWidth': 25,
+                'graphicXOffset': -10.5,
+                'graphicYOffset': -12.5
+            };
+        }
+        OpenLayers.Format.prototype.initialize.apply(this, [options]);
+        },
+        read: function(data) {
+                //data = new OpenLayers.Format.JSON().read(data);
+                result = []
+                for (var i = 0; i < data.length; i++) {
+                        var style = this.defaultStyle ? 
+                        OpenLayers.Util.applyDefaults({}, this.defaultStyle) :
+                        null;
+                        if(data[i]["icon"]){style["externalGraphic"]=(this.options["icon_dir"]||"")+data[i]["icon"]}  
+                        var feature = new OpenLayers.Feature.Vector(new OpenLayers.Geometry.Point(data[i]["lat"], data[i]["lon"]), data[i], style);
+                        result.push(feature);
+                }
+
+                return result;
+        },
+        
+    CLASS_NAME: "OpenLayers.Format.JSON.sqlite"
+  });
+
+OpenLayers.Protocol.Script.sqlite = OpenLayers.Class(OpenLayers.Protocol.Script, {
+        layer: null,
+        projectionPattern: /[0-9]+/i,
+        
+        read: function(options) {
+                options = options || {};
+                options.params = options.params || {};
+                //options.params["z"] = this.layer.map.getZoom();
+                var where= this.options.where;
+                options.where = this.options.where || "true";
+                if(options.filter)
+                    switch(options.filter.type) {
+                        case OpenLayers.Filter.Spatial.BBOX:
+                            var bbox = options.filter.value.toArray();
+                            options.where=((options.where=="true")?"":(options.where + " and "))+"lat>"+ bbox[0]+" and lon>"+ bbox[1]+ " and lat<"+ bbox[2]+ " and lon<"+ bbox[3];
+                            delete options.filter;
+                            break;
+                        default:
+                            OpenLayers.Console.warn(
+                                "Unknown filter type " + filter.type);
+                    }
+                
+                options.columns = this.options.columns || "*";
+                options.group = " group by " + this.options.group || "";
+                options.tables = this.options.tables || "swdata";
+                options.params["query"]="select "+options.columns+" from "+ options.tables +" where "+ options.where + options.group;
+                
+                var ret = OpenLayers.Protocol.Script.prototype.read.apply(this, [options]);
+                                return ret;
+        },
+        
+    CLASS_NAME: "OpenLayers.Protocol.Script.sqlite"
+});
+
+        var map;
+
+        function init(){
+                 var poi;
+                 map=new OpenLayers.Map('map', {
+                    layers: [
+                        new OpenLayers.Layer.OSM.Mapnik("Mapnik"),
+                        poi=new OpenLayers.Layer.Vector("POIs", {
+                                strategies: [new OpenLayers.Strategy.BBOX({resFactor: 1.1})],
+                                protocol: new OpenLayers.Protocol.Script.sqlite({url: "http://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=dvbt_reception_via_equinux", 
+                                    tables: "zip_location as z left join swdata as s on s.zip=z.zip and s.country=z.country", 
+                                    columns: "z.zip,lat,lng as lon,group_concat(channel) as channels, 'red'||count(channel)||'.png' as icon",
+                                    group: "s.zip",   
+                                    format: new OpenLayers.Format.JSON.sqlite({icon_dir:"http://google-maps-icons.googlecode.com/files/"})})
+}),
+                        ],
+                     controls: [
+                      new OpenLayers.Control.SelectFeature(poi,
+                        {onSelect: onFeatureSelect, onUnselect: onFeatureUnselect, stopSingle: true} ) ,
+                      new OpenLayers.Control.Navigation(),
+                      new OpenLayers.Control.PanZoomBar(),
+                      new OpenLayers.Control.LayerSwitcher(),
+                      new OpenLayers.Control.Attribution(),
+                                            
+],
+                     maxResolution: 'auto',
+                     });
+      map.controls[0].activate();
+      map.setCenter(new OpenLayers.LonLat(8.4, 49).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()),12);
+      navigator.geolocation.getCurrentPosition(function(position) {             
+            map.setCenter(new OpenLayers.LonLat(position.coords.longitude, position.coords.latitude).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()),12);  })
+
+}
+           function onPopupClose(evt) {
+                // 'this' is the popup.
+                var feature = this.feature;
+                if (feature.layer) { // The feature is not destroyed
+                    map.controls[0].unselect(feature);
+                } else { // After "moveend" or "refresh" events on POIs layer all 
+                         //     features have been destroyed by the Strategy.BBOX
+                    this.destroy();
+                }
+            }
+            function onFeatureSelect(feature) {
+                    var text="<h2>"+feature.attributes["zip"]+"</h2><ul><li>"+               feature.attributes["channels"].split(",").join("</li><li>")+"</li></ul>";
+                        
+                                popup = new OpenLayers.Popup.FramedCloud("featurePopup",
+                                         feature.geometry.getBounds().getCenterLonLat(),
+                                         new OpenLayers.Size(100,100),
+                                         text,
+                                         null, true, onPopupClose);
+                feature.popup = popup;
+                popup.feature = feature;
+                map.addPopup(popup, true);
+            }
+            function onFeatureUnselect(feature) {
+                
+                if (feature.popup) {
+                    popup.feature = null;
+                    map.removePopup(feature.popup);
+                    feature.popup.destroy();
+                    feature.popup = null;
+                }
+            }
+        </script>
+    </head>
+
+    <body onLoad="init()">
+        <div id="map" style="width: 1000px; height: 500px; border: 1px solid black;"></div>
+    </body>
+</html>

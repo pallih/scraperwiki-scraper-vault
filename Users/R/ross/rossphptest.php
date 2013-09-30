@@ -16,3 +16,9 @@ print "Hello"
 
 print "Hello"
 ?>
+<?php
+
+# Blank PHP
+
+print "Hello"
+?>

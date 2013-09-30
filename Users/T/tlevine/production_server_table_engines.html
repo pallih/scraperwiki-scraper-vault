@@ -78,4 +78,84 @@ mysql> select table_name, ENGINe from information_schema.TABLES ;
 | whitelist_whitelist                   | InnoDB |
 +---------------------------------------+--------+
 72 rows in set (0.00 sec)
+</pre><pre>
+
+mysql> select table_name, ENGINe from information_schema.TABLES ;
++---------------------------------------+--------+
+| table_name                            | ENGINe |
++---------------------------------------+--------+
+| CHARACTER_SETS                        | MEMORY |
+| COLLATIONS                            | MEMORY |
+| COLLATION_CHARACTER_SET_APPLICABILITY | MEMORY |
+| COLUMNS                               | MyISAM |
+| COLUMN_PRIVILEGES                     | MEMORY |
+| ENGINES                               | MEMORY |
+| EVENTS                                | MyISAM |
+| FILES                                 | MEMORY |
+| GLOBAL_STATUS                         | MEMORY |
+| GLOBAL_VARIABLES                      | MEMORY |
+| KEY_COLUMN_USAGE                      | MEMORY |
+| PARTITIONS                            | MyISAM |
+| PLUGINS                               | MyISAM |
+| PROCESSLIST                           | MyISAM |
+| PROFILING                             | MEMORY |
+| REFERENTIAL_CONSTRAINTS               | MEMORY |
+| ROUTINES                              | MyISAM |
+| SCHEMATA                              | MEMORY |
+| SCHEMA_PRIVILEGES                     | MEMORY |
+| SESSION_STATUS                        | MEMORY |
+| SESSION_VARIABLES                     | MEMORY |
+| STATISTICS                            | MEMORY |
+| TABLES                                | MEMORY |
+| TABLE_CONSTRAINTS                     | MEMORY |
+| TABLE_PRIVILEGES                      | MEMORY |
+| TRIGGERS                              | MyISAM |
+| USER_PRIVILEGES                       | MEMORY |
+| VIEWS                                 | MyISAM |
+| api_apimetric                         | MyISAM |
+| auth_group                            | InnoDB |
+| auth_group_permissions                | InnoDB |
+| auth_message                          | InnoDB |
+| auth_permission                       | InnoDB |
+| auth_user                             | InnoDB |
+| auth_user_groups                      | InnoDB |
+| auth_user_user_permissions            | InnoDB |
+| captcha_captchastore                  | InnoDB |
+| codewiki_code                         | InnoDB |
+| codewiki_code_last_month              | NULL   |
+| codewiki_code_relations               | InnoDB |
+| codewiki_codepermission               | MyISAM |
+| codewiki_codesetting                  | MyISAM |
+| codewiki_domainscrape                 | InnoDB |
+| codewiki_scraper                      | InnoDB |
+| codewiki_scraperrunevent              | InnoDB |
+| codewiki_usercoderole                 | InnoDB |
+| codewiki_vault                        | MyISAM |
+| codewiki_vault_members                | MyISAM |
+| codewiki_vaultrecord                  | MyISAM |
+| codewiki_view                         | InnoDB |
+| django_admin_log                      | InnoDB |
+| django_comment_flags                  | InnoDB |
+| django_comments                       | InnoDB |
+| django_content_type                   | InnoDB |
+| django_session                        | InnoDB |
+| django_site                           | InnoDB |
+| frontend_dataenquiry                  | InnoDB |
+| frontend_dataenquiry_last_month       | NULL   |
+| frontend_feature                      | MyISAM |
+| frontend_message                      | MyISAM |
+| frontend_userprofile                  | InnoDB |
+| frontend_userprofile_features         | MyISAM |
+| frontend_userprofile_last_month       | NULL   |
+| kpi_datastorerecordcount              | InnoDB |
+| kpi_monthlycounts                     | InnoDB |
+| market_solicitation                   | InnoDB |
+| market_solicitationstatus             | InnoDB |
+| registration_registrationprofile      | InnoDB |
+| south_migrationhistory                | InnoDB |
+| tagging_tag                           | InnoDB |
+| tagging_taggeditem                    | InnoDB |
+| whitelist_whitelist                   | InnoDB |
++---------------------------------------+--------+
+72 rows in set (0.00 sec)
 </pre>

@@ -180,4 +180,186 @@ last: <input type="text" id="ageAmount" value="3" size="4">
  <button type="button" onclick="plotScatter();">Filter</button>
 <div id="scatterchart"></div><code id="sql"></code>
 </body>
+</html><html>
+<head>
+<title>used 911 autoscout</title>
+<style type="text/css">
+    html, body, #scatterchart {
+        margin: 0;
+        padding: 0;
+        height: 95%;
+    }
+    zdiv#scraperwikipane {
+        display: none;
+    }
+</style>
+<!-- Load the required javascript to plot the graphs -->
+  <script src="https://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+  <script src="https://media.scraperwiki.com/js/json-min.js"></script>
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<!-- Load the visualization packages -->
+<script type="text/javascript">
+google.load('visualization', '1', {'packages':['corechart', 'table']});
+</script>
+
+<script type="text/javascript">
+function plotScatter() {
+var sql = 'select price, "<div><a href=" || url || " target=_blank>" || month || "/" || year || " " || description || "<br>" || gearbox || " - " || color || "<br>" || price || " € - " || mileage || " km - " || cv || " cv<br>" || city || " " || zip || "><br>created: " || datetime(createdtimestamp, \'unixepoch\', \'localtime\')|| "<br>lastseen: " || datetime(lastseen, \'unixepoch\', \'localtime\') || "<br><img src=" || photo || "</a></div>" as description, CASE year WHEN 2004 THEN mileage ELSE null END as y2004, CASE year WHEN 2005 THEN mileage ELSE null END as y2005, CASE year WHEN 2006 THEN mileage ELSE null END as y2006, CASE year WHEN 2007 THEN mileage ELSE null END as y2007, CASE year WHEN 2008 THEN mileage ELSE null END as y2008, CASE year WHEN 2009 THEN mileage ELSE null END as y2009 from `swdata` ';
+
+var sql = 'select price, "<div><a href=" || url || " target=_blank>" || month || "/" || year || " " || description || "<br>" || gearbox || " - " || color || "<br>" || price || " € - " || mileage || " km - " || cv || " cv<br>" || city || " " || zip || "<br>created: " || datetime(createdtimestamp, \'unixepoch\', \'localtime\')|| "<br>lastseen: " || datetime(lastseen, \'unixepoch\', \'localtime\') || "<br><img src=" || photo || "</a></div>" as description, mileage from `swdata` ';
+
+var sql = 'select price, "<div><a href=" || url || " target=_blank>" || month || "/" || year || " " || description || "<br>" || gearbox || " - " || color || "<br>" || price || " € - " || mileage || " km - " || cv || " cv<br>" || city || " " || zip || "<br>created: " || datetime(createdtimestamp, \'unixepoch\', \'localtime\')|| "<br>lastseen: " || datetime(lastseen, \'unixepoch\', \'localtime\') || "<br><img src=" || photo || "</a></div>" as description, CASE lower(gearbox) WHEN "manual" THEN mileage ELSE null END as man, CASE lower(gearbox) WHEN "automático" THEN mileage WHEN "semiautomático" THEN mileage ELSE null END as auto from `swdata` ';
+
+
+var yearFrom = document.getElementById("yearFrom").value;;
+var yearTo = document.getElementById("yearTo").value;;
+var cvFrom = document.getElementById("cvFrom").value;
+var cvTo = document.getElementById("cvTo").value;
+var kmFrom = document.getElementById("kmFrom").value;
+var kmTo = document.getElementById("kmTo").value;
+var priceFrom = document.getElementById("priceFrom").value;
+var priceTo = document.getElementById("priceTo").value;
+var ageAmount = document.getElementById("ageAmount").value;
+var ageUnit = document.getElementById("ageUnit").options[document.getElementById("ageUnit").selectedIndex].value;
+var gearbox = document.getElementById("gearbox").options[document.getElementById("gearbox").selectedIndex].value;
+var deleted = document.getElementById("deleted").options[document.getElementById("deleted").selectedIndex].value;
+var zip = document.getElementById("zip").options[document.getElementById("zip").selectedIndex].value;
+//var age = document.getElementById("age").options[document.getElementById("age").selectedIndex].value;
+
+sql = sql + 'WHERE year >= "' +  yearFrom + '" AND year <= "' +  yearTo + '" ';
+sql = sql + 'AND cv >= "' +  cvFrom + '" AND cv <= "' +  cvTo + '" ';
+sql = sql + 'AND mileage >= "' +  kmFrom + '" AND mileage <= "' +  kmTo + '" ';
+sql = sql + 'AND price >= "' +  priceFrom + '" AND price <= "' +  priceTo + '" ';
+sql = sql + 'AND lower(gearbox) LIKE "' +  gearbox + '" ';
+sql = sql + 'AND deleted LIKE "' +  deleted + '" ';
+sql = sql + 'AND zip LIKE "' +  zip + '" ';
+sql = sql + 'AND createdtimestamp > strftime("%s", "now", "-' + ageAmount + ageUnit + '")';
+
+//document.getElementById("sql").innerHTML = sql.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+//alert (sql);
+    var dbname= "autoscout_911";
+
+    //Column definition
+//    var columns = [
+//        {type: 'number', label: 'euros', index: 0},
+//        {type: 'number', label: '2004', index: 2},
+//        {type: 'tooltip', label: 'tooltip', index: 1},
+//        {type: 'number', label: '2005', index: 3},
+//        {type: 'tooltip', label: 'tooltip', index: 1},
+//        {type: 'number', label: '2006', index: 4},
+//        {type: 'tooltip', label: 'tooltip', index: 1},
+//        {type: 'number', label: '2007', index: 5},
+//        {type: 'tooltip', label: 'tooltip', index: 1},
+//        {type: 'number', label: '2008', index: 6},
+//        {type: 'tooltip', label: 'tooltip', index: 1},
+//        {type: 'number', label: '2009', index: 7},
+//        {type: 'tooltip', label: 'tooltip', index: 1}
+//    ];
+    var columns = [
+        {type: 'number', label: 'euros', index: 0},
+        {type: 'number', label: 'manual', index: 2},
+        {type: 'tooltip', label: 'tooltip', index: 1},
+        {type: 'number', label: 'auto', index: 3},
+        {type: 'tooltip', label: 'tooltip', index: 1},
+    ];
+
+    //Graph options
+    title = 'Porsche 911 - year: ' + yearFrom + ' - ' + yearTo + ' power (hp): ' + cvFrom + ' - ' + cvTo + ' price (€): ' + priceFrom + ' - ' + priceTo;
+
+    var options = {'title':title,
+        'vAxis': {title: "mileage (km)", titleTextStyle: {color: "black"}},
+        'tooltip': {isHtml: true},
+        'hAxis': {title: "price (euros)", titleTextStyle: {color: "black"}}
+    };
+
+    googlePlot(dbname, sql, "#scatterchart", columns,
+             options, function(element) {return new google.visualization.ScatterChart(element)});
+
+}
+
+/**
+Google Plot helper method that will fetch the data with json and draw a graph of the specified type.
+*/
+function googlePlot(dbname, query, divSelector, columns, options, graphConstructor) {
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    var adata = {name:dbname, query:query, format:"jsonlist"};
+    $(divSelector).html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        for(var coli  in columns) {
+            if(columns[coli] != undefined) {
+                if(columns[coli].type != 'tooltip') {
+                    data.addColumn(columns[coli].type, columns[coli].label);
+                } else {
+                    data.addColumn({type: 'string', role: 'tooltip', 'p': {'html': true}});
+                }
+                if(columns[coli].cleanFunction == undefined) {
+                    columns[coli].cleanFunction = function(data) {return data};
+                }
+            } else {
+                data.addColumn('string', 'text'+coli);
+            }
+        }
+        var rows = [ ];
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var cols = [];
+            for(var coli  in columns) {
+                if(columns[coli] != undefined) {
+                    cols[coli] = columns[coli].cleanFunction(tdata.data[i][columns[coli].index]);
+                } else {
+                    cols.push(undefined);
+                }
+            }
+            rows.push(cols);
+        }
+        data.addRows(rows);
+
+        var chart = graphConstructor($(divSelector)[0]);
+        chart.draw(data, options);
+    }});
+}
+
+//Start the drawing of the plot when the page loads.
+$(window).ready(function()
+{
+plotScatter();
+});
+</script>
+</head>
+
+<body>
+year: <input type="text" id="yearFrom" value="2006" size="1"> to <input type="text" id="yearTo" value="2015" size="1">
+hp: <input type="text" id="cvFrom" value="400" size="1"> to <input type="text" id="cvTo" value="800" size="1">
+<br>price: <input type="text" id="priceFrom" value="11000" size="4"> to <input type="text" id="priceTo" value="100000" size="4">
+km: <input type="text" id="kmFrom" value="1" size="4"> to <input type="text" id="kmTo" value="200000" size="4">
+<br>gearbox: <select id="gearbox">
+<option value="%" selected>all</option>
+<option value="manual">manual</option>
+<option value="%automático">tiptronic / pdk</option>
+</select>
+status: <select id="deleted" disabled>
+<option value="%" selected>all</option>
+<option value="0">online</option>
+<option value="1">sold / deleted</option>
+</select>
+zip: <select id="zip">
+<option value="%">All</option>
+<option value="E-AD%">Andorra</option>
+<option value="E-01%">Alava</option><option value="E-02%">Albacete</option><option value="E-03%">Alicante</option><option value="E-04%">Almeria</option><option value="E-33%">Asturias</option><option value="E-05%">Avila</option><option value="E-06%">Badajoz</option><option value="E-07%">Baleares</option><option value="E-08%">Barcelona</option><option value="E-09%">Burgos</option><option value="E-10%">Caceres</option><option value="E-11%">Cadiz</option><option value="E-39%">Cantabria</option><option value="E-12%">Castellon</option><option value="E-51%">Ceuta</option><option value="E-13%">Ciudad Real</option><option value="E-14%">Cordoba</option><option value="E-15%">Coruña, A</option><option value="E-16%">Cuenca</option><option value="E-20%">Guipuzcoa</option><option value="E-17%">Girona</option><option value="E-18%">Granada</option><option value="E-19%">Guadalajara</option><option value="E-21%">Huelva</option><option value="E-22%">Huesca</option><option value="E-23%">Jaen</option><option value="E-24%">Leon</option><option value="E-25%">Lerida</option><option value="E-27%">Lugo</option><option value="E-28%">Madrid</option><option value="E-29%">Malaga</option><option value="E-52%">Melilla</option><option value="E-30%">Murcia</option><option value="E-31%">Navarra</option><option value="E-32%">Orense</option><option value="E-34%">Palencia</option><option value="E-35%">Las Palmas</option><option value="E-36%">Pontevedra</option><option value="E-26%">La Rioja</option><option value="E-37%">Salamanca</option><option value="E-38%">Tenerife</option><option value="E-40%">Segovia</option><option value="E-41%">Sevilla</option><option value="E-42%">Soria</option><option value="E-43%">Tarragona</option><option value="E-44%">Teruel</option><option value="E-45%">Toledo</option><option value="E-46%">Valencia</option><option value="E-47%">Valladolid</option><option value="E-48%">Vizcaya</option><option value="E-49%">Zamora</option><option value="E-50%">Zaragoza</option></select><br>
+last: <input type="text" id="ageAmount" value="3" size="4">
+<select id="ageUnit" disabled>
+<option value="100 year" selected>all time</option>
+<option value=" hours">hour(s)</option>
+<option value=" days">day(s)</option>
+<option value=" months">month(s)</option>
+<option value=" years">year(s)</option>
+</select>
+
+ <button type="button" onclick="plotScatter();">Filter</button>
+<div id="scatterchart"></div><code id="sql"></code>
+</body>
 </html>

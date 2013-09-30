@@ -54,3 +54,59 @@ $.ajax({
 
 
 
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Informit book of the day</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" />
+    <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+    <script src="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/datejs/1.0/date.min.js"></script>
+    <script type="text/javascript" src="https://github.com/BorisMoore/jsrender/raw/master/jsrender.js"></script>
+    <script id="bookTemplate" type="text/x-jsrender">
+      <li><a href="{{:link}}"><img class="ui-li-thumb" src="{{:img}}" /><h3>{{:title}}</h3><p>{{:~formatDate(date)}}</p></a></li>
+    </script>
+    <script type="text/javascript">
+$.views.helpers({
+
+    formatDate: function( val ) {
+        return Date.parse(val).toString('yyyy-MM-dd HH:mm');
+    }
+});
+
+$.ajax({
+  url: 'http://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=informit_book_of_the_day&query=select%20*%20from%20%60swdata%60%20order%20by%20date%20desc%20limit%2010%20',
+  dataType: 'jsonp',
+  success: function(data){
+    $('body').append( $("<span>").text= "Data fetched" )
+    $( "#booksList" ).html(
+      $( "#bookTemplate" ).render( data )
+    ).listview("refresh");
+    
+  },
+  error: function(jqXHR, textStatus, errorThrown) {
+    $('body').append( $("<span>").text= "Error fetching data "+":"+errorThrown )
+  },
+});
+    </script>
+  </head>
+  <body>
+    <div data-role="page">
+      <div data-role="header"><h1>Recents books of the day</h1></div>
+      <div data-role="content">
+        <div class="content-primary">
+          <ul id="booksList" data-role="listview">
+          </ul>
+        </div>
+      </div>
+    </div> 
+  </body>
+<html>
+
+
+
+
+
+
+

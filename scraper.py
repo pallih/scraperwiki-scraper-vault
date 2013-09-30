@@ -9,6 +9,11 @@ import StringIO
 import os
 import collections
 import datetime
+import compiler
+from compiler.ast import Discard, Const
+from compiler.visitor import ASTVisitor
+import operator
+
 
 START_URL = 'https://classic.scraperwiki.com/browse/scrapers/?page=%s'
 JSON_URL = 'https://api.scraperwiki.com/api/1.0/scraper/getuserinfo?format=jsondict&username=%s'
@@ -88,7 +93,7 @@ def scrape_user_scrapers(username):
         print 'Oooops, something went wrong - must investigate'
         pass
 
-def write_readme_file():
+def collect_file_stats():
     stat_string = 'Count of file extensions<br>'
     extensions = collections.defaultdict(int)
     for path, dirs, files in os.walk(BASEDIR+'/Users/'):
@@ -97,6 +102,80 @@ def write_readme_file():
 
     for key,value in extensions.items():
         stat_string = stat_string + 'Extension: ' + str(key) + ' ' + str(value) + '<br>' #+ ' ' + value, +' items'
+    return stat_string
+
+class ImportVisitor(object):
+     def __init__(self):
+         self.modules = []
+         self.recent = []
+     def visitImport(self, node):
+         self.accept_imports()
+         self.recent.extend((x[0], None, x[1] or x[0], node.lineno, 0)
+                            for x in node.names)
+     def visitFrom(self, node):
+         self.accept_imports()
+         modname = node.modname
+         if modname == '__future__':
+             return # Ignore these.
+         for name, as_ in node.names:
+             if name == '*':
+                 # We really don't know...
+                 mod = (modname, None, None, node.lineno, node.level)
+             else:
+                 mod = (modname, name, as_ or name, node.lineno, node.level)
+             self.recent.append(mod)
+     def default(self, node):
+         pragma = None
+         if self.recent:
+             if isinstance(node, Discard):
+                 children = node.getChildren()
+                 if len(children) == 1 and isinstance(children[0], Const):
+                     const_node = children[0]
+                     pragma = const_node.value
+         self.accept_imports(pragma)
+     def accept_imports(self, pragma=None):
+         self.modules.extend((m, r, l, n, lvl, pragma)
+                             for (m, r, l, n, lvl) in self.recent)
+         self.recent = []
+     def finalize(self):
+         self.accept_imports()
+         return self.modules
+
+class ImportWalker(ASTVisitor):
+     def __init__(self, visitor):
+         ASTVisitor.__init__(self)
+         self._visitor = visitor
+     def default(self, node, *args):
+         self._visitor.default(node)
+         ASTVisitor.default(self, node, *args)
+
+def parse_python_source(fn):
+     contents = open(fn, 'rU').read()
+     try:
+        ast = compiler.parse(contents)
+        vis = ImportVisitor()
+
+        compiler.walk(ast, vis, ImportWalker(vis))
+        return vis.finalize()
+     except Exception as e:
+        #print e
+        pass
+
+
+def collect_python_stats():
+    modules = collections.defaultdict(int)
+
+    for path, dirs, files in os.walk(BASEDIR+'/Users/'):
+            for filename in files:
+                if os.path.splitext(filename)[1].lower() == '.py':
+                    imports = parse_python_source(path+'/'+filename)
+                    if imports:
+                        for x in imports:
+                            modules[x[0]] += 1
+    stat_string = 'Count of python module imports<br><br>'
+    sorted_x = sorted(modules.iteritems(), key=operator.itemgetter(1))
+    for x in sorted_x:
+        stat_string = stat_string  + str(x[0]) + ' ' + str(x[1])+ '<br>'
     return stat_string
 
 todo = scraperwiki.sqlite.select('* from usernames where done=0')
@@ -115,11 +194,12 @@ intro = 'This repository contains code for all public scrapers at scraperwiki.co
         + '<br><br>'\
         + 'Some statistics: <br><br>'
 
-file_stats = write_readme_file()
+file_stats = collect_file_stats()
 users = scraperwiki.sqlite.select('* from usernames')
 over_100 = scraperwiki.sqlite.select('username,scrapercount from usernames WHERE CAST(scrapercount AS integer)>100 order by scrapercount DESC')
 failed = scraperwiki.sqlite.select('* from usernames where done = 0')
 usercount = len(users)
+python_stats = collect_python_stats()
 
 print 'Writing readme'
 
@@ -135,6 +215,8 @@ with open(BASEDIR+'/readme.md', 'w') as the_file:
     for user in over_100:
         the_file.write(user['username'] +' ' + user['scrapercount'] + '<br>')
     the_file.write('<br><br>')
-    the_file.write('Usernames that retrieval failed for:<br>')
+    the_file.write('Usernames that retrieval failed (at least partially) for:<br>')
     for user in failed:
         the_file.write(user['username'] + '<br>')
+    the_file.write('<br><br>')
+    the_file.write(python_stats)

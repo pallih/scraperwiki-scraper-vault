@@ -107,3 +107,112 @@
     </body>
 <html>
 
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Alberta Wind Farms Current Production</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+            #infoWindow {
+                height: auto;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+            $(function(){
+                var dataUrl = 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=alberta_wind_and_aeso&query=select%20*%20from%20%60swdata%60%20where%20%60lat%60%20is%20not%20null%20limit%2020'
+
+                var myOptions = {
+                    zoom: 10,
+                    center: new google.maps.LatLng(0, 0),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+
+                $.ajax({
+                    url: dataUrl,
+                    dataType: 'json',
+                    success: function(data){ drop_markers(data); }
+                });
+
+                function drawBarChart(name, current, capacity) {
+                  // Create and populate the data table.
+                  var data1 = google.visualization.arrayToDataTable([
+                    ['Name', 'Current', 'Capacity'],
+                    [name, 0, capacity]
+                  ]);
+                
+                  var data2 = google.visualization.arrayToDataTable([
+                    ['Name', 'Current', 'Capacity'],
+                    [name, current, capacity-current]
+                  ]);
+                
+                  // Create and draw the visualization.
+                  var options = 
+                           {
+                             focusTarget:'category',
+                             isStacked:'true',
+                             width:80, height:100,
+                             vAxis:{maxValue: 81, minValue: 0, viewWindowMode: 'maximized', textPosition:'none'},
+                             hAxis:{textPosition:'none'},
+                             axisTitlesPosition:'none',
+                             legend:{position:'none'},
+                             animation:{duration:2000,easing:'out'},
+                             series:[
+                               //{color:'white', visibleInLegend:false},
+                               {color:'#5882FA'},
+                               {color:'#F3E2A9'}]
+                            };
+                
+                  var chart = new google.visualization.ColumnChart(document.getElementById('visualization'));
+                  chart.draw(data1,options);
+                  chart.draw(data2,options);
+                }
+
+                function drop_markers(data){
+
+                    bounds = new google.maps.LatLngBounds();
+
+                    var infoWindow = new google.maps.InfoWindow();
+
+                    for(i = 0; i < data.length; i++){
+                        dataItem = data[i];
+                        myLatLng = new google.maps.LatLng(dataItem .lat, dataItem .lon);
+                        markerOptions = {position: myLatLng, map: map, title: dataItem .name};
+                        marker = new google.maps.Marker(markerOptions);
+
+                        (function(marker, dataItem) {
+                        
+                          // Attaching a click event to the current marker
+                          google.maps.event.addListener(marker, "click", function(e) {
+                            contentInfo = "<div id='infoWindow'><b>" + dataItem.name + "</b>" + 
+                                "<p>Total Net Generation: " + dataItem.tng + " MW" +
+                                "<p>Maximum Capacity: " + dataItem.mc + " MW";
+                            infoWindow.setContent(contentInfo);
+                            infoWindow.open(map, marker);
+                          });
+                        
+                        })(marker, dataItem);
+
+                        bounds.extend(myLatLng);
+                    }
+                    
+                    map.fitBounds(bounds);
+                }
+            });
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>
+

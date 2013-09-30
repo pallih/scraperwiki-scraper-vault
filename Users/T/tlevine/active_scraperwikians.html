@@ -40,4 +40,46 @@ select username,owns,edits,edits/owns as "ratio", "https://scraperwiki.com/profi
 select username,owns,edits,edits/owns as "ratio", "https://scraperwiki.com/profiles/"||username as "ScraperWiki profile", "http://twitter.com/"||username as "Twitter?",biotext from `users` order by ratio desc limit 20;
 
 </pre>
+<p>The Twitter account is a guess.</p><style>
+html{
+  height: 100%;
+}
+body,iframe{
+  height: inherit;
+}
+.query_table {
+  width: 100%;
+}
+</style>
+
+<h1>Active ScraperWikians</h1>
+<h2>Data</h2>
+
+<h3>Most scrapers owned</h3>
+<iframe class="query_table" src="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=htmltable&name=scraperwiki_user_profiles&query=select%20username%2Cowns%2Cedits%2C%20%22https%3A%2F%2Fscraperwiki.com%2Fprofiles%2F%22%7C%7Cusername%20as%20%22ScraperWiki%20profile%22%2C%20%22http%3A%2F%2Ftwitter.com%2F%22%7C%7Cusername%20as%20%22Twitter%3F%22%2Cbiotext%20from%20%60users%60%20order%20by%20owns%20desc%20limit%2020"></iframe>
+
+<h3>Most scrapers edited</h3>
+<iframe class="query_table" src="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=htmltable&name=scraperwiki_user_profiles&query=select%20username%2Cowns%2Cedits%2Cedits%2Fowns%20as%20%22ratio%22%2C%20%22https%3A%2F%2Fscraperwiki.com%2Fprofiles%2F%22%7C%7Cusername%20as%20%22ScraperWiki%20profile%22%2C%20%22http%3A%2F%2Ftwitter.com%2F%22%7C%7Cusername%20as%20%22Twitter%3F%22%2Cbiotext%20from%20%60users%60%20order%20by%20edits%20desc%20limit%2020%3B%0A"></iframe>
+
+<h3>Highest edited:owned ratio</h3>
+<iframe class="query_table" src="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=htmltable&name=scraperwiki_user_profiles&query=select%20username%2Cowns%2Cedits%2Cedits%2Fowns%20as%20%22ratio%22%2C%20%22https%3A%2F%2Fscraperwiki.com%2Fprofiles%2F%22%7C%7Cusername%20as%20%22ScraperWiki%20profile%22%2C%20%22http%3A%2F%2Ftwitter.com%2F%22%7C%7Cusername%20as%20%22Twitter%3F%22%2Cbiotext%20from%20%60users%60%20order%20by%20ratio%20desc%20limit%2020%3B"></iframe>
+
+<h2>Observations</h2>
+<ul>
+  <li>People with lots of scrapers often have many versions of similar scrapers.</li>
+  <li></li>
+  <li></li>
+</ul>
+
+<h2>About</h2>
+<p>I run these queries</p>
+<pre>
+
+select username,owns,edits,edits/owns as "ratio", "https://scraperwiki.com/profiles/"||username as "ScraperWiki profile", "http://twitter.com/"||username as "Twitter?",biotext from `users` order by owns desc limit 20;
+
+select username,owns,edits,edits/owns as "ratio", "https://scraperwiki.com/profiles/"||username as "ScraperWiki profile", "http://twitter.com/"||username as "Twitter?",biotext from `users` order by edits desc limit 20;
+
+select username,owns,edits,edits/owns as "ratio", "https://scraperwiki.com/profiles/"||username as "ScraperWiki profile", "http://twitter.com/"||username as "Twitter?",biotext from `users` order by ratio desc limit 20;
+
+</pre>
 <p>The Twitter account is a guess.</p>

@@ -22,3 +22,11 @@ scraperwiki.scrape( 'http://www.servercode.co.uk', function($, html){
 
 
 
+var scraperwiki = require('scraperwiki');
+
+scraperwiki.scrape( 'http://www.servercode.co.uk', function($, html){
+    console.log( $('img').attr('src') );
+});
+
+
+

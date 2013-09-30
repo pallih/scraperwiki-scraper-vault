@@ -251,4 +251,257 @@ var stustaffVexp = new google.visualization.ChartWrapper({
 <br/>- sheet 0 of spreadsheet gives university groupings - <a href="https://developers.google.com/chart/interactive/docs/reference#google_visualization_data_join">join data</a> (<a href="http://code.google.com/apis/ajax/playground/?type=visualization#join">example</a>) and then allow filter by group?
 <br/>- create a view with a column that multiplies the value add column by 10
 <br/>- pull data for the same HEI from several (all?) sheets, add a new column to describe the subject related to the row data, and then allow a comparison of scores across subjects by university
+</p><script type="text/javascript" src="https://www.google.com/jsapi"></script><br />
+<script type="text/javascript">
+
+  // Load the Visualization API and the controls package.
+  // Packages for all the other charts you need will be loaded
+  // automatically by the system.
+  google.load('visualization', '1.1', {'packages':['controls']});
+
+  // Set a callback to run when the Google Visualization API is loaded.
+  google.setOnLoadCallback(initialize);
+
+function changeSubj(subjID){
+  var query=new google.visualization.Query('http://spreadsheets.google.com/tq?tq=select%20*where%20B%21%3D%27%27&key=0AonYZs4MzlZbdG1PRER2ZXZTNy1veDJDU2hrNU9PdkE&gid='+subjID)
+  
+  // Send the query with a callback function.
+  query.send(drawDashboard);
+}
+
+function initialize() {
+  // Replace the data source URL on next line with your data source URL.
+  var query = new google.visualization.Query('http://spreadsheets.google.com/tq?tq=select%20C%2CD%2CE%2CL%2CK%2CG%2CH&key=0AmbQbL4Lrd61dFJ6M004UWtKbFB2QmdFRnBWY0JkWUE');
+  query=new google.visualization.Query('http://spreadsheets.google.com/tq?tq=select%20*where%20B%21%3D%27%27&key=0AonYZs4MzlZbdG1PRER2ZXZTNy1veDJDU2hrNU9PdkE&gid=34')
+  
+  // Send the query with a callback function.
+  query.send(drawDashboard);
+}
+
+
+function drawDashboard(response) {
+  var data = response.getDataTable();
+  // Everything is loaded. Assemble your dashboard...
+/*
+var namePicker = new google.visualization.ControlWrapper({
+    'controlType': 'CategoryFilter',
+    'containerId': 'filter_div',
+    'options': {
+      'filterColumnLabel': 'driver',
+      'ui': {
+        'labelStacking': 'vertical',
+        'allowTyping': false,
+        'allowMultiple': false    
+      }
+    }
+  });
+//*/
+
+var gscoreRangeSlider = new google.visualization.ControlWrapper({
+          'controlType': 'NumberRangeFilter',
+          'containerId': 'filter1_div',
+          'options': {
+            'filterColumnLabel': 'Guardian score/100'
+          }
+        });
+
+
+var teachSatRangeSlider = new google.visualization.ControlWrapper({
+          'controlType': 'NumberRangeFilter',
+          'containerId': 'filter2_div',
+          'options': {
+            'filterColumnLabel': '% Satisfied with Teaching'
+          }
+        });
+
+var overallSatRangeSlider = new google.visualization.ControlWrapper({
+          'controlType': 'NumberRangeFilter',
+          'containerId': 'filter3_div',
+          'options': {
+            'filterColumnLabel': '% Satisfied overall with course'
+          }
+        });
+
+
+var expRangeSlider = new google.visualization.ControlWrapper({
+          'controlType': 'NumberRangeFilter',
+          'containerId': 'filter4_div',
+          'options': {
+            'filterColumnLabel': 'Expenditure per student (FTE)'
+          }
+        });
+
+var stuStaffRangeSlider = new google.visualization.ControlWrapper({
+          'controlType': 'NumberRangeFilter',
+          'containerId': 'filter5_div',
+          'options': {
+            'filterColumnLabel': 'Student:staff ratio'
+          }
+        });
+
+var careerRangeSlider = new google.visualization.ControlWrapper({
+          'controlType': 'NumberRangeFilter',
+          'containerId': 'filter6_div',
+          'options': {
+            'filterColumnLabel': 'Career prospects'
+          }
+        });
+
+var valueAddRangeSlider = new google.visualization.ControlWrapper({
+          'controlType': 'NumberRangeFilter',
+          'containerId': 'filter7_div',
+          'options': {
+            'filterColumnLabel': 'Value added score/10'
+          }
+        });
+
+var avEntryRangeSlider = new google.visualization.ControlWrapper({
+          'controlType': 'NumberRangeFilter',
+          'containerId': 'filter8_div',
+          'options': {
+            'filterColumnLabel': 'Average Entry Tariff'
+          }
+        });
+
+var assessSatRangeSlider = new google.visualization.ControlWrapper({
+          'controlType': 'NumberRangeFilter',
+          'containerId': 'filter9_div',
+          'options': {
+            'filterColumnLabel': '% Satisfied with Assessment'
+          }
+        });
+ 
+var rankingTable = new google.visualization.ChartWrapper({
+    'chartType': 'Table',
+    'containerId': 'rankingTable',
+    'options': {}
+});
+
+
+  var teachingSatVexp = new google.visualization.ChartWrapper({
+    'chartType': 'ScatterChart',
+    'containerId': 'teachingSatVexp_div',
+    
+    'options': {
+      'width': 800,
+      'height': 400,
+        'title': 'Teaching satisfaction vs. Expenditure per student',
+    },
+    'view': {'columns': [5,3,4]}
+  });
+ 
+   var entryVprospects = new google.visualization.ChartWrapper({
+    'chartType': 'ScatterChart',
+    'containerId': 'entryVprospects_div',
+    'options': {
+      'width': 800,
+      'height': 400,
+    'title': 'Prospects and Value Add v Entry Tariff',
+    },
+    'view': {'columns': [9, 7,8]}
+  });
+  
+var teachsatVstaffstu = new google.visualization.ChartWrapper({
+    'chartType': 'ScatterChart',
+    'containerId': 'teachsatVstaffstu_div',
+    'options': {
+      'width': 800,
+      'height': 400,
+'title': 'Teaching satisfaction vs. Student/staff ratio',
+    },
+    'view': {'columns': [6,3,4]}
+  });
+ 
+var stustaffVexp = new google.visualization.ChartWrapper({
+    'chartType': 'ScatterChart',
+    'containerId': 'stustaffVexp_div',
+    'options': {
+      'width': 800,
+      'height': 400,
+'title': 'Student/staff ratio vs. Av expediture per student',
+    },
+    'view': {'columns': [5,6]}
+  });
+  
+  var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div')).
+    bind([gscoreRangeSlider,teachSatRangeSlider,overallSatRangeSlider,expRangeSlider,stuStaffRangeSlider,careerRangeSlider,valueAddRangeSlider,avEntryRangeSlider,assessSatRangeSlider], [rankingTable,teachingSatVexp,entryVprospects,teachsatVstaffstu,stustaffVexp]).
+    draw(data)
+    
+  }
+
+</script><br />
+
+<h1>Scratchpad for Guardian University Ranking Data Visualisations</h1>
+<p>Browse through subject level data from the <a href="http://www.guardian.co.uk/news/datablog/2012/may/22/university-guide-2013-guardian-data">Guardian University guide 2013 data tables</a>.</p>
+<p>Select a subject heading, then filter column values using the sliders. You can also sort the table by column by clicking on column headers.</p>
+<p>This page is wikified, so please feel free to build on it...</p>
+
+<form>
+     <select name="subj"
+       onChange="changeSubj(this.options[selectedIndex].value);">
+          <option value='2'>Medicine</option>
+          <option value='3'>Dentistry</option>
+          <option value='4'>Veterinary Science</option>
+          <option value='5'>Anatomy</option>
+          <option value='6'>Nursing</option>
+          <option value='7'>Social work</option>
+          <option value='8'>Psychology</option>
+          <option value='9'>Pharmacy and Pharmacology</option>
+          <option value='10'>Biosciences</option>
+          <option value='11'>Chemistry</option>
+          <option value='12'>Physics</option>
+          <option value='13'>Agriculture, Forestry and Food</option>
+          <option value='14'>Earth and Marine Sciences</option>
+          <option value='15'>General Engineering</option>
+          <option value='16'>Chemical Engineering</option>
+          <option value='17'>Materials and Mineral Engineering</option>
+          <option value='18'>Civil Engineering</option>
+          <option value='19'>Electronic and Electrical Engineering</option>
+          <option value='20'>Mechanical Engineering</option>
+          <option value='21'>Mathematics</option>
+          <option value='22'>Computer Sciences and IT</option>
+          <option value='23'>Business and Management Studies</option>
+          <option value='24'>Tourism, Transport and Travel</option>
+          <option value='25'>Geography and Environmental Sciences</option>
+          <option value='26'>Social Policy and Administration</option>
+          <option value='27'>Anthropology</option>
+          <option value='28'>Media Studies/Communications/Librarianship</option>
+          <option value='29'>Education</option>
+          <option value='30'>Modern Languages/Linguistics</option>
+          <option value='31'>Archaeology</option>
+          <option value='32'>Law</option>
+          <option value='33'>Sociology</option>
+          <option value='34'>Politics</option>
+          <option value='35'>Economics</option>
+          <option value='36'>English</option>
+          <option value='37'>Art and Design</option>
+          <option value='39'>Drama and Dance</option>
+          <option value='40'>Architecture</option>
+          <option value='41'>Philosophy</option>
+          <option value='42'>Classics</option>
+          <option value='43'>Religious Studies/Theology</option>
+          <option value='44'>American Studies</option>
+          <option value='45'>History/History of Art</option>
+          <option value='46'>Sports Science</option>
+          <option value='47'>Planning</option>
+          <option value='48'>Music</option>
+     </select>
+</form>
+
+<div id="dashboard_div">
+<div id='filter1_div'></div>
+<div id='filter2_div'></div>
+<div id='filter3_div'></div>
+<div id='filter4_div'></div>
+<div id='filter5_div'></div>
+<div id='filter6_div'></div>
+<div id='filter7_div'></div>
+<div id='filter8_div'></div>
+<div id='filter9_div'></div>
+<div id='rankingTable'></div><!--Divs that will hold each control and chart--><div id="gscore_div"></div><div><span id="teachingSatVexp_div"></span><span id="teachsatVstaffstu_div"></span></div><div><span id="entryVprospects_div"></span><span id="stustaffVexp_div"></span></div></div><br />
+<p>TO DO:
+<br/>- work out how to get tooltips added on charts - requires use of <a href="https://developers.google.com/chart/interactive/docs/gallery/scatterchart">tooltip role</a>
+<br/>- sheet 0 of spreadsheet gives university groupings - <a href="https://developers.google.com/chart/interactive/docs/reference#google_visualization_data_join">join data</a> (<a href="http://code.google.com/apis/ajax/playground/?type=visualization#join">example</a>) and then allow filter by group?
+<br/>- create a view with a column that multiplies the value add column by 10
+<br/>- pull data for the same HEI from several (all?) sheets, add a new column to describe the subject related to the row data, and then allow a comparison of scores across subjects by university
 </p>

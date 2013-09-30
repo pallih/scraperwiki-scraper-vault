@@ -172,3 +172,177 @@
 </body>
 </html>
 
+<html lang="en">
+<head>
+<title>IATI Registry update frequency: per publisher</title>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" ></script>
+<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <h1>Browse <a href="http://iatiregistry.org">IATI Registry</a> revisions</h1>
+    <div class="pull-right">
+        <label for="include_iati_archiver"><input type="checkbox" id="include_iati_archiver" /> Include IATI Archiver</label>
+        <label for="limit">Show records: <input type="text" id="limit" value="50" /></label>
+        <label for="offset">Starting at: <input type="text" id="offset" value="0" /></label>
+    </div>
+    <label for="publisher_select">By Publisher: <select name="publisher_select" id="publisher_select" >
+    <option value="">Loading publishers...</option>
+    </select></label>
+    <input type="button" id="show_all_data" value="All publishers" />
+    <div id="publisher_title"></div>
+    <table id="publisher_data" class="table">
+    <thead><th>Date</th><th>Message</th><th>Publisher</th></thead>
+    <tbody>
+    <tr><td colspan="3">Please select a publisher or all publishers from above.</td></tr>
+    </tbody>
+    </table>
+    <div class="pager">
+      <ul class="pager">
+        <li class="previous disabled"><a href="#" id="previous">&laquo; Newer</a></li>
+        <li class="next"><a href="#" id="next">Older &raquo;</a></li>
+      </ul>
+    </div>
+</div>
+<div class="footer">
+    <div class="container">
+        <div class="pull-right">
+            <a href="http://twitter.com/mark_brough">by @mark_brough</a><br />
+            <a href="https://scraperwiki.com/scrapers/iati_registry_update_frequency">ScraperWiki scraper</a><br />
+            <a href="https://iatiregistry.org">IATI Registry</a>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+        $.getJSON('https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=iati_registry_update_frequency&query=select%20name%2C%20display_name%20from%20packagegroups%20order%20by%20name%3B', function(data) {
+             $("#publisher_select").empty().append('<option value="">Select one...</option>');
+             $.each(data, function(key, packagegroup) {
+                $("#publisher_select").append('<option value="' + packagegroup["name"] + '">' + packagegroup["display_name"] + '</option>');
+            });
+        });
+  });
+
+    var url_publisher_summary = "https://views.scraperwiki.com/run/iati_registry_frequency_views/?packagegroup_name="
+
+    var url_includeiatiarchiver = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=iati_registry_update_frequency&query=select%20rev.id%2C%20rev.timestamp%2C%20rev.message%2C%20pkggroup.name%2C%20pkggroup.display_name%0Afrom%20revisions%20rev%0Ainner%20join%20packages%20pkg%20on%20pkg.id%3Drev.package_id%0Ainner%20join%20packagegroups%20pkggroup%20on%20pkggroup.name%3Dpkg.packagegroup_name%0Awhere%20pkggroup.name%3D'"
+
+    var url_excludeiatiarchiver = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=iati_registry_update_frequency&query=select%20rev.id%2C%20rev.timestamp%2C%20rev.message%2C%20pkggroup.name%2C%20pkggroup.display_name%0Afrom%20revisions%20rev%0Ainner%20join%20packages%20pkg%20on%20pkg.id%3Drev.package_id%0Ainner%20join%20packagegroups%20pkggroup%20on%20pkggroup.name%3Dpkg.packagegroup_name%0Awhere%20rev.author%20!%3D%20'iati-archiver'%0Aand%20pkggroup.name%3D'"
+
+    var url_alldata_includeiatiarchiver = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=iati_registry_update_frequency&query=select%20rev.id%2C%20rev.timestamp%2C%20rev.message%2C%20pkggroup.name%2C%20pkggroup.display_name%0Afrom%20revisions%20rev%0Ainner%20join%20packages%20pkg%20on%20pkg.id%3Drev.package_id%0Ainner%20join%20packagegroups%20pkggroup%20on%20pkggroup.name%3Dpkg.packagegroup_name"
+
+    var url_alldata_excludeiatiarchiver = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=iati_registry_update_frequency&query=select%20rev.id%2C%20rev.timestamp%2C%20rev.message%2C%20pkggroup.name%2C%20pkggroup.display_name%0Afrom%20revisions%20rev%0Ainner%20join%20packages%20pkg%20on%20pkg.id%3Drev.package_id%0Ainner%20join%20packagegroups%20pkggroup%20on%20pkggroup.name%3Dpkg.packagegroup_name%0Awhere%20rev.author%20!%3D%20'iati-archiver'"
+
+
+    var limit = 50;
+    var offset = 0;
+    var which_selection = "all";
+
+    $("#publisher_select").change(function(e){
+        which_selection = "publisher";
+        offset = 0;
+        $("#offset").val(offset);
+        $(".previous").addClass("disabled");
+        get_packagegroup_data();
+    });
+
+    $("#include_iati_archiver").change(function(e){
+        get_packagegroup_data();
+    });
+
+    $("#limit").change(function(){
+        limit = $(this).val();
+        get_packagegroup_data();
+    });
+    $("#offset").change(function(){
+        offset = $(this).val();
+        get_packagegroup_data();
+    });
+    function get_packagegroup_data(){ 
+
+        packagegroup_name = $("#publisher_select").val();
+        $("#publisher_data tbody").empty();
+        if (limit < 1000){
+            wait_message = "Just getting that data for you...";
+        } else {
+            wait_message = "Just getting that data for you. It might take some time as you're asking for so many records."
+        }
+        $("#publisher_data tbody").append('<tr><td colspan="3"><i class="icon-refresh"></i> ' + wait_message + '</td></tr>');
+
+        $("#publisher_title").empty();
+        if (which_selection == "all") {
+            if ($("#include_iati_archiver").prop('checked')) {
+                var the_url = url_alldata_includeiatiarchiver;
+                var packagegroup_name_here = "";
+            } else {
+                var the_url = url_alldata_excludeiatiarchiver;
+                var packagegroup_name_here = "";
+            }
+        } else {
+            if ($("#include_iati_archiver").prop('checked')) {
+                var the_url = url_includeiatiarchiver;
+                var packagegroup_name_here = packagegroup_name + "'";
+            } else {
+                var the_url = url_excludeiatiarchiver;
+                var packagegroup_name_here = packagegroup_name + "'";
+            }
+            $.getJSON(url_publisher_summary + packagegroup_name, function(data) {
+                var updates = data['timeliness'];
+                if (updates === undefined) {
+                    updates = "Couldn't determine when it was last updated";
+                } else {
+                    updates = "Looks like it updates "+updates;
+                }
+                var title_data = '<h1>Publisher: '+packagegroup_name+'</h1>\n<p class="lead"> '+updates+'.</p>';
+                $("#publisher_title").html(title_data);
+            });
+        }
+        var order_by = "%0Aorder%20by%20rev.timestamp%20DESC"
+        $.getJSON(the_url + packagegroup_name_here + order_by + "%0Alimit%20" + limit + "%0Aoffset%20" + offset, function(data) {
+            $("#publisher_data tbody").empty();
+
+            if (data.length==0){
+                report_error("No results found");
+            } else {
+                $.each(data, function(key, revision) {
+                    if (revision["name"]) {
+                        var name = "" + revision["name"] + "";
+                    } else {
+                        var name = ""
+                    }  
+                    $("#publisher_data tbody").append('<tr><td><a href="http://iatiregistry.org/revision/' + revision["id"] + '">' + revision["timestamp"].substring(0,10) + '</a></td><td>' + revision['message'] + '</td><td><a href="http://iatiregistry.org/publisher/' + revision["name"] + '">' + revision["display_name"] + '</a></td></tr>');
+                });
+            }
+        });
+    }
+    function report_error(error){
+        $("#publisher_data tbody").append('<tr><td colspan="3"><i class="icon-remove"></i> ' + error + '</td></tr>');
+    }
+    $("#show_all_data").click(function() {
+        which_selection = "all";
+        offset = 0;
+        $(".previous").addClass("disabled");
+        $("#offset").val(offset);
+        get_packagegroup_data();
+    });
+    $("#next").click(function(){
+        $(".previous").removeClass("disabled");
+        offset = (offset+limit);
+        $("#offset").val(offset);
+        get_packagegroup_data();        
+    });
+    $("#previous").click(function(){
+        if (offset > 0) {
+            offset = (offset-limit);
+            $("#offset").val(offset);
+            get_packagegroup_data();
+        }
+        if (offset<=0) {
+           $(".previous").addClass("disabled");
+        }     
+    });
+</script>
+</body>
+</html>
+

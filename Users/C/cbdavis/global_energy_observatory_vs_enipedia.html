@@ -369,4 +369,375 @@
     <body>
         <div id="map_canvas"></div>
     </body>
+<html><!DOCTYPE html>
+<html>
+    <head>
+        <title>Power plants: GlobalEnergyObservatory vs Enipedia</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3&sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script src="http://jawj.github.com/OverlappingMarkerSpiderfier/bin/oms.min.js" type="text/javascript"></script>
+
+        <script type="text/javascript">
+            var map;
+            var markersEnipedia = [];
+            var markersScraper = [];
+            var oms;
+                
+            var infowindowScraper = new google.maps.InfoWindow({maxWidth: 350});
+            var infowindowEnipedia = new google.maps.InfoWindow();
+            
+            var queryString = {};
+            
+            $(function(){
+            
+                var params = location.search.split(/[?&]/);
+                for (var param in params) {
+                    queryString[params[param].split("=")[0]] = params[param].split("=")[1];
+                }
+                
+                var myOptions = {
+                    zoom: 2,
+                    center: new google.maps.LatLng(20, 0),
+                    mapTypeId: google.maps.MapTypeId.HYBRID
+                };
+                
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+
+                var controlDiv = createControls();
+                map.controls[google.maps.ControlPosition.TOP].push(controlDiv);
+            
+                oms = new OverlappingMarkerSpiderfier(map, {nearbyDistance: 32});
+                oms.addListener("click", open_info_enipedia);
+                oms.addListener("spiderfy", function(markers) { infowindowEnipedia.close() });
+                oms.legColors.usual[google.maps.MapTypeId.HYBRID] = oms.legColors.usual[google.maps.MapTypeId.SATELLITE] = "#0ff";
+                oms.legColors.highlighted[google.maps.MapTypeId.HYBRID] = oms.legColors.highlighted[google.maps.MapTypeId.SATELLITE] = "#f0f";
+
+                
+                function createControls() {
+                    var controlDiv = document.createElement('div');
+                    controlDiv.id = "map_controls";
+                    controlDiv.style.background = "-moz-linear-gradient(left center , rgba(255, 255, 255, 0.2) 5px, rgba(255, 255, 255, 0.7) 50px) repeat scroll 0% 0% transparent";
+                    controlDiv.style.fontFamily = 'Arial,sans-serif';
+                    controlDiv.style.fontSize = '10pt';
+                    
+                    controlDiv.appendChild(document.createTextNode("\u00a0\u00a0\u00a0Enipedia:"));
+                    var cboEnipediaCountries = document.createElement('select');
+                    cboEnipediaCountries.id = "enipedia_countries";
+                    controlDiv.appendChild(cboEnipediaCountries);
+                    google.maps.event.addDomListener(cboEnipediaCountries, 'change', function() { load_ppl_enipedia(cboEnipediaCountries.value, cboEnipediaFuels.value, true) });
+                    
+                    $.ajax({
+                        url: 'http://enipedia.tudelft.nl/sparql',
+                        data: {
+                            query:  "BASE <http://enipedia.tudelft.nl/wiki/>\n" +
+                                    "PREFIX prop: <http://enipedia.tudelft.nl/wiki/Property:>\n" +
+                                    "PREFIX cat: <http://enipedia.tudelft.nl/wiki/Category:>\n" +
+                                    "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                                    "select distinct(substr(str(?ctry),33) as ?country) where {\n" +
+                                    "  ?ppl rdf:type cat:Powerplant .\n" +
+                                    "  ?ppl prop:Country ?ctry .\n" +
+                                    "} order by ?country",
+                            output: "json"
+                        },
+                        dataType: 'jsonp',
+                        success: function(data) {
+                                    var list = data.results.bindings;
+                                    for (var i = 0; i < list.length; i++) {
+                                        var opt = document.createElement('option');
+                                        if (list[i].country.value == queryString["enipedia_country"])
+                                            opt.setAttribute("selected", "true");
+                                        opt.appendChild(document.createTextNode(list[i].country.value));
+                                        cboEnipediaCountries.appendChild(opt);
+                                    } }
+                    });
+                    
+                    var cboEnipediaFuels = document.createElement('select');
+                    cboEnipediaFuels.id = "scraper_fuels";
+                    controlDiv.appendChild(cboEnipediaFuels);
+                    google.maps.event.addDomListener(cboEnipediaFuels, 'change', function() { load_ppl_enipedia(cboEnipediaCountries.value, cboEnipediaFuels.value, false) });
+                    var fuels = ["", "Biomass", "Coal", "Geothermal", "Hydro", "Landfill_Gas", "Natural_Gas", "Nuclear", "Oil", "Solar", "Waste", "Wind"];
+                    for (var i in fuels) {
+                        var opt = document.createElement('option');
+                        if (fuels[i] == queryString["enipedia_fuel"])
+                            opt.setAttribute("selected", "true");
+                        opt.appendChild(document.createTextNode(fuels[i]));
+                        cboEnipediaFuels.appendChild(opt);
+                    }
+                    
+                    controlDiv.appendChild(document.createTextNode("\u00a0\u00a0\u00a0Scraper:"));
+                    var cboScraperCountries = document.createElement('select');
+                    cboScraperCountries.id = "scraper_countries";
+                    controlDiv.appendChild(cboScraperCountries);
+                    google.maps.event.addDomListener(cboScraperCountries, 'change', function() { load_ppl_scraper(cboScraperCountries.value, cboScraperFuels.value, true) });
+                    
+                    $.ajax({
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite',
+                    data: {
+                        name: "global_energy_observatory_power_plants",
+                        query: "select distinct Country from `powerplants` order by Country",
+                        format: "jsondict"
+                    },
+                    dataType: 'json',
+                        success: function(data) {
+                                    for (var i = 0; i < data.length; i++) {
+                                        var opt = document.createElement('option');
+                                        if (data[i].Country == queryString["scraper_country"])
+                                            opt.setAttribute("selected", "true");
+                                        opt.appendChild(document.createTextNode(data[i].Country));
+                                        cboScraperCountries.appendChild(opt);
+                                    } }
+                    });
+                    
+                    var cboScraperFuels = document.createElement('select');
+                    cboScraperFuels.id = "scraper_fuels";
+                    controlDiv.appendChild(cboScraperFuels);
+                    google.maps.event.addDomListener(cboScraperFuels, 'change', function() { load_ppl_scraper(cboScraperCountries.value, cboScraperFuels.value, false) });
+                    var fuels = ["", "Hydro", "Coal", "Gas", "Geothermal", "Nuclear", "Oil", "Solar_PV", "Solar_Thermal", "Waste", "Wind"];
+                    for (var i in fuels) {
+                        var opt = document.createElement('option');
+                        if (fuels[i] == queryString["scraper_fuel"])
+                            opt.setAttribute("selected", "true");
+                        opt.appendChild(document.createTextNode(fuels[i]));
+                        cboScraperFuels.appendChild(opt);
+                    }
+                    
+                    if (queryString["enipedia_country"])
+                        load_ppl_enipedia(queryString["enipedia_country"], queryString["enipedia_fuel"], false);
+                    if (queryString["scraper_country"])
+                        load_ppl_scraper(queryString["scraper_country"], queryString["scraper_fuel"], true);
+                        
+                    return controlDiv;
+                }
+
+
+                function load_ppl_scraper(country, fuel, zoom) {
+                    clearMarkers(markersScraper),
+                    $.ajax({
+                        url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite',
+                        data: {
+                            name: "global_energy_observatory_power_plants",
+                            query: "select Name, Country, Latitude_Start, Longitude_Start, Description_ID, Type as Fuel_type, " + 
+                                   "Type_of_Plant_rng1, Type_of_Fuel_rng1_Primary, Type_of_Fuel_rng2_Secondary, " + 
+                                   "coalesce(Design_Capacity_nbr,Design_Capacity_MWe_nbr,Design_Capacity_MWe_Peak_nbr) as Design_Capacity, " +
+                                   "State, Location, CurrentPage_sys, Operating_Company, Owners1, Year_Project_Commissioned, References1, References2 " +
+                                   "from `powerplants` where Latitude_Start is not null and Country = '" + country + "'" +
+                                   (fuel != "" ? " and (Type = '" + fuel + "' or Type_of_Fuel_rng1_Primary like '%" + fuel + "%' or Type_of_Fuel_rng2_Secondary like '%" + fuel + "%')" : ""), 
+                            format: "jsondict"
+                        },
+                        dataType: 'json',
+                        success: function(data){ drop_markers_scraper(data, zoom); }
+                    });
+                }
+                
+                function load_ppl_enipedia(country, fuel, zoom) {
+                    var filter = "";
+                    if (fuel == "Hydro" || fuel == "Solar" || fuel == "Wind")
+                        filter = " || (!bound(?fuel_type) && ?co2 = 0 && ?out > 0)";
+                    else if (fuel == "Coal")
+                        filter = " || (!bound(?fuel_type) && ?intensity >= 800 && ?intensity <= 1500)";
+                    else if (fuel == "Natural_Gas" || fuel == "Oil")
+                        filter = " || (!bound(?fuel_type) && ?intensity >= 300 && ?intensity <= 750)";
+                    else if (fuel == "Landfill_Gas")
+                        filter = " || (!bound(?fuel_type) && ?intensity >= 270 && ?intensity <= 320)";
+                    else if (fuel == "Waste")
+                        filter = " || (!bound(?fuel_type) && ?intensity >= 50 && ?intensity <= 120)";
+                        
+                    clearMarkers(markersEnipedia);
+                    $.ajax({
+                        url: 'http://enipedia.tudelft.nl/sparql',
+                        data: {
+                            query:  "BASE <http://enipedia.tudelft.nl/wiki/>\n" +
+                                    "PREFIX a: <http://enipedia.tudelft.nl/wiki/>\n" +
+                                    "PREFIX prop: <http://enipedia.tudelft.nl/wiki/Property:>\n" +
+                                    "PREFIX cat: <http://enipedia.tudelft.nl/wiki/Category:>\n" +
+                                    "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                                    "PREFIX fn: <http://www.w3.org/2005/xpath-functions#>\n" +
+                                    "select (substr(str(?ppl), 33) as ?wiki) ?name (substr(str(?own), 33) as ?ownerenc) ?owner \n" +
+                                    "?zip (substr(str(?town), 33) as ?city) (substr(str(?stat), 33) as ?state) ?point \n" +
+                                    "(substr(str(?fuel_type), 33) as ?fuel) (round(?out) as ?Output_MWh) \n" +
+                                    "(round(?co2 / 1000000) as ?CO2_emissions) (round(?intensity) as ?CO2_intensity) where {\n" +
+                                    "  ?ppl rdf:type cat:Powerplant .\n" +
+                                    "  ?ppl prop:Country a:" + country + " .\n" +
+                                    "  ?ppl rdfs:label ?name .\n" +
+                                    "  ?ppl prop:Ownercompany ?own .\n" +
+                                    "  ?ppl prop:City ?town .\n" +
+                                    "  ?ppl prop:Point ?point .\n" +
+                                    "  ?ppl prop:Annual_Energyoutput_MWh ?out .\n" +
+                                    "  ?ppl prop:Annual_Carbonemissions_kg ?co2 .\n" +
+                                    "  ?ppl prop:Intensity_kg_CO2_per_MWh_elec ?intensity .\n" +
+                                    "  OPTIONAL{?ppl prop:Primary_fuel_type ?fuel_type} .\n" +
+                                    "  OPTIONAL{?ppl prop:State ?stat} .\n" +
+                                    "  OPTIONAL{?ppl prop:Zipcode ?zip} .\n" +
+                                    "  OPTIONAL{?own rdfs:label ?owner} .\n" + 
+                                    (fuel != "" ? "  FILTER( REGEX(str(?fuel_type), \".*" + fuel + ".*\",\"i\") " + filter + ") .\n" : "") +
+                                    "} order by ?ppl",
+                            output: "json"
+                        },
+                        dataType: 'jsonp',
+                        success: function(data){ drop_markers_enipedia(data, zoom); }
+                    });
+                }
+
+            });
+
+
+            function clearMarkers(markersArray) {
+                if (markersArray) {
+                    for (var i in markersArray) {
+                        markersArray[i].setMap(null);
+                        oms.removeMarker(markersArray[i]); 
+                    }
+                    markersArray.length = 0;
+                }
+            }
+
+            function drop_markers_scraper(data, zoom){
+                var bounds = new google.maps.LatLngBounds();
+                for (var i = 0; i < data.length; i++){
+                    var fuelIcon = "";
+                    var fuel = data[i].Fuel_type;
+                    if (fuel.indexOf("Coal") >= 0)
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/falling_rocks.png";
+                    else if (fuel.indexOf("Oil") >= 0)
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/gas_stations.png";
+                    else if (fuel.indexOf("Gas") >= 0 || (fuel && fuel.indexOf("Gas") >= 0))
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/campfire.png";
+                    else if (fuel.indexOf("Hydro") >= 0 || fuel.indexOf("Pumped") >= 0)
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/water.png";
+                    else if (fuel.indexOf("Nuclear") >= 0)
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/caution.png";
+                    else if (fuel.indexOf("Solar_PV") >= 0)
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/sunny.png";
+                    else if (fuel.indexOf("Solar_Thermal") >= 0)
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/sunny.png";
+                    else if (fuel.indexOf("Waste") >= 0)
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/grocery.png";
+                    else if (fuel.indexOf("Wind") >= 0)
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/flag.png";
+                    else if (fuel.indexOf("Biomass") >= 0)
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/parks.png";
+                    else if (fuel.indexOf("Geothermal") >= 0)
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/shapes/volcano.png";
+                    else
+                        fuelIcon = "http://maps.google.com/mapfiles/kml/paddle/red-circle.png";
+                    myLatLng = new google.maps.LatLng(data[i].Latitude_Start, data[i].Longitude_Start);
+
+                    var capa = 0;
+                    if (data[i].Design_Capacity && !isNaN(parseInt(data[i].Design_Capacity)))
+                        // Running into errors like "Uncaught TypeError: Object 339 has no method 'replace'"
+                        // Is there a special case where replacing the commas is necessary?
+                        //capa = parseInt(data[i].Design_Capacity.replace(',',''));
+                        capa = parseInt(data[i].Design_Capacity);
+                    var factor = 1 + (capa == 0 ? 0 : Math.log(capa)/Math.LN10 - 3) / 5;
+                    var markerImage = {url: fuelIcon, size: {width:32*factor, height:32*factor}, scaledSize: {width:32*factor, height:32*factor} }
+                    var markerOptions = {position: myLatLng, map: map, title: data[i].Name, icon: markerImage, zIndex: 5000+i};
+
+                    var marker = new google.maps.Marker(markerOptions);
+                    marker.data = data[i];
+                    markersScraper.push(marker);
+                    google.maps.event.addListener(marker, 'click', function() { open_info_scraper(this)} );
+                    bounds.extend(myLatLng);
+                    if (zoom)
+                        map.fitBounds(bounds);
+                }
+            }
+            
+            function drop_markers_enipedia(data, zoom) {
+                var bounds = new google.maps.LatLngBounds();
+                var list = data.results.bindings;
+                
+                for (var i = 0; i < list.length; i++) {
+                    var fuelIcon = "";
+                    var fuel = list[i].fuel ? list[i].fuel.value : "";
+                    if (fuel.indexOf("Biomass") >= 0)
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/f/f0/Biomass.png";
+                    else if (fuel.indexOf("Biogas") >= 0 || fuel.indexOf("Landfill") >= 0)
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/5/5d/Biogas.png";
+                    else if (fuel.indexOf("Coal") >= 0)
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/a/a7/Coal.png";
+                    else if (fuel.indexOf("Gas") >= 0)
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/7/78/Gas.png";
+                    else if (fuel.indexOf("Oil") >= 0)
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/0/06/Oil.png";
+                    else if (fuel.indexOf("Hydro") >= 0)
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/0/08/Hydro.png";
+                    else if (fuel.indexOf("Nuclear") >= 0)
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/4/42/Nuclear.png";
+                    else if (fuel.indexOf("Solar") >= 0)
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/2/25/Solar.png";
+                    else if (fuel.indexOf("Waste") >= 0)
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/1/12/Waste.png";
+                    else if (fuel.indexOf("Wind") >= 0)
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/b/bf/Wind.png";
+                    else
+                        fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/d/dd/Unknown.png";
+
+                    var coords = list[i].point.value.split(',');
+                    var myLatLng = new google.maps.LatLng(coords[0], coords[1]);
+                
+                    var output = list[i].Output_MWh ? list[i].Output_MWh.value : 0;
+                    var factor = 0.5 + (output == 0 ? 0 : (Math.log(output)/Math.LN10/8) * 0.75);
+                    var markerImage = {url: fuelIcon, size: {width:32*factor, height:37*factor}, scaledSize: {width:32*factor, height:37*factor} }
+                    var markerOptions = {position: myLatLng, map: map, title: list[i].name.value, icon: markerImage};
+                    
+                    var marker = new google.maps.Marker(markerOptions);
+                    marker.data = list[i];
+                    markersEnipedia.push(marker);
+                    google.maps.event.addListener(marker, 'click', function() { open_info_enipedia(this)} );
+                    bounds.extend(myLatLng);
+                
+                    oms.addMarker(marker); 
+                }
+                if (zoom)
+                    map.fitBounds(bounds);
+            }
+            
+            function open_info_scraper(marker) {
+                var content = "<span style='font-size: 12pt'>" + marker.data.Name + "</span><ul style='font-size: 9pt; font-family: Arial'>";
+                for (var p in marker.data) {
+                     if ((p == "Fuel_type" || p == "Type_of_Fuel_rng1_Primary" || p == "Type_of_Fuel_rng2_Secondary" || p == "Type_of_Plant_rng1" || 
+                          p == "Design_Capacity" ||p == "State" || p == "Location" || p == "Operating_Company" || p == "Owners1" ||
+                          p == "Year_Project_Commissioned") && marker.data[p] != null)
+                         content += "<li>" + p.replace(/_/g," ") + ": " + marker.data[p] +"</li>";
+                 }
+                 if (marker.data.References1)
+                     content += "<li>web 1: <a href='" + marker.data.References1 + "' target='_blank'>" + marker.data.References1 + "</a></li>";;
+                 if (marker.data.References2)
+                     content += "<li>web 2: <a href='" + marker.data.References2 + "' target='_blank'>" + marker.data.References2 + "</a></li>";;
+                 content += "</ul><a href='http://globalenergyobservatory.org/geoid/" + marker.data.Description_ID + "' target='ScraperView'>View in GEO</a>";
+                infowindowScraper.setContent(content);
+                infowindowScraper.open(map, marker);
+            }
+            
+            function open_info_enipedia(marker) {
+                var reEncode = /-(\d{2})/g;
+                var content = "<div style='font-size: 9pt; font-family: Arial'><span style='font-size: 12pt'>" + marker.data.name.value + "</span><ul>";
+                for (var p in marker.data) {
+                    if (p != "wiki" && p != "name" && p != "point" && marker.data[p].value != null && !(p == "ownerenc" && marker.data.owner)) {
+                        if (marker.data[p].value.indexOf("-") > 0)
+                            marker.data[p].value = marker.data[p].value.replace(reEncode, function(match, p1) { return decodeURIComponent("%"+p1) } );
+                        content += "<li>" + p.replace(/_/g," ").replace("enc","") + ": " + marker.data[p].value.replace("_"," ").replace(".0e0","") + "</li>";
+                    }
+                }
+                content += "</ul><a href='http://enipedia.tudelft.nl/wiki/" + marker.data.wiki.value + "' target='EnipView'>view</a> | ";
+                content += "<a href='http://enipedia.tudelft.nl/enipedia/index.php?title=" + marker.data.wiki.value + "&action=formedit' target='EnipEdit'>edit</a> in Enipedia</div>";
+                infowindowEnipedia.setContent(content);
+                infowindowEnipedia.open(map, marker);
+            }
+
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
 <html>

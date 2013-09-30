@@ -48,3 +48,53 @@ function consumedata(tdata)
         <div id="map_canvas"></div>
     </body>
 <html>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Latest Earthqakes from USGS http://earthquake.usgs.gov</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<script type="text/javascript">
+
+    $(function(){
+        
+        $.ajax({ //get the latest earthquakes from http://earthquake.usgs.gov
+            url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=usgs_earthquakes_2&query=select%20*%20from%20%60swdata%60%20where%20LATdeg%20is%20not%20null%20and%20LONdeg%20is%20not%20null',
+            dataType: 'json',
+            success: function(data){ consumedata(data); }
+        });
+        function drop_markers(data){
+           
+            for(i = 0; i < data.length; i++){
+               console.log( data[i].LATdeg);
+                
+            }
+        }
+function consumedata(tdata)
+{
+    var keys = tdata[0]["Tutorial"]; 
+    var data = tdata[0]["data"]; 
+    var tab = $("<table>"); 
+    $(window).append(tab); 
+    tab.append($("<tr><th>" + keys.join("</th><th>") + "</th></tr>")); 
+    for (var i = 0; i < data.length; i++)
+        tab.append($('<tr><td>' + data[i].join("</td><td>") + "</td></tr>")); 
+}
+
+    });
+</script>
+
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>

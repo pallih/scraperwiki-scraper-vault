@@ -60,3 +60,65 @@ $.ajax({
         <form>
     </body>
 <html>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>OEPIO</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<script type="text/javascript">
+var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+$.ajaxSetup({
+    type: "GET", 
+    dataType: "jsonp", 
+    url: apiurl, 
+    error: function(jq, status) { 
+        alert(status); 
+    }
+});
+function consumedata(tdata)           
+{
+    var keys = tdata[0]["keys"]; 
+    var data = tdata[0]["data"]; 
+    var tab = $("<table>"); 
+    $(window).append(tab); 
+    tab.append($("<tr><th>" + keys.join("</th><th>") + "</th></tr>")); 
+    for (var i = 0; i < data.length; i++)
+        tab.append($('<tr><td>' + data[i].join("</td><td>") + "</td></tr>")); 
+    $('#results') = tab;
+    alert(tab)
+};
+var sqlselect = "select * from swdata order by date limit 10";           
+var name = "oepio";
+$.ajax({
+    data:{
+        name: name, 
+        query: sqlselect
+    }, 
+    success: consumedata
+    alert("done")
+});
+
+
+</script>
+
+    </head>
+    <body>
+        <div id="container-search">
+            <form>
+                <input id="input-search" type="text">
+            </form>
+        </div>
+        <div id="results">
+        </div>
+        <form>
+    </body>
+<html>

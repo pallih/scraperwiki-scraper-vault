@@ -422,3 +422,268 @@
     <div id="visualization" style="height: 400px; width: 400px;"></div>
   </body>
 </html>
+
+<!-- See output as http://scraperwiki.com/scrapers/html/google-query-language-demo -->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>
+      Google Visualization API Sample
+    </title>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['table']});
+      google.load('visualization', '1', {packages: ['corechart']});
+    </script>
+    <script type="text/javascript">
+    var visualization;
+
+    function drawVisualization() {
+      // To see the data that this visualization uses, browse to
+      // http://spreadsheets.google.com/ccc?key=pCQbetd-CptGXxxQIG7VFIQ  
+      basic = 'http://spreadsheets.google.com/tq?key=pCQbetd-CptGXxxQIG7VFIQ&pub=1'; 
+      oilwell = 'http://spreadsheets0.google.com/tq?key=0AruG93MU5w52dEtMM2luSVBxTUlkZVFjNFU3alc2SXc&gid=0';
+      var query = new google.visualization.Query(oilwell);
+      
+      // Apply query language.
+      query.setQuery('SELECT count(M) GROUP BY year(R)');
+        //query.setQuery('SELECT count(V) pivot year(R)');
+      
+      // Send the query with a callback function.
+      query.send(handleQueryResponse);
+    }
+    
+    function handleQueryResponse(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+      var data = response.getDataTable();
+      visualization = new google.visualization.BarChart(document.getElementById('visualization'));
+      visualization.draw(data, {legend: 'bottom'});
+    }
+
+    google.setOnLoadCallback(drawVisualization);
+    </script>
+  </head>
+  <body style="font-family: Arial;border: 0 none;">
+    Copied from <a href="http://code.google.com/apis/ajax/playground/?type=visualization#using_the_query_language">here</a>.
+    Google spreadsheet copied from oil well data is <a href="http://spreadsheets1.google.com/ccc?key=tKL3inIPqMIdeQc4U7jW6Iw#gid=0">here</a>
+    <div id="visualization" style="height: 400px; width: 400px;"></div>
+  </body>
+</html>
+
+<!-- See output as http://scraperwiki.com/scrapers/html/google-query-language-demo -->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>
+      Google Visualization API Sample
+    </title>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['table']});
+      google.load('visualization', '1', {packages: ['corechart']});
+    </script>
+    <script type="text/javascript">
+    var visualization;
+
+    function drawVisualization() {
+      // To see the data that this visualization uses, browse to
+      // http://spreadsheets.google.com/ccc?key=pCQbetd-CptGXxxQIG7VFIQ  
+      basic = 'http://spreadsheets.google.com/tq?key=pCQbetd-CptGXxxQIG7VFIQ&pub=1'; 
+      oilwell = 'http://spreadsheets0.google.com/tq?key=0AruG93MU5w52dEtMM2luSVBxTUlkZVFjNFU3alc2SXc&gid=0';
+      var query = new google.visualization.Query(oilwell);
+      
+      // Apply query language.
+      query.setQuery('SELECT count(M) GROUP BY year(R)');
+        //query.setQuery('SELECT count(V) pivot year(R)');
+      
+      // Send the query with a callback function.
+      query.send(handleQueryResponse);
+    }
+    
+    function handleQueryResponse(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+      var data = response.getDataTable();
+      visualization = new google.visualization.BarChart(document.getElementById('visualization'));
+      visualization.draw(data, {legend: 'bottom'});
+    }
+
+    google.setOnLoadCallback(drawVisualization);
+    </script>
+  </head>
+  <body style="font-family: Arial;border: 0 none;">
+    Copied from <a href="http://code.google.com/apis/ajax/playground/?type=visualization#using_the_query_language">here</a>.
+    Google spreadsheet copied from oil well data is <a href="http://spreadsheets1.google.com/ccc?key=tKL3inIPqMIdeQc4U7jW6Iw#gid=0">here</a>
+    <div id="visualization" style="height: 400px; width: 400px;"></div>
+  </body>
+</html>
+
+<!-- See output as http://scraperwiki.com/scrapers/html/google-query-language-demo -->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>
+      Google Visualization API Sample
+    </title>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['table']});
+      google.load('visualization', '1', {packages: ['corechart']});
+    </script>
+    <script type="text/javascript">
+    var visualization;
+
+    function drawVisualization() {
+      // To see the data that this visualization uses, browse to
+      // http://spreadsheets.google.com/ccc?key=pCQbetd-CptGXxxQIG7VFIQ  
+      basic = 'http://spreadsheets.google.com/tq?key=pCQbetd-CptGXxxQIG7VFIQ&pub=1'; 
+      oilwell = 'http://spreadsheets0.google.com/tq?key=0AruG93MU5w52dEtMM2luSVBxTUlkZVFjNFU3alc2SXc&gid=0';
+      var query = new google.visualization.Query(oilwell);
+      
+      // Apply query language.
+      query.setQuery('SELECT count(M) GROUP BY year(R)');
+        //query.setQuery('SELECT count(V) pivot year(R)');
+      
+      // Send the query with a callback function.
+      query.send(handleQueryResponse);
+    }
+    
+    function handleQueryResponse(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+      var data = response.getDataTable();
+      visualization = new google.visualization.BarChart(document.getElementById('visualization'));
+      visualization.draw(data, {legend: 'bottom'});
+    }
+
+    google.setOnLoadCallback(drawVisualization);
+    </script>
+  </head>
+  <body style="font-family: Arial;border: 0 none;">
+    Copied from <a href="http://code.google.com/apis/ajax/playground/?type=visualization#using_the_query_language">here</a>.
+    Google spreadsheet copied from oil well data is <a href="http://spreadsheets1.google.com/ccc?key=tKL3inIPqMIdeQc4U7jW6Iw#gid=0">here</a>
+    <div id="visualization" style="height: 400px; width: 400px;"></div>
+  </body>
+</html>
+
+<!-- See output as http://scraperwiki.com/scrapers/html/google-query-language-demo -->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>
+      Google Visualization API Sample
+    </title>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['table']});
+      google.load('visualization', '1', {packages: ['corechart']});
+    </script>
+    <script type="text/javascript">
+    var visualization;
+
+    function drawVisualization() {
+      // To see the data that this visualization uses, browse to
+      // http://spreadsheets.google.com/ccc?key=pCQbetd-CptGXxxQIG7VFIQ  
+      basic = 'http://spreadsheets.google.com/tq?key=pCQbetd-CptGXxxQIG7VFIQ&pub=1'; 
+      oilwell = 'http://spreadsheets0.google.com/tq?key=0AruG93MU5w52dEtMM2luSVBxTUlkZVFjNFU3alc2SXc&gid=0';
+      var query = new google.visualization.Query(oilwell);
+      
+      // Apply query language.
+      query.setQuery('SELECT count(M) GROUP BY year(R)');
+        //query.setQuery('SELECT count(V) pivot year(R)');
+      
+      // Send the query with a callback function.
+      query.send(handleQueryResponse);
+    }
+    
+    function handleQueryResponse(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+      var data = response.getDataTable();
+      visualization = new google.visualization.BarChart(document.getElementById('visualization'));
+      visualization.draw(data, {legend: 'bottom'});
+    }
+
+    google.setOnLoadCallback(drawVisualization);
+    </script>
+  </head>
+  <body style="font-family: Arial;border: 0 none;">
+    Copied from <a href="http://code.google.com/apis/ajax/playground/?type=visualization#using_the_query_language">here</a>.
+    Google spreadsheet copied from oil well data is <a href="http://spreadsheets1.google.com/ccc?key=tKL3inIPqMIdeQc4U7jW6Iw#gid=0">here</a>
+    <div id="visualization" style="height: 400px; width: 400px;"></div>
+  </body>
+</html>
+
+<!-- See output as http://scraperwiki.com/scrapers/html/google-query-language-demo -->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>
+      Google Visualization API Sample
+    </title>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['table']});
+      google.load('visualization', '1', {packages: ['corechart']});
+    </script>
+    <script type="text/javascript">
+    var visualization;
+
+    function drawVisualization() {
+      // To see the data that this visualization uses, browse to
+      // http://spreadsheets.google.com/ccc?key=pCQbetd-CptGXxxQIG7VFIQ  
+      basic = 'http://spreadsheets.google.com/tq?key=pCQbetd-CptGXxxQIG7VFIQ&pub=1'; 
+      oilwell = 'http://spreadsheets0.google.com/tq?key=0AruG93MU5w52dEtMM2luSVBxTUlkZVFjNFU3alc2SXc&gid=0';
+      var query = new google.visualization.Query(oilwell);
+      
+      // Apply query language.
+      query.setQuery('SELECT count(M) GROUP BY year(R)');
+        //query.setQuery('SELECT count(V) pivot year(R)');
+      
+      // Send the query with a callback function.
+      query.send(handleQueryResponse);
+    }
+    
+    function handleQueryResponse(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+      var data = response.getDataTable();
+      visualization = new google.visualization.BarChart(document.getElementById('visualization'));
+      visualization.draw(data, {legend: 'bottom'});
+    }
+
+    google.setOnLoadCallback(drawVisualization);
+    </script>
+  </head>
+  <body style="font-family: Arial;border: 0 none;">
+    Copied from <a href="http://code.google.com/apis/ajax/playground/?type=visualization#using_the_query_language">here</a>.
+    Google spreadsheet copied from oil well data is <a href="http://spreadsheets1.google.com/ccc?key=tKL3inIPqMIdeQc4U7jW6Iw#gid=0">here</a>
+    <div id="visualization" style="height: 400px; width: 400px;"></div>
+  </body>
+</html>

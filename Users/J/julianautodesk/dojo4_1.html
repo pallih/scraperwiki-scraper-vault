@@ -142,3 +142,147 @@ $(window).ready(main);
 </body>
 </html>
 
+<html>
+<head>
+<script src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<style>
+
+table td
+{
+border: 1px solid black;
+width: 50px;
+height: 50px;
+text-align:center;
+}
+
+</style>
+
+
+<script>
+
+
+var p1 = "X";
+var player = p1;
+var p2 = "O";
+var n_goes = 0;
+
+var sol = [[1, 2, 3], [4, 5, 6], [7,8,9], [1,4,7], [2,5,8], [3,6,9], [1,5,9], [3,5,7]];
+
+
+var nr_x = 0;
+var nr_o = 0;
+
+function main() {
+//    alert("Hello world"); 
+
+function color_win_sol(j){
+
+for ( var i = 0; i < 3; i++ ){
+
+$("#"+sol[j][i]).css("background-color","yellow");
+
+}
+
+}
+
+function computer_pick()
+{
+    var emp = [];
+    for( var i = 1; i < 10; i++){
+        if($("#"+i).text() == "")
+            emp.push(i);
+    }
+    var rand = Math.floor((Math.random()*emp.length));
+    $("#"+emp[rand]).click();
+}
+
+function reset_board()
+{
+    for( var i = 1; i < 10; i++){
+    $("#"+i).text("");
+    $("#"+i).css("background-color","white");
+    }
+    n_goes = 0;
+}
+
+function check_for_winner()
+{
+  
+    for ( var j = 0; j < 8; j++ ){
+    nr_x = 0;
+    nr_o = 0;
+    for (var i=0; i<3; i++) {
+    if ($("#"+sol[j][i]).text() === p1) {
+        nr_x++;
+        } 
+    if ($("#"+sol[j][i]).text() === p2) {
+        
+        nr_o++;
+    }
+    }
+
+    if ( nr_x === 3 ){
+        color_win_sol(j);
+        alert( "Player " + p1 + " wins!" );
+        reset_board();
+        break;
+        }
+    if ( nr_o === 3 ){
+        color_win_sol(j);
+        alert( "Player " + p2 + " wins!" );
+        reset_board();
+        break;
+    }
+}
+}
+
+
+$("td").click(function(){
+
+    var txt = $(this).text();
+    var comp = true;
+
+    if ( txt ==="" ){
+    if (player === p1){ $(this).text(p1); player=p2; n_goes++; } 
+    else {$(this).text(p2); player=p1; n_goes++;}
+
+
+    check_for_winner();
+    if ( n_goes == 9 ){
+        alert( "Tie" );
+        reset_board();
+    }
+
+    if (comp && player === p2){
+         computer_pick();
+    }
+}
+
+});
+
+
+}
+$(window).ready(main); 
+
+
+
+</script>
+</head>
+
+<body>
+
+<h2>Play Tic-Tac-Toe</h2>
+
+<input type="radio" id="one_player" name="group1" value="1"> One player<br>
+<input type="radio" name="group1" value="2" checked> Two player<br>
+
+<table> 
+<tr><td id="1"></td><td id="2"></td><td id="3"></td></tr>
+<tr><td id="4"></td><td id="5"></td><td id="6"></td></tr>
+<tr><td id="7"></td><td id="8"></td><td id="9"></td></tr>
+</table>
+
+
+</body>
+</html>
+

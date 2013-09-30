@@ -122,3 +122,127 @@ $(window).ready(main);
   <td id = "22">  </td>
 </tr>
 </table>
+<html>
+<head>
+<script src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<style>
+table td {width: 30px; height: 30px; text-align: center; border: thick black solid}
+table {border-collapse: collapse; border:thick red solid}
+</style>
+
+
+<script>
+function checkWinner() {
+    var lines = [ ["00", "01", "02"], 
+                  ["10", "11", "12"], 
+                  ["20", "21", "22"], 
+                  ["00", "10", "20"], 
+                  ["01", "11", "21"], 
+                  ["02", "12", "22"], 
+                  ["00", "11", "22"], 
+                  ["02", "11", "20"] 
+                ];
+    for ( var index = 0 ; index < lines.length ; index++ ) {
+        var t0 = document.getElementById(lines[index][0]);
+        if ( t0.innerText === "-" ){
+           continue;
+           }
+  
+        var t1 = document.getElementById(lines[index][1]);
+        if ( t0.innerText !== t1.innerText ){
+           continue;
+           }
+
+        var t2 = document.getElementById(lines[index][2]);
+        if ( t0.innerText === t2.innerText ){
+
+
+           var rect0 = t0.getBoundingClientRect();
+           var rect2 = t2.getBoundingClientRect();
+           if(index < 3) {
+
+//$("h2").append('<div id="c" style="width:100; height:3; background-color:red; position:absolute; top:rect0.top; left:6"></div>')
+           }
+           alert("Winner is " + t2.innerText);
+           return true;
+           }
+        
+       }
+
+         var finished = true;
+         for ( var i = 0 ; i < 3 ; i++ ) {
+             for ( var j = 0 ; j < 3 ; j++ ) {
+                  id = ("" + i) + j;
+                  var t = document.getElementById(id);
+                  if ( t.innerText == "-" ){
+                      finished = false;
+                      break;
+                      }
+              }
+          }
+
+        if ( finished ) {
+            alert( "No winner" );
+            return true;
+        }
+    return false;
+    }
+
+function main() {
+    var vals = [];
+
+    for ( var i = 0 ; i < 3 ; i++ ) {
+        for ( var j = 0 ; j < 3 ; j++ ) {
+            id = ("" + i) + j;
+            var t = document.getElementById(id);
+            t.innerText = "-";
+            t.onclick = function () {
+                if ( this.innerText == "-"){
+                  this.innerText = token;
+                  if ( token === "X" ) token = "O";
+                  else                 token = "X";
+                  if (checkWinner()) {
+                     for ( var i = 0 ; i < 3 ; i++ ) {
+                         for ( var j = 0 ; j < 3 ; j++ ) {
+                              id = ("" + i) + j;
+                              var t = document.getElementById(id);
+                              t.innerText = "-";
+                          }
+                      }
+                  }
+
+
+               }
+            }
+            vals[3*i+j] = t;
+        }
+    }
+    var vals=[ document.getElementById("00") ];
+    var token = "X";
+}
+$(window).ready(main); 
+
+</script>
+</head>
+
+<body>
+
+<h2>Play Tic-Tac-Toe</h2>
+
+<table>
+<tr>
+  <td id = "00">  </td>
+  <td id = "01">  </td>
+  <td id = "02">  </td>
+</tr>
+<tr>
+  <td id = "10">  </td>
+  <td id = "11">  </td>
+  <td id = "12">  </td>
+</tr>
+<tr>
+  <td id = "20">  </td>
+  <td id = "21">  </td>
+  <td id = "22">  </td>
+</tr>
+</table>

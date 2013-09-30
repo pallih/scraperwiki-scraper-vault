@@ -97,3 +97,102 @@ function scraperStatistics(statistics) {
 </body>
 </html>
 
+<!DOCTYPE html>
+<html>
+<head>
+<title>Planning Scrapers Status</title>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<style type="text/css">
+table#scrapers {
+  width: 100%
+}
+
+table#scrapers th {
+  text-align: left;
+}
+</style>
+</head>
+<body>
+<h1>Planning Scrapers Status</h1>
+<table id="scrapers">
+<tr>
+<th>Name</th>
+<th>Last Run</th>
+<th>Records</th>
+<th>First Record</th>
+<th>Last Record</th>
+<th>Awaiting Scraping</th>
+</tr>
+</table>
+<script type="text/javascript">
+var scrapers = [
+  "broxbourne_planning_applications",
+  "darlington_planning_applications_3",
+  "denbighshire_planning_applications",
+  "erewash_planning_applications",
+  "harrow_planning_applications",
+  "maldon_planning_applications",
+  "northampton_planning_applications",
+  "south_somerset_planning_applications",
+  "st_albans_planning_applications",
+  "stroud_planning_applications",
+  "wrexham_planning_applications"
+];
+
+for (i = 0; i < scrapers.length; i++) {
+  var scraper = scrapers[i];
+
+  $("table#scrapers").append("<tr id=\"" + scraper + "\"></tr>");
+
+  var row = $("table#scrapers tr#" + scraper);
+
+  row.append("<td class=\"name\"></td>");
+  row.append("<td class=\"last_run\"></td>");
+  row.append("<td class=\"records\"></td>");
+  row.append("<td class=\"first_record\"></td>");
+  row.append("<td class=\"last_record\"></td>");
+  row.append("<td class=\"awaiting_scraping\"></td>");
+
+  $.ajax({
+    url: "https://api.scraperwiki.com/api/1.0/scraper/getinfo",
+    dataType: "jsonp",
+    data: {
+      name: scraper,
+      version: -1,
+      quietfields: "code|runevents|datasummary|userroles|history",
+      format: "jsondict",
+      callback: "scraperDetails"
+    },
+  });
+
+  $.ajax({
+    url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite",
+    dataType: "jsonp",
+    data: {
+      name: scraper,
+      query: "SELECT '" + scraper + "' AS name, MIN(start_date) AS min_date, MAX(start_date) AS max_date, (SELECT COUNT(*) FROM swdata WHERE date_scraped IS NULL) AS not_scraped FROM swdata",
+      format: "jsondict",
+      callback: "scraperStatistics"
+    },
+  });
+}
+
+function scraperDetails(details) {
+  var row = $("table#scrapers tr#" + details[0].short_name);
+
+  row.children(".name").html("<a href=\"https://scraperwiki.com/scrapers/" + details[0].short_name + "\">" + details[0].title + "</a>");
+  row.children(".last_run").html(details[0].last_run);
+  row.children(".records").html(details[0].records);
+}
+
+function scraperStatistics(statistics) {
+  var row = $("table#scrapers tr#" + statistics[0].name);
+
+  row.children(".first_record").html(statistics[0].min_date);
+  row.children(".last_record").html(statistics[0].max_date);
+  row.children(".awaiting_scraping").html(statistics[0].not_scraped);
+}
+</script>
+</body>
+</html>
+

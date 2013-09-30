@@ -178,4 +178,184 @@
     </form>
  
 </body>
+</html><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+    <title>Dynamic Form Population With jQuery</title>
+    <script type="text/javascript" src="https://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+    <script type="text/javascript">
+ 
+        // Define a method that handles nothing but the actual
+        // form population. This helps us decouple the data
+        // insertion from the data retrieval.
+        function PopulateFields( strValue1, strValue2 ){
+            $( "#field2" ).val( strValue1 );
+            $( "#field3" ).val( strValue2 );
+        }
+ 
+ 
+        // I take the given option selection and return the
+        // associated data using a remote method call.
+        function GetAJAXValues( strOption, fnCallback ){
+            // Check to see if there is currently an AJAX
+            // request on this method.
+            if (GetAJAXValues.Xhr){
+ 
+                // Abort the current request.
+                GetAJAXValues.Xhr.abort();
+ 
+            }
+ 
+            // Get data via AJAX. Store the XHR (AJAX request
+            // object in the method in case we need to abort
+            // it on subsequent requests.
+            GetAJAXValues.Xhr = $.ajax({
+                type: "get",
+                url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=list_of_registered_icelandic_ships&query=select%20*%20from%20%60swdata%60%20order%20by%20name",
+                data: {
+                    option: strOption
+                    },
+                dataType: "jsonp",
+ 
+                // Our success handler.
+                success: function( objData ){
+                    // At this point, we have data coming back
+                    // from the server. However, since ColdFusion
+                    // upper-cases the struct-keys, let's
+                    // translate these back to the expected case.
+                    fnCallback({
+                        Value1: objData.name,
+                        Value2: objData.operator
+                        });
+                },
+ 
+                // An error handler for the request.
+                error: function(){
+                    alert( "An error occurred" );
+                },
+ 
+                // I get called no matter what.
+                complete: function(){
+                    // Remove completed request object.
+                    GetAJAXValues.Xhr = null;
+                }
+                });
+        }
+ 
+ 
+        // I take the given option selection and return the
+        // associated data.
+        function GetStaticValues( strOption ){
+            if (strOption == "opt1"){
+ 
+                return({
+                    Value1: "Value 1 - Field 1",
+                    Value2: "Value 1 - Field 2"
+                    });
+ 
+            } else if (strOption == "opt2"){
+ 
+                return({
+                    Value1: "Value 2 - Field 1",
+                    Value2: "Value 2 - Field 2"
+                    });
+ 
+            } else {
+ 
+                // No matches, so return default value.
+                return({
+                    Value1: "",
+                    Value2: ""
+                    });
+ 
+            }
+        }
+ 
+ 
+        // I handle the updating of the form fields based on the
+        // selected option of the combo box.
+        function UpdateFormFields(){
+            var jSelect = $( "#field1" );
+            var jAJAX = $( "#ajax" );
+            var objData = null;
+ 
+            // Check to see if we are using AJAX or static data
+            // to re-populate the form.
+            if (jAJAX.is( ":checked" )){
+ 
+                // Make a remote call to get the remote data.
+                // Because we have to do this asynchronously,
+                // we have to provide a callback method that
+                // will hook the results up to the populate
+                // fields method.
+                GetAJAXValues(
+                    jSelect.val(),
+ 
+                    // Callback method for results.
+                    function( objRemoteData ){
+                        PopulateFields(
+                            objRemoteData.Value1,
+                            objRemoteData.Value2
+                            );
+                    }
+                    );
+ 
+            } else {
+ 
+                // Make a local call to get the static data.
+                objData = GetStaticValues( jSelect.val() );
+ 
+                // Populate form fields.
+                PopulateFields( objData.Value1, objData.Value2 );
+ 
+            }
+        }
+ 
+ 
+        // When the DOM is ready to be interacted with, init.
+        $(function(){
+            var jSelect = $( "#field1" );
+ 
+            // Bind the change event to the select box. We're
+            // just going to hand that control off to the
+            // handler method.
+            jSelect.change( UpdateFormFields );
+            });
+ 
+    </script>
+</head>
+<body>
+ 
+    <h1>
+        Dynamic Form Population With jQuery
+    </h1>
+ 
+    <form>
+ 
+        <p>
+            <select id="field1">
+                <option value="">- - Select - -</option>
+                <option value="opt1">Option 1</option>
+                <option value="opt2">Option 2</option>
+            </select>
+        </p>
+ 
+        <p>
+            <input type="text" id="field2" size="50" />
+        </p>
+ 
+        <p>
+            <input type="text" id="field3" size="50" />
+        </p>
+ 
+        <p>
+            <label>
+                <input type="checkbox" id="ajax" />
+                Use Ajax To Gather Data
+            </label>
+        </p>
+ 
+    </form>
+ 
+</body>
 </html>

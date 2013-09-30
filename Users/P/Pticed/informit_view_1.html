@@ -37,3 +37,42 @@ $.ajax({
 
 
 
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Informit book of the day</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript" src="https://github.com/BorisMoore/jsrender/raw/master/jsrender.js"></script>
+        <script id="bookTemplate" type="text/x-jsrender">
+          <div>
+            <a href="{{:link}}"><img src="{{:img}}"/>{{:title}}</a>
+          </div>
+        </script>
+
+        <script type="text/javascript">
+$.ajax({
+  url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=informit_book_of_the_day&query=select%20*%20from%20%60swdata%60%20order%20by%20date%20desc%20limit%2010%20',
+  dataType: 'jsonp',
+  success: function(data){
+    $('body').append( $("<span>").text= "Data fetched" )
+    $( "#booksList" ).html(
+      $( "#bookTemplate" ).render( data )
+    );
+  },
+  error: function(jqXHR, textStatus, errorThrown) {
+    $('body').append( $("<span>").text= "Error fetching data "+":"+errorThrown )
+  },
+});
+        </script>
+    </head>
+    <body>
+        <div id="booksList"></div>
+    </body>
+<html>
+
+
+
+
+
+

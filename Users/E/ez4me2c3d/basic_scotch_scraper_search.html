@@ -51,3 +51,56 @@
         </div>
     </body>
 <html>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Scotch Scraper</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            
+        </style>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                var $table_canvas = $('#table_canvas'),
+                    $cheapest = $('#table_current_cheapest_price'),
+                    $product_name = $('#product_name'),
+                    $loader = $('#loader');
+
+                $loader.hide();
+
+                $('#search').submit(function (e) {
+                    e.preventDefault();
+                    $loader.show();
+                    var q = $product_name.val().replace(/\s/g, '%25');
+                    console.log('q='+q);
+                    var sql_query_cheapest;
+
+                    sql_query_cheapest = 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=htmltable&name=scotch_scraper&query=select%20distinct%20product_price%20from%20%60swdata%60%20where%20product_name%20like%20\'%25'+q+'%25\'%20order%20by%20product_price%20asc';
+
+                    $cheapest
+                        .empty()
+                        .load(
+                            sql_query_cheapest,
+                            function() {
+                                $loader.hide();
+                            }
+                        );
+                });
+
+            });
+        </script>
+    </head>
+    <body>
+        <form id="search">
+        Name Contains <input id="product_name" /> <input type="submit" value="Search" />
+        </form>
+        <hr />
+        <div id="loader">Loading...</div>
+        <div id="table_canvas">
+            <div id="table_current_cheapest_price"></div>
+        </div>
+    </body>
+<html>

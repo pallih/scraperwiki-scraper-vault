@@ -47,3 +47,52 @@ for table in page.findAll('table', { 'class':'markuptable' } ):
             data = { 'country' : country, 'date' : date_of_holiday, 'holiday_name' : holiday_name}
             sqlite.save(unique_keys=['country','date'], data=data, date=date_of_holiday)
 
+import scraperwiki
+import BeautifulSoup
+import re
+from datetime import datetime
+
+from scraperwiki import sqlite
+import pickle
+
+# Hello World Example #
+
+#scrape page
+html = scraperwiki.scrape('http://www.direct.gov.uk/en/Employment/Employees/Timeoffandholidays/DG_073741')
+page = BeautifulSoup.BeautifulSoup(html)
+
+#find rows
+for table in page.findAll('table', { 'class':'markuptable' } ):
+
+    rows = table.findAll('tr')[:-2]
+    country = rows[0].th.string
+
+    years = [(cell.string or cell.strong.string).strip()
+             for cell in rows[0].findAll('th')[1:]]
+    
+    # Confirm correct parsing
+    print years
+    
+    for row in rows[1:]:
+        holiday_name = row.td.string
+        for cell, year in zip(row.findAll('td')[1:], years):
+            #save to datastore
+            cell = re.sub('(\d+)',r'\1 ', cell.string.strip().replace('*','').strip())
+            if cell == '-':
+                continue
+            
+            date_str = cell + " " + year
+            # Remove non-breaking spaces (\xa0), and join up with single spaces
+            date_str = ' '.join(date_str.split())
+            print repr(date_str)
+            
+            #convert date to date object
+            date_of_holiday = datetime.strptime(date_str, "%d %B %Y").date()
+            print date_of_holiday
+            date_of_holiday = pickle.dumps(date_of_holiday)
+
+            
+            #save to datastore
+            data = { 'country' : country, 'date' : date_of_holiday, 'holiday_name' : holiday_name}
+            sqlite.save(unique_keys=['country','date'], data=data, date=date_of_holiday)
+

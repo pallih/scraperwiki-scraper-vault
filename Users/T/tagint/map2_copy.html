@@ -91,3 +91,96 @@
     <div id="heatmapArea" />
 </body>
 </html>
+<html lang="en">
+<head>
+    <title>Tirana / 2+1 house for sale / price per sqm Heatmap</title>
+
+    <link rel="stylesheet" href="http://media.scraperwiki.com/css/jquery-ui-1.8.12.css">
+    <script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-1.5.2.min.js"></script>
+    <script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-ui-1.8.12.custom.min.js"></script>
+    <script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
+    <script type="text/javascript" src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+
+    <script type="text/javascript" src="http://www.patrick-wied.at/static/heatmapjs/src/heatmap.js"></script>
+    <script type="text/javascript" src="http://www.patrick-wied.at/static/heatmapjs/src/heatmap-openlayers.js"></script>
+
+    <script type="text/javascript">
+    
+        // Start position for the map (hardcoded here for simplicity)
+        var lat=41.330033;
+        var lon=19.82517219;
+        var zoom=11;
+        
+        var map; //complex object of type OpenLayers.Map
+        window.alert(1)  
+        //Initialise the 'map' object
+        window.alert(2)
+        $(function() {
+         
+          map = new OpenLayers.Map('heatmapArea', {
+            controls: [
+              new OpenLayers.Control.Navigation(),
+              new OpenLayers.Control.PanZoomBar(),
+              new OpenLayers.Control.LayerSwitcher(),
+              new OpenLayers.Control.Attribution()],
+            maxResolution: 'auto',
+          });
+         
+          layer = new OpenLayers.Layer.OSM.Mapnik("Mapnik");
+          map.addLayer(layer);
+          window.alert(2)
+          var epsg = new OpenLayers.Projection("EPSG:4326");
+          var proj = map.getProjectionObject();
+        
+          var lonLat = new OpenLayers.LonLat(lon, lat).transform(epsg,proj);    
+          map.setCenter(lonLat, zoom);
+        
+          var transformedTestData = { max: 1000 , data: [] },
+          nudata = [];
+    
+         $.getJSON("http://api.scraperwiki.com/api/1.0/datastore/sqlite?callback=?",
+                {
+                    "format": "jsonlist",
+                    "name": "gazeta-celesi",
+                    "query": "select areaPrice, lat, lon, area from swdata limit 10",
+                },
+                function(data, textStatus, jqXHR) {
+    
+                  window.alert(2)
+                  var coordinates = data.data;
+                  transformedTestData.max = coordinates.length;
+
+                  for(i=0; i<coordinates.length; i++){
+                    var el = coordinates[i];
+                    if(el[1] == "" || el[1]  == "NaN")
+                                continue;
+
+                    try{
+                        nudata.push({
+                                lonlat: new OpenLayers.LonLat(el[2], el[1]),
+                                count: Math.round(el[0]/50)
+                                });
+                       
+                    }catch(err){}
+                  }
+
+                transformedTestData.data = nudata;
+
+                var heatmap = new OpenLayers.Layer.Heatmap( "Heatmap Layer", map, layer, 
+                                    {visible: true, radius:5}, 
+                                    {isBaseLayer: false, opacity: 0.4, projection: new OpenLayers.Projection("EPSG:4326")});
+                map.addLayers([layer, heatmap]);                
+                heatmap.setDataSet(transformedTestData);
+              }
+        );
+
+    });
+    </script>
+
+
+</head>
+
+<body>
+    <div id="heatmapArea" />
+</body>
+</html>

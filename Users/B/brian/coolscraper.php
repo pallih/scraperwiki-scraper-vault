@@ -3,3 +3,8 @@
 # Blank PHP
 
 ?>
+<?php
+
+# Blank PHP
+
+?>

@@ -84,3 +84,89 @@ $(function()
 <a href="http://www.geoplugin.com/" target="_new" title="geoPlugin for IP geolocation">Geolocation by geoPlugin</a>
 </body>
 </html>
+<html>
+<head>
+<script src="http://maps.google.com/maps/api/js?sensor=false"></script> 
+<script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script> 
+<script src="https://www.google.com/jsapi?key=ABQIAAAA3nzo5YlIWwysawGu_EQ5zBTRrdnd-e_675_4WaiH6Ppz8aEy6xSzcLkylvtOGyxlPvUXHKjDmkZl5A" type="text/javascript"></script>
+</head>
+<body>
+<script>
+var map;
+var timedelta = function(enddate, endtime, startdate, starttime)
+{
+    var ed = enddate.split('-');
+    var et = endtime.split(':');
+    var de = new Date(parseInt(ed[0]), parseInt(ed[1]) - 1, parseInt(ed[2]), parseInt(et[0]), parseInt(et[1]), parseInt(et[2]));
+    var sd = startdate.split('-');
+    var st = starttime.split(':');
+    var ds = new Date(parseInt(sd[0]), parseInt(sd[1]) - 1, parseInt(sd[2]), parseInt(st[0]), parseInt(st[1]), parseInt(st[2]));
+    var msecs = (de.getTime() - ds.getTime());
+    var dur = (de.getTime() - ds.getTime());
+    var d = new Date();
+    d.setTime(dur);
+    var hstr = d.getHours() < 9 ? "0" + d.getHours() : d.getHours();
+    var mstr = d.getMinutes() < 9 ? "0" + d.getMinutes() : d.getMinutes();
+    var sstr = d.getSeconds() < 9 ? "0" + d.getSeconds() : d.getSeconds();
+    return hstr + ":" + mstr + ":" + sstr; 
+}
+
+var stickPin = function(p)
+{
+    var pos = new google.maps.LatLng(p.latlon[0], p.latlon[1]);
+    var icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=X|0f0|f0f';
+    var marker = new google.maps.Marker({position:pos, map:map, icon:icon, animation: google.maps.Animation.DROP, title:"title message"});
+    return marker;
+}
+
+var attachMessage = function(marker, p)
+{
+    google.maps.event.addListener(marker, 'click', function() 
+    {
+          var dur = timedelta(p.enddate, p.endtime, p.startdate, p.starttime);
+          var infowindow = new google.maps.InfoWindow(
+          { content: "<b>IP:</b>" + p.IP + 
+                     "<br /><b>Date:</b>" + p.startdate +
+                     "<br /><b>Duration:</b>" + dur,
+            size: new google.maps.Size(50,50)
+          });
+
+          infowindow.open(map, marker);
+    });
+}
+
+$(function()
+{
+    var c = new google.maps.LatLng(30, 0);
+    var mapOptions = { "zoom": 2, "center":c, "mapTypeId": google.maps.MapTypeId.ROADMAP };
+    map = new google.maps.Map(document.getElementById("mapdiv"), mapOptions); 
+
+    var sourcename = "onlinesliceraccesslog"; 
+    var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+    var sqlselect = "select * from swdata"; 
+
+    var pin;
+    
+    $.ajax(
+    {
+        url:apiurl, dataType:"jsonp", data:{name:sourcename, query:sqlselect}, success:function(tdata) 
+        { 
+            for (var i = 0; i < tdata.length; i++) 
+            {
+                var m = stickPin({ip: tdata[i].IP, latlon: [tdata[i].Latitude, tdata[i].Longitude], startend:[tdata[i].startdate, tdata[i].starttime, tdata[i].enddate, tdata[i].endtime]});
+                m.setTitle(tdata[i].IP);
+                attachMessage(m, tdata[i]);
+            }
+        },
+        error:function(o, ts)
+        {
+            alert("Some error. " + ts);
+        }
+    });
+
+});
+</script>
+<div id="mapdiv" style="width:100%;height:600px"></div> 
+<a href="http://www.geoplugin.com/" target="_new" title="geoPlugin for IP geolocation">Geolocation by geoPlugin</a>
+</body>
+</html>

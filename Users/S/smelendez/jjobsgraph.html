@@ -64,3 +64,69 @@
     </body>
 <html>
 
+<html>
+    <head>
+        <title>JournalismJobs Postings Over Time</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #graph_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript">
+          google.load("visualization", "1", {packages:["corechart"]});
+          google.setOnLoadCallback(getData);
+          function getData() {
+              var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";            
+              var srcname = "jjobs"; 
+              var sqlselect = "select date, count(*) from `swdata` group by date"; 
+              $.ajax({
+                url: apiurl, 
+                dataType: "jsonp", 
+                data:{
+                    name: srcname, 
+                    query: sqlselect, 
+                    format: "jsonlist"
+                }, 
+                success: drawChart
+              });
+          }
+          function fixDates(data) {
+            var i;
+            var len = data.length;
+            for(i = 0; i < len; i++)
+            {
+                data[i][0] = new Date(data[i][0]);
+            }
+            return data;
+          };
+          function drawChart(tdata) {
+              var data = new google.visualization.DataTable();
+              data.addColumn('date', 'Day');
+              data.addColumn('number', 'Number Of Jobs');
+              console.log(tdata);
+              
+              data.addRows(fixDates(tdata.data));
+              
+
+              var options = {
+                  title: 'JournalismJobs Posts Over Time'
+              };
+
+        var chart = new google.visualization.ScatterChart(document.getElementById('graph_canvas'));
+        
+        chart.draw(data, options);
+      };
+    </script>
+    </head>
+    <body>
+        <div id="graph_canvas"></div>
+    </body>
+<html>
+

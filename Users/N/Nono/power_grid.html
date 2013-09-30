@@ -234,3 +234,239 @@
         <div id="map_canvas"></div>
     </body>
 <html>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Dutch Power Grid</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3&sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+            var overlaysEnipedia = [];
+
+            var infowindowEnipedia = new google.maps.InfoWindow();
+            
+            var queryString = {};
+            
+            $(function(){
+            
+                var params = location.search.split(/[?&]/);
+                for (var param in params) {
+                    queryString[params[param].split("=")[0]] = params[param].split("=")[1];
+                }
+                
+                var myOptions = {
+                    zoom: 8,
+                    center: new google.maps.LatLng(52.5, 5),
+                    mapTypeId: google.maps.MapTypeId.HYBRID,
+                    mapTypeControlOptions: { 
+                        //mapTypeIds: ['ITO', google.maps.MapTypeId.HYBRID],
+                        style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+                    }
+                };
+                
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+                
+                var myITOOptions = {
+                    getTileUrl: function(coord, zoom) {
+                        return "http://t" + Math.floor(Math.random()*4) + ".beta.itoworld.com/4/770fc0c2b467b4cb16c330d996e2ddd2/" 
+                                + zoom + "/" + coord.x + "/" + coord.y + ".png";
+                    },
+                    tileSize: new google.maps.Size(256, 256),
+                    isPng: true,
+                    alt: "ITOWorld Power Transmission",
+                    name: "ITOWorld"
+                }
+                
+                //map.mapTypes.set('ITO', new google.maps.ImageMapType(myITOOptions));
+                //map.setMapTypeId('ITO');
+                map.overlayMapTypes.insertAt(0, new google.maps.ImageMapType(myITOOptions));
+
+                var controlDiv = createControls();
+                map.controls[google.maps.ControlPosition.TOP].push(controlDiv);
+                    
+                var kml = new google.maps.KmlLayer("http://enipedia.tudelft.nl/enipedia/images/a/aa/DutchPowerGrid.kml", {map: map, preserveViewport: true});
+                var source = new google.maps.KmlLayer("http://files.hoogspanningsnet.webnode.com/200001808-6eba26f34e/Nederlandse%20Standaard%20Netkaart%20V2.0.kmz", {map: map, preserveViewport: true});
+                
+                function createControls() {
+                    var controlDiv = document.createElement('div');
+                    controlDiv.id = "map_controls";
+                    controlDiv.style.background = "-moz-linear-gradient(left center , rgba(255, 255, 255, 0.2) 5px, rgba(255, 255, 255, 0.7) 50px) repeat scroll 0% 0% transparent";
+                    controlDiv.style.fontFamily = 'Arial,sans-serif';
+                    controlDiv.style.fontSize = '10pt';
+                    
+                    var chkITO = document.createElement('input');
+                    chkITO.setAttribute("type", "checkbox");
+                    chkITO.setAttribute("checked", "true");
+                    chkITO.id = "ito";
+                    controlDiv.appendChild(chkITO);
+                    google.maps.event.addDomListener(chkITO, 'change', function() { if(chkITO.checked) 
+                                                                                        map.overlayMapTypes.insertAt(0, new google.maps.ImageMapType(myITOOptions));
+                                                                                    else
+                                                                                        map.overlayMapTypes.removeAt(0) });
+                    controlDiv.appendChild(document.createTextNode("ITOWorld power distribution"));
+                    
+                    controlDiv.appendChild(document.createTextNode("\u00a0\u00a0\u00a0"));
+                    var chkSource = document.createElement('input');
+                    chkSource.setAttribute("type", "checkbox");
+                    chkSource.setAttribute("checked", "true");
+                    chkSource.id = "hoogspanning";
+                    controlDiv.appendChild(chkSource);
+                    google.maps.event.addDomListener(chkSource, 'change', function() { source.setMap(chkSource.checked ? map : null) });
+                    controlDiv.appendChild(document.createTextNode("KML from HoogspanningsNet"));
+                    
+                    controlDiv.appendChild(document.createTextNode("\u00a0\u00a0\u00a0"));
+                    var chkKML = document.createElement('input');
+                    chkKML.setAttribute("type", "checkbox");
+                    chkKML.setAttribute("checked", "true");
+                    chkKML.id = "enipedia_static";
+                    controlDiv.appendChild(chkKML);
+                    google.maps.event.addDomListener(chkKML, 'change', function() { kml.setMap(chkKML.checked ? map : null) });
+                    controlDiv.appendChild(document.createTextNode("static KML from Enipedia"));
+                        
+                    controlDiv.appendChild(document.createTextNode("\u00a0\u00a0\u00a0"));
+                    var chkEnipedia = document.createElement('input');
+                    chkEnipedia.setAttribute("type", "checkbox");
+                    chkEnipedia.id = "enipedia_dynamic";
+                    controlDiv.appendChild(chkEnipedia);
+                    google.maps.event.addDomListener(chkEnipedia, 'change', function() { if (chkEnipedia.checked) load_grid_enipedia(); else clearOverlays(overlaysEnipedia) });
+                    controlDiv.appendChild(document.createTextNode("dynamic generation from Enipedia"));
+
+                    return controlDiv;
+                }
+                
+                function load_grid_enipedia() {
+                        
+                    clearOverlays(overlaysEnipedia);
+                    
+                    $.ajax({
+                        url: 'http://enipedia.tudelft.nl/sparql',
+                        data: { 
+                            query:  "BASE <http://enipedia.tudelft.nl/wiki/>\n" + 
+                                    "PREFIX prop: <http://enipedia.tudelft.nl/wiki/Property:>\n" + 
+                                    "PREFIX cat: <http://enipedia.tudelft.nl/wiki/Category:>\n" + 
+                                    "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" + 
+                                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" + 
+                                    "select ?x (?powerLineName as ?name) ?voltage ?geopath\n" + 
+                                    "       ?substation1 ?substation1Name ?substation2 ?substation2Name where {\n" + 
+                                    "  ?x rdf:type cat:PowerLine . \n" + 
+                                    "  ?x rdfs:label ?powerLineName . \n" + 
+                                    "  ?x prop:GeoPath ?geopath . \n" + 
+                                    "  ?x prop:ConnectedToSubstation1 ?substation1 . \n" + 
+                                    "  ?x prop:ConnectedToSubstation2 ?substation2 . \n" + 
+                                    "  ?substation1 rdfs:label ?substation1Name . \n" + 
+                                    "  ?substation2 rdfs:label ?substation2Name . \n" + 
+                                    "  OPTIONAL{?x prop:Voltage ?voltage }. \n" + 
+                                    "} limit 5000", 
+                            output: "json" 
+                        },
+                        dataType: 'jsonp',
+                        success: function(data){ drop_lines_enipedia(data); }
+                    });
+                    
+                    $.ajax({
+                        url: 'http://enipedia.tudelft.nl/sparql',
+                        data: { 
+                            query:  "BASE <http://enipedia.tudelft.nl/wiki/>\n" + 
+                                    "PREFIX prop: <http://enipedia.tudelft.nl/wiki/Property:>\n" + 
+                                    "PREFIX cat: <http://enipedia.tudelft.nl/wiki/Category:>\n" + 
+                                    "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" + 
+                                    "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" + 
+                                    "select ?x ?name ?voltage ?point where {\n" + 
+                                    "  ?x rdf:type cat:PowerSubstation . \n" + 
+                                    "  ?x rdfs:label ?name . \n" + 
+                                    "  ?x prop:Point ?point . \n" + 
+                                    "  OPTIONAL{?x prop:Voltage ?voltage }. \n" + 
+                                    "} limit 5000", 
+                            output: "json" 
+                        },
+                        dataType: 'jsonp',
+                        success: function(data){ drop_stations_enipedia(data); }
+                    });
+                }
+            });
+
+            function clearOverlays(overlaysArray) {
+                if (overlaysArray) {
+                    for (var i in overlaysArray) {
+                        overlaysArray[i].setMap(null);
+                    }
+                    overlaysArray.length = 0;
+                }
+            }
+
+            
+            function drop_lines_enipedia(data) {
+                var list = data.results.bindings; 
+                for(var i = 0; i < list.length; i++) {
+                    var color, weight;
+                    if (list[i].voltage.value == 450000){
+                        color = "#0000ff";
+                        weight = 10;
+                    } else if (list[i].voltage.value == 380000){
+                        color = "#ffff00";
+                        weight = 7;
+                    } else if (list[i].voltage.value == 220000){
+                        color = "#ff0000";
+                        weight = 4;
+                    }
+                    var pts = list[i].geopath.value.split(" ");
+                    for (var j=0; j<pts.length; j++) {
+                        var pt = pts[j].split(",");
+                        pts[j] = new google.maps.LatLng(pt[0], pt[1]);
+                    }
+                    var lineOptions = {map: map, path: pts, strokeColor: color, strokeWeight: weight};
+                    var line = new google.maps.Polyline(lineOptions);
+                    line.data = list[i];
+                    line.position = pts[Math.floor(pts.length/2)]
+                    overlaysEnipedia.push(line);
+                    google.maps.event.addListener(line, 'click', function() { open_info_enipedia(this, "line")} );
+                }
+            }
+            
+            function drop_stations_enipedia(data){
+                var list = data.results.bindings; 
+                for(var i = 0; i < list.length; i++){
+                    var coords = list[i].point.value.split(',');
+                    var latitude = coords[0].indexOf('S') > 0 ? "-"+coords[0].replace(' S','') : coords[0].replace(' N','');
+                    var longitude = coords[1].indexOf('W') > 0 ? "-"+coords[1].replace(' W','') : coords[1].replace(' E','');
+                    var myLatLng = new google.maps.LatLng(latitude, longitude);
+                    var markerOptions = {position: myLatLng, map: map, title: list[i].name.value, icon: "http://enipedia.tudelft.nl/kml/powersubstation.png"};
+                    var marker = new google.maps.Marker(markerOptions);
+                    marker.data = list[i];
+                    overlaysEnipedia.push(marker);
+                    google.maps.event.addListener(marker, 'click', function() { open_info_enipedia(this, "marker")} );
+                }
+            }
+            
+            function open_info_enipedia(obj, type) {
+                var content = "<div style='font-size: 9pt; font-family: Arial'><span style='font-size: 12pt'>" + obj.data.name.value + "</span>";
+                for (var p in obj.data) {
+                    if (p == "x")
+                        content += "<li><b>Enipedia link:</b> <a href=\"" + obj.data[p].value + "\">" + obj.data[p].value + "</a></li>";
+                    else if (p != "name" && p != "point" && p != "geopath" && p.indexOf("substation") == -1 && obj.data[p].value != null)
+                        content += "<li><b>" + p.replace("_"," ") + ":</b> " + obj.data[p].value.replace("_"," ") + "</li>";
+                }
+                if (type == "line") {
+                    content += "<li><b>Sunstation 1:</b> <a href=\"" + obj.data["substation1"].value + "\">" + obj.data["substation1Name"].value + "</a></li>";
+                    content += "<li><b>Sunstation 2:</b> <a href=\"" + obj.data["substation2"].value + "\">" + obj.data["substation2Name"].value + "</a></li>";
+                }
+                content += "</ul></div>";
+                infowindowEnipedia.setContent(content);
+                infowindowEnipedia.open(map, obj);
+            }
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>

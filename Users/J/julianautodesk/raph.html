@@ -29,3 +29,34 @@ https://views.scraperwiki.com/run/raphaeljs_cheat_sheet/
 ddd
 </body>
 
+<html>
+<head>
+    <script src="https://media.scraperwiki.com/js/raphael-1.5.2.min.js"></script>
+    <script src="https://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+    <style>
+       code { margin-left:10px; background:black; color: white; display:block; font-family: monospace; white-space:pre; font-size:120% }
+       p { margin-bottom:0px; }
+#rj { width:400px; height:300px; background-color:#222}
+    </style>
+<script>
+var c; 
+$(window).ready(function() 
+{
+    var width = $("#rj").width(); 
+    var height = $("#rj").height(); 
+    var paper = Raphael("rj", width, height)
+c = paper.circle(50, 40, 10).attr("fill", "red");
+c.click(function(e)  { this.animate({translation:"-10 200"}, 2000, "bounce"); })
+c.drag(function(dx, dy) { this.translate(dx-this.odx, dy-this.ody); this.odx=dx; this.ody=dy }, 
+       function() { this.odx = 0; this.ody = 0; this.attr({opacity:0.5})}, 
+       function() { this.attr({opacity:1}); })
+}); 
+
+</script>
+</head>
+<body>
+https://views.scraperwiki.com/run/raphaeljs_cheat_sheet/
+<div id="rj"></div>
+ddd
+</body>
+

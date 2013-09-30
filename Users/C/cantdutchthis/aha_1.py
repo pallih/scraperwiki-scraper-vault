@@ -296,4 +296,302 @@ for link in link_list:
         name   = product.find('a',{'class', 'description'})['title']
         date   = strftime("%Y-%m-%d %H:%M:%S", gmtime())
         data = { 'price':price, 'name':name, 'date':date, 'type':type_link, 'ID': date+name} 
+        scraperwiki.sqlite.save(unique_keys=['ID'], data=data)import urllib 
+from bs4 import BeautifulSoup 
+from time import gmtime, strftime
+import unicodedata
+import scraperwiki
+
+link_list = [[
+        'aardappelen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1_1ahalal2%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build' 
+    ],[
+        'groente', 
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1_1ahalal3%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'groente',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1_1ahalal3%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'fruit',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1_1ahalal4%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build'
+    ],[
+        'bier', 
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal303%7D&&items=//ecommerce/nl_NL/categories%3C{ecommerce_shoc1}/categories%3C{ecommerce_shoc1_1al}/categories%3C{ecommerce_shoc1_1al_1ahal}/categories%3C{ecommerce_shoc1_1al_1ahal_1ahalal115}/categories%3C{ecommerce_shoc1_1al_1ahal_1ahalal115_1ahalal303}&itemsinselection=1&fh_search_pass=search2location&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'groente_kookgemak', 
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1_1ahalal1860%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'groente_kookgemak', 
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1_1ahalal1860%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'diepvries_pizzas',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116_1ahalal356%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build'
+    ],[
+        'diepvries_snacks',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116_1ahalal357%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'ijs',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116_1ahalal358%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'diepvries_aardappel',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116_1ahalal352%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build'
+    ],[
+        'diepvries_groente',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116_1ahalal353%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build'
+    ],[
+        'diepvries_vleesvis',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal116_1ahalal355%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'kaas',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52_1ahalal53%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'kaas',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52_1ahalal53%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'eetzuivel',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52_1ahalal56%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'eetzuivel',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52_1ahalal56%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'drinkzuivel',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52_1ahalal54%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[ 
+        'boten_enzo',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52_1ahalal59%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'eieren',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52_1ahalal60%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build'
+    ],[
+        'houdbare_zuivel',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal52_1ahalal2036%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'rundvlees',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33_1ahalal34%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build'
+    ],[
+        'varkensvlees',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33_1ahalal35%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'kip',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33_1ahalal36%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build'
+    ],[
+        'lam',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33_1ahalal37%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build'
+    ],[
+        'vegameuk',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33_1ahalal39%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build'
+    ],[
+        'vis',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal33_1ahalal40%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'koffie_thee',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal103%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'koffie_thee',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal103%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'suiker_koffiemelk',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal104%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'bakproducten',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal105%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'broodbeleg',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal106%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'broodbeleg',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal106%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'ontbijt_meuk',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal107%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'ontbijt_meuk',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal107%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'maaltijd_kolydraten',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal108%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'maaltijd_sauzen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal109%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'maaltijd_sauzen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal109%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'internationale_meuk',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal110%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'internationale_meuk',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal110%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'kruiden',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal111%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'olie_sauzen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal112%7D&&fh_reffacet=categories&fh_start_index=0&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'olie_sauzen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal112%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'olie_sauzen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal112%7D&&fh_reffacet=categories&fh_start_index=240&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'soepen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal113%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'soepen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal113%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'conserven',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal114%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'conserven',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal114%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'conserven',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal102_1ahalal114%7D&&fh_reffacet=categories&fh_start_index=240&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'sappen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal275%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'sappen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal275%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'siroop',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal276%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build' 
+    ],[
+        'frisdrank',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal277%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'frisdrank',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal277%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'sportdrank',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal278%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build'
+    ],[
+        'eigenlijk_kraanwater',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal302%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build' 
+    ],[
+        'peuken',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal2197%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'chocolade',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal325%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'chocolade',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal325%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'chips',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal323%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'chips',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal323%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'suikerzooi',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal324%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'suikerzooi',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal324%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'apperatief',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal315%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build' 
+    ],[
+        'wijn',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal304%7D&&fh_reffacet=categories&fh_start_index=0&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'wijn',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal304%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'wijn',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal115_1ahalal304%7D&&fh_reffacet=categories&fh_start_index=240&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'witbrood',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92_1ahalal93%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build'
+    ],[
+        'bruinbrood',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92_1ahalal94%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build'
+    ],[
+        'bolletjes',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92_1ahalal95%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build' 
+    ],[
+        'vreemd_brood',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92_1ahalal96%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build' 
+    ],[
+        'afbakbrood',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92_1ahalal97%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build' 
+    ],[
+        'afbak',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92_1ahalal99%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build' 
+    ],[
+        'koek',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92_1ahalal101%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'koek',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92_1ahalal101%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'tussendoortjes',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal92_1ahalal100%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'schoonmaak_middelen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal454%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'schoonmaak_middelen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal454%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'schoonmaak_middelen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal454%7D&&fh_reffacet=categories&fh_start_index=240&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'schoonmaak_middelen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal460%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build' 
+    ],[
+        'wasmiddel',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal455%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'pleepapieren',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal457%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'overige_zooi',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal462%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'huisdier',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal464%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build'
+    ],[
+        'huisdier',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal464%7D&&fh_reffacet=categories&fh_start_index=120&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=120&action=albert_noscript.modules.build' 
+    ],[
+        'huisdier',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal465%7D&&fh_reffacet=categories&fh_refpath=facet_85502244&fh_refview=summary&action=albert_noscript.modules.build' 
+    ],[
+        'seizoen',
+        'http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fit_asso_start_date_8982%3C20130112%2Fit_asso_end_date_8982%3E20130112%2Fpr_startdate%3C20130112%2Fpr_enddate%3E20130112%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal118_1ahalal456%7D&&fh_reffacet=categories&fh_refview=summary&fh_refpath=facet_85502244&fh_view_size=60&action=albert_noscript.modules.build' 
+    ]]
+
+
+
+
+web_link             = "http://webwinkel.ah.nl/process?fh_location=%2F%2Fecommerce%2Fnl_NL%2Fcategories%3C%7Becommerce_shoc1%7D%2Fit_show_product_code_8982%3E%7B10%3B20%7D%2Fpr_startdate%3C20121229%2Fpr_enddate%3E20121229%2Fpr_ltc_allowed%3E%7Bbowi%7D%2Fcategories%3C%7Becommerce_shoc1_1al%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal%7D%2Fcategories%3C%7Becommerce_shoc1_1al_1ahal_1ahalal1%7D%2Fit_brand%3Dah&&fh_reffacet=it_brand&fh_refview=summary&fh_refpath=facet_90604659&fh_view_size=120&action=albert_noscript.modules.build"
+html_string            = urllib.urlopen(web_link).read()
+soup                 = BeautifulSoup(html_string) 
+all_products        = soup.findAll('div', {"class", "product"})
+
+for link in link_list: 
+    web_link               = link[1] 
+    type_link              = link[0]     
+    html_string            = urllib.urlopen(web_link).read()
+    soup                   = BeautifulSoup(html_string) 
+    all_products           = soup.findAll('div', {"class", "product"})
+    for product in all_products: 
+        promo_price = product.find('p',{'class', 'p_promo'})
+        if type(promo_price) != type(None): 
+            price = float(str(product.find('p',{'class', 'p_promo'}).contents[0]).replace(',','.'))
+        else: 
+            if type(product.find('p',{'class','p_specdeal'})) != type(None): 
+                if unicodedata.normalize('NFKD', product.find('p',{'class','p_specdeal'}).contents[0]).encode('ascii','ignore').find('2e') > 0: 
+                    price   = float(str(product.find('p',{'class', 'p_price'}).contents[0]).replace(',','.'))/2
+                elif unicodedata.normalize('NFKD', product.find('p',{'class','p_specdeal'}).contents[0]).encode('ascii','ignore').find('vanaf 6') > 0:
+                    price   = float(str(product.find('p',{'class', 'p_price'}).contents[0]).replace(',','.'))*0.9
+            else: 
+                price   = float(str(product.find('p',{'class', 'p_price'}).contents[0]).replace(',','.'))
+        name   = product.find('a',{'class', 'description'})['title']
+        date   = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+        data = { 'price':price, 'name':name, 'date':date, 'type':type_link, 'ID': date+name} 
         scraperwiki.sqlite.save(unique_keys=['ID'], data=data)

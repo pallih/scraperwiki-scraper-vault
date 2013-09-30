@@ -40,4 +40,46 @@ $(function() {
 </table>
 
 </body>
+</html><html>
+<head>
+<title>Perl jobs</title>
+
+<link rel="stylesheet" href="http://media.scraperwiki.com/css/jquery-ui-1.8.12.css">
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-1.5.2.min.js"></script>
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-ui-1.8.12.custom.min.js"></script>
+
+<script type="text/javascript"> 
+
+$(function() {
+ 
+
+  $.getJSON("http://api.scraperwiki.com/api/1.0/datastore/sqlite?callback=?",
+            {
+                "format": "jsondict",
+                "name": "perl_jobs",
+                "query": "select * from swdata order by date desc limit 1000",
+            },
+            function(data, textStatus, jqXHR) {
+
+      $.each(data, function(i, job) {
+
+          $("#joblist tr:last").after("<tr><td>" + job["date"] + "</td><td><a href=\"" + job["link"] + "\">" + job["title"] + "</a></td><td>" + job["company"] + "</td><td>" + job["location"] + "</td></tr>" );
+      });
+  });
+});
+</script>
+</head>
+<body>
+
+<h1>Perl jobs</h1>
+<table id="joblist">
+<tr>
+<th>Date</th>
+<th>Title</th>
+<th>Company</th>
+<th>Location</th>
+</tr>
+</table>
+
+</body>
 </html>

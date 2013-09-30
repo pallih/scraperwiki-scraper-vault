@@ -62,4 +62,68 @@
         <div id="map_canvas"></div>
 <!--textarea id='debugArea' rows='10' cols='50'></textarea-->
     </body>
+<html><!DOCTYPE html>           
+<html>
+    <head>
+        <title>Magento Users throughout the world</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+            $(function(){
+                var myOptions = {
+                    zoom: 3,
+                    center: new google.maps.LatLng(53.405092, -2.969876),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+            });
+
+        $.ajax({
+            url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=json&name=scrape_stackoverflow_for_magento_users_in_tennesse&query=select+location%2Clat%2Clng%2Ccount(*)+as+cnt+from+`users2`+where+`lat`+!%3D+1+AND+`lat`+!%3D+%27XXX%27+GROUP+BY+`location`',
+            dataType: 'json',
+            success: function(data){ 
+                drop_markers(data); 
+                //$('#debugArea').text(data);
+            }
+        });
+
+
+        function drop_markers(data){
+
+            //alert(data.length);
+
+            bounds = new google.maps.LatLngBounds();
+            for(i = 0; i < data.length; i++){
+
+                //alert(data[i].cnt + ':'+ data[i].lat +'-'+ data[i].lng); 
+
+                myLatLng = new google.maps.LatLng(data[i].lat, data[i].lng);
+                markerOptions = {position: myLatLng, map: map, title: data[i].location+'('+data[i].cnt+')',url:'http://www.google.com/'};
+                marker = new google.maps.Marker(markerOptions);
+                bounds.extend(myLatLng);
+                map.fitBounds(bounds);
+            }
+        }
+
+        google.maps.event.addListener(marker, 'click', function() {
+              window.location.href = marker.url;
+            });
+
+
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+<!--textarea id='debugArea' rows='10' cols='50'></textarea-->
+    </body>
 <html>

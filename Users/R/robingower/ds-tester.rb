@@ -4,3 +4,9 @@
 
 record = { 'name' => 'band a', 'desc' => 'rubbish'}
 ScraperWiki.save(['name'], record)
+###############################################################################
+# Datastore test
+###############################################################################
+
+record = { 'name' => 'band a', 'desc' => 'rubbish'}
+ScraperWiki.save(['name'], record)

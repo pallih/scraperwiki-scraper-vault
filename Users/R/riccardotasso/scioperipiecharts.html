@@ -120,4 +120,126 @@ Field Name: <select name="fields" id="fields"></select>
 <div id="chart_div" style="width: 1024px; height: 768px;"></div>
 
 </body>
+</html><!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+
+<script>
+
+google.load("visualization", "1", {packages:["corechart"]});
+
+function add_options(data) {
+    for(k in data[0]) {
+        var n = document.createElement("option");
+        n.setAttribute("value", k);
+        var txt = document.createTextNode(k);
+        n.appendChild(txt);
+        var e = document.getElementById('fields');
+        e.appendChild(n);
+    }
+    
+}
+
+function pop_from(data) {
+    var dates = []
+    for(k in data[0])
+        dates.push(data[0][k]);
+    
+    var min_date =  dates.sort()[0];
+    document.getElementById('d_from').setAttribute("value", min_date);
+    min_date = document.createTextNode(min_date);
+    document.getElementById('d_from').appendChild(min_date);
+}
+
+window.onload=function() {
+
+    var query="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=scioperi_it&query=select%20*%20from%20%60swdata%60%20limit%201";
+    
+    $.ajax({
+        url: query,
+        dataType: 'json',
+        success: function(data){ add_options(data); }
+    });
+
+    query = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?" +
+            "format=jsondict&name=scioperi_it&query=select" + "%20min(%60Data%20Intervento%60)%2C%20"+
+            "min(%60Data%20Proclamazione%60)%2C%20"+
+            "min(%60Data%20sciopero%60)%2C%20"+
+            "min(%60Data%20sciopero%20dal%60)%2C%20"+
+            "min(%60Data%20sciopero%20al%60)%2C%20"+
+            "min(%60Data%20Revoca%60)%2C%20"+
+            "min(%60Data%20Differimento%60)%20"+
+            "from%20%60swdata%60";
+    $.ajax({
+        url: query,
+        dataType: 'json',
+        success: function(data){ pop_from(data); }
+    });
+};
+
+function write(data, field) {
+    var g_map = {};
+    for(var i = 0; i < data.length; i ++) {
+        var key = data[i]['field'];
+        if(key == null)
+            continue;
+        var incr = data[i]['count'];
+        if(key.charAt(0) == '[' && key.charAt(key.length - 1) == ']') {
+            var keys = JSON.parse(key);
+        } else {
+            var keys = [key];
+        }
+        for(j in keys) {
+            var k = keys[j];
+            if(!(k in g_map))
+                g_map[k] = 0;
+            g_map[k] += incr;
+        }
+    }
+    var g_data = []
+    g_data.push([field, 'Count'])
+    for(k in g_map) {
+        g_data.push([k, g_map[k]]);
+    }
+
+    g_data = google.visualization.arrayToDataTable(g_data);
+
+    var options = {
+      title: 'My Daily Activities'
+    };
+
+    var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
+    chart.draw(g_data, options);
+}
+
+function myFunction(field) {
+
+    var query="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=scioperi_it&query=SELECT%20`" + field + "`%20AS%20field%2C%20COUNT(`" + field +  "`)%20AS%20count%20" +
+                "%0AFROM%20swdata%0A" +
+                "GROUP%20BY%20`" + field + "`" +
+                "%0AORDER%20BY%20COUNT(`"+ field +"`)%20DESC";
+
+    $.ajax({           
+        url: query,
+        dataType: 'json',
+        success: function(data){ write(data, field); }
+    });
+}
+</script>
+</head>
+
+<body>
+
+Field Name: <select name="fields" id="fields"></select>
+<!--
+<input id="d_from", name="d_from", type="date" />
+<input id="d_to", name="d_to", type="date" />
+-->
+<input type="button" onclick="myFunction(document.getElementById('fields').value)" value="Calculate" />
+<div id="chart_div" style="width: 1024px; height: 768px;"></div>
+
+</body>
 </html>

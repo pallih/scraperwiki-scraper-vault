@@ -119,3 +119,124 @@
         
     </body>
 </html>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Oil Refineries Synthesis Map</title>
+        <!-- modification of--> 
+        <!--https://scraperwiki.com/views/oil_refineries_synthesis_map/-->
+        <!--http://harrywood.co.uk/maps/examples/openlayers/marker-popups.view.html.-->
+        <!--<div id="mapdiv"></div>-->
+        <!-- with DOCTYPE must specify dimensions of map element top, left, bottom, right-->
+        <div id="mapdiv" style="top: 0; left: 0; bottom: 0; right: 0; position: fixed;"></div>
+        <link rel="stylesheet" href="http://media.scraperwiki.com/css/jquery-ui-1.8.12.css">
+        <script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-1.5.2.min.js"></script>
+        <script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-ui-1.8.12.custom.min.js"></script>
+        <script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script> 
+        <script type="text/javascript" src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+        <script type="text/javascript"> 
+        
+            map = new OpenLayers.Map("mapdiv");
+            map.addLayer(new OpenLayers.Layer.OSM());
+            
+            epsg4326 =  new OpenLayers.Projection("EPSG:4326"); //WGS 1984 projection
+            projectTo = map.getProjectionObject(); //The map projection (Spherical Mercator)
+           
+            var lonLat = new OpenLayers.LonLat( -0.1279688 ,51.5077286 ).transform(epsg4326, projectTo);
+                  
+            var zoom=14;
+            map.setCenter (lonLat, zoom);
+           
+            var vectorLayer = new OpenLayers.Layer.Vector("Overlay");
+            
+    
+           
+            var queryString = {};
+            var params = location.search.split(/[?&]/);
+            for (param in params) {
+                queryString[params[param].split("=")[0]] = params[param].split("=")[1];
+            }
+            
+            
+            //Add a selector control to the vectorLayer with popup functions
+            var controls = {
+              selector: new OpenLayers.Control.SelectFeature(vectorLayer, { onSelect: createPopup, onUnselect: destroyPopup })
+            };
+
+            function createPopup(feature) {
+              feature.popup = new OpenLayers.Popup.FramedCloud("pop",
+                  feature.geometry.getBounds().getCenterLonLat(),
+                  null,
+                  '<div class="markerContent">'+feature.attributes.description+'</div>',
+                  null,
+                  true,
+                  function() { controls['selector'].unselectAll(); }
+              );
+              //feature.popup.closeOnMove = true;
+              map.addPopup(feature.popup);
+            }
+
+            function destroyPopup(feature) {
+              feature.popup.destroy();
+              feature.popup = null;
+            }
+            
+            map.addControl(controls['selector']);
+            controls['selector'].activate();
+        
+        $(document).ready(function(){
+            
+            var params = location.search.split(/[?&]/);
+            for (param in params) {
+                queryString[params[param].split("=")[0]] = params[param].split("=")[1];
+            }
+            
+            load_ppl_scraper("wikipedia_oil_refineries", "select plant as name, province, city, owner, operator, longitude, latitude, wikipediaPage from swdata where latitude <> ''");
+            //load_ppl_scraper("europetrole", "select name, location, owner, description, longitude, latitude from swdata where latitude is not null and type like '%Raffinerie%'");
+            load_ppl_scraper("power_plants_from_industryabout", "select name, area, address, type, owner, shareholders, activity_since, installed_capacity, production, longitude, latitude, web, wikipedia, other_name, notes from refineries where latitude is not null");
+            
+                
+            function load_ppl_scraper(source, sql_query) {
+                $.ajax({
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite',
+                    data: {
+                        name: source,
+                        query: sql_query,
+                        format: "jsondict"
+                    },
+                    dataType: 'json',
+                    success: function(data){ drop_markers_scraper(data, source); }
+                });
+            }
+        });    
+            
+        function drop_markers_scraper(data, source){
+            var reEncode = /((?:%[0-9A-F]{2}){1,2})/ig;
+            for (var i = 0; i < data.length; i++) {
+                var feature = new OpenLayers.Feature.Vector(
+                    new OpenLayers.Geometry.Point( data[i].longitude, data[i].latitude).transform(epsg4326, projectTo),
+                    //{description:'Big Ben'} ,
+                    {description:data[i].name} ,
+                    <!--{externalGraphic: 'img/marker.png', graphicHeight: 25, graphicWidth: 21, graphicXOffset:-12, graphicYOffset:-25  }-->
+                    {externalGraphic: 'http://www.openlayers.org/dev/img/marker.png', graphicHeight: 25, graphicWidth: 21, graphicXOffset:-12, graphicYOffset:-25  }
+                );    
+                vectorLayer.addFeatures(feature);
+
+            }
+        }
+        
+        map.addLayer(vectorLayer);
+            
+        
+        </script>
+        
+    </head>
+    <body>
+        <script>
+            
+            
+        </script>
+        
+        
+    </body>
+</html>

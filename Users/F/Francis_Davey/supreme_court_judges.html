@@ -41,3 +41,46 @@
     </body>
 </html>
 <!-- https://scraperwiki.com/views/new/html?sourcescraper=uk-supreme-court-cases -->
+<!DOCTYPE html> 
+<html> 
+<head> 
+    <title>Supreme Court Judges</title> 
+    <meta charset="UTF-8"> 
+    <style type="text/css"> html, body, #map_canvas { margin: 0; padding: 0; height: 100%; } </style> 
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        // this is where our program lives
+
+        var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+        var srcname = "supreme_court_judges"; 
+        var sqlselect = "select judge, count(case_id) as ncases from judges group by judge order by ncases desc"; 
+        $.ajax({
+            url: apiurl, 
+            dataType: "jsonp", 
+            data:{
+                name: srcname, 
+                query: sqlselect, 
+                format: "jsonlist"
+            }, 
+            success: consumedata(data){
+                alert(data);
+            }
+        }); 
+
+
+    function consumedata(tdata) 
+    {
+        var keys = tdata[0]["keys"]; 
+        var data = tdata[0]["data"]; 
+        var tab = $("<table>"); 
+        $(window).append(tab); 
+        tab.append($("<tr><th>" + keys.join("</th><th>") + "</th></tr>")); 
+        for (var i = 0; i < data.length; i++) 
+            tab.append($('<tr><td>' + data[i].join("</td><td>") + "</td></tr>")); 
+    }
+    </script>
+    <body> 
+        <div id="map_canvas"></div> 
+    </body>
+</html>
+<!-- https://scraperwiki.com/views/new/html?sourcescraper=uk-supreme-court-cases -->

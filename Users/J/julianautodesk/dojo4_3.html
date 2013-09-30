@@ -108,3 +108,113 @@ table.mytable {border:1px solid black}
 </body>
 </html>
 
+<html>
+<head>
+<script src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<style>
+</style>
+
+<script>
+
+var XorO = "X";
+
+function getCellText(i)
+{
+    return $(t[i]).text();
+}
+
+function checkTriple(i, j, k)
+{
+    var t = $("#mytable td");
+    if($(t[i]).text() === $(t[j]).text() && $(t[i]).text() === $(t[k]).text()
+       && $(t[i]).text() != "-")
+//       return $(t[i]).text();
+       return true;
+    else
+       return false;
+}
+function boardFull()
+{
+    var t = $("#mytable td");
+    result =
+      ($(t[0]).text() != "-") && 
+      ($(t[1]).text() != "-") && 
+      ($(t[2]).text() != "-") && 
+      ($(t[3]).text() != "-") && 
+      ($(t[4]).text() != "-") && 
+      ($(t[5]).text() != "-") && 
+      ($(t[6]).text() != "-") && 
+      ($(t[7]).text() != "-") && 
+      ($(t[8]).text() != "-"); 
+   return result;
+}
+
+function checkForWinner()
+{
+  if(checkTriple(0, 1, 2) || 
+     checkTriple(3, 4, 5) || 
+     checkTriple(6, 7, 8) ||
+     checkTriple(0, 3, 6) ||
+     checkTriple(1, 4, 7) ||
+     checkTriple(2, 5, 8) ||
+     checkTriple(0, 4, 8) ||
+     checkTriple(2, 4, 6))
+  return true;
+}
+
+
+function cellClicked(c) {
+    if(boardFull())
+    {
+      alert("game is already over");
+      return;
+    }
+
+    if($(c.toElement).text() === "-")
+    {
+      flip();
+
+      if (checkForWinner()) alert ("You won!:" + XorO);
+    }
+   else
+    alert("click empty cell");
+}
+function flip() {
+    if (XorO === "X") XorO="O";
+    else XorO = "X";
+}
+
+function main() {
+    //alert("Hello world"); 
+    $("#mytable td").click(cellClicked);
+}
+
+$("#mytable td").click(function() {z=alert(""+$(this).text())})
+$(window).ready(main); 
+
+
+</script>
+</head>
+
+<body>
+
+<h2>Play Tic-Tac-Toe shjfjs</h2>
+<style type="text/css">
+//table.mytable {background-color:transparent;border-collapse:collapse;}
+table.mytable {border:1px solid black}
+</style>
+<table id="mytable">
+<tr>
+<td id=1>-</td><td id=2>-</td> <td id=3>-</td>
+</tr>
+<tr>
+<td id=4>-</td><td id=5>-</td> <td id=6>-</td>
+</tr>
+<tr>
+<td id=7>-</td><td id=8>-</td> <td id=9>-</td>
+</tr>
+</table>
+
+</body>
+</html>
+

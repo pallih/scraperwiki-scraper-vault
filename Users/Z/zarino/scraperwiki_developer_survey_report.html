@@ -262,4 +262,268 @@ function makeTable(container, sql){
             </script>
         </div>
     </body>
+</html><!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>ScraperWiki Developer Survey Report</title>
+        <style type="text/css">
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+}
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 18px;
+    line-height: 24px;
+    background: #f3f3f3 url('https://media.scraperwiki.com/images/f3f3f3_grain.gif') 0 0;
+    width: 800px;
+    margin: 0 auto;
+}
+ol, ul {
+    list-style: none;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after, q:before, q:after {
+    content: '';
+    content: none;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+b, strong {
+    font-weight: bold;
+}
+i, em {
+    font-style: italic;
+}
+#scraperwikitag {
+    display: block;
+    position: fixed;
+    top: -5px;
+    right: 20px;
+    z-index: 4;
+    width: 200px;
+    height: 40px;
+    padding: 0;
+    background: #fff url('https://media.scraperwiki.com/images/powered.png') 50% 15px no-repeat;
+    text-indent: -9000px;
+    cursor: pointer;
+    -webkit-box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.4);
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.4);
+    -webkit-border-bottom-right-radius: 2px;
+    -webkit-border-bottom-left-radius: 2px;
+    -moz-border-radius-bottomright: 2px;
+    -moz-border-radius-bottomleft: 2px;
+    border-bottom-right-radius: 2px;
+    border-bottom-left-radius: 2px;
+    transition: top 0.1s;
+    -moz-transition: top 0.1s;
+    -webkit-transition: top 0.1s; 
+    -o-transition: top 0.1s;
+}
+#scraperwikitag:hover {
+    top: -2px;
+}
+#loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    line-height: 40px;
+    padding-top: 26px;
+    width: 150px;
+    margin-top: -32px;
+    margin-left: -75px;
+    background: rgba(0,0,0,0.5) url(data:image/gif;base64,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)50% 10px no-repeat;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    color: #fff;
+    -webkit-box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    -moz-box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    cursor: wait;
+}
+table {
+    margin: 10px auto;
+}
+td {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: #fff;
+    vertical-align: middle;
+}
+th {
+    padding: 5px 10px;
+    font-weight: bold;
+    border: 1px solid #ddd;
+    background: rgba(0,0,0,0.05);
+    vertical-align: middle;
+}
+p.sql {
+    margin: 10px 0 40px 0;
+    padding: 5px 10px;
+    background: rgba(0,0,0,0.05);
+    font-family: Consolas, "Andale Mono", "Lucida Console", Monaco, Courier, monospace;
+    font-size: 12px;
+    line-height: 16px;
+    color: #444;
+}
+tr:hover td {
+    background: #f6f6f6;
+}
+h2 {
+    margin: 40px 0;
+    text-align: center;
+    font-weight: bold;
+    font-size: 30px;
+    line-height: 30px;
+    padding-top: 40px;
+    border-top: 2px solid #ccc;
+}
+
+h2:first-of-type {
+    border-top: none;
+    padding-top: 0;
+}
+        </style>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript" src="https://media.scraperwiki.com/js/jquery.flot.js"></script>
+        <script type="text/javascript">
+$(function(){
+    $('<a>').attr('id', 'scraperwikitag').attr('href', $('#scraperwikipane a').attr('href')).appendTo('body');
+    $('#scraperwikipane').hide();
+})
+
+function makeTable(container, sql){
+    $(function(){
+        $.ajax({
+            dataType: 'json',
+            url: 'http://sw.zarino.co.uk/api/',
+            data: {sql: sql},
+            success: function(data, textStatus, jqXHR){
+                $t = $('<table>').appendTo($(container));
+                $.each(data.response, function(rownum,cols){
+                    if(rownum == 0){
+                        $th = $('<tr>').appendTo($t);
+                        $.each(cols, function(col,cell){
+                            $th.append('<th>' + col + '</th>');
+                        });
+                    }
+                    $tr = $('<tr>').appendTo($t);
+                    $.each(cols, function(col, cell){
+                        $tr.append('<td>' + cell + '</td>');
+                    });
+                });
+                $($t).after('<p class="sql">' + data.query + '</p>');
+                $('#loading').hide();
+            }, error: function(jqXHR, textStatus, errorThrown){
+                console.log(textStatus);
+                console.log(errorThrown);
+                console.log($.parseJSON(jqXHR.responseText));
+            }
+        })
+    })
+}
+        </script>
+    </head>
+    <body>
+        <p id="loading">Loading&hellip;</p>
+        <h2>Summary</h2>
+        <div id="main_use">
+            <script type="text/javascript">
+                makeTable('#main_use', 'select users.use as "main use", count(uuid) as "number of users" from users where incomplete=0 group by users.use order by count(uuid) desc');
+            </script>
+        </div>
+        <div id="languages">
+            <script type="text/javascript">
+                makeTable('#languages', 'select languages.name as language, count(languages_users.id) as "number of users" from languages, languages_users where languages.id=languages_users.language_id group by languages_users.language_id order by count(languages_users.id) desc');
+            </script>
+        </div>
+        <div id="descriptions">
+            <script type="text/javascript">
+                makeTable('#descriptions', 'select descriptions.name as description, count(descriptions_users.id) as "number of users" from descriptions, descriptions_users where descriptions.id=descriptions_users.description_id group by descriptions_users.description_id order by count(descriptions_users.id) desc');
+            </script>
+        </div>
+        <div id="services">
+            <script type="text/javascript">
+                makeTable('#services', 'select services.name as service, case when paid=0 then "" else "$" end as "paid?", count(services_users.id) as "number of users" from services, services_users where services.id=services_users.service_id group by services_users.service_id, paid order by count(services_users.id) desc');
+            </script>
+        </div>
+        <div id="disappointed">
+            <script type="text/javascript">
+                makeTable('#disappointed', 'select case when disappointed is null then "(skipped)" else disappointed end as "disappointed if we disappeared?", count(uuid) as "number of users" from users where incomplete=0 group by disappointed');
+            </script>
+        </div>
+        <div id="recommend">
+            <script type="text/javascript">
+                makeTable('#recommend', 'select case when recommend is null then "(skipped)" else recommend end as "would you recommend us?", count(uuid) as "number of users" from users where incomplete=0 group by recommend order by recommend desc');
+            </script>
+        </div>
+        <h2>&ldquo;Businessmen&rdquo; only</h2>
+        <div id="main_use2">
+            <script type="text/javascript">
+                makeTable('#main_use2', 'select users.use as "main use", count(users.uuid) as "number of users" from users, descriptions_users, descriptions where incomplete=0 and descriptions_users.uuid=users.uuid and descriptions_users.description_id=descriptions.id and descriptions.name="Businessman" group by users.use order by count(users.uuid) desc');
+            </script>
+        </div>
+        <div id="languages2">
+            <script type="text/javascript">
+                makeTable('#languages2', 'select languages.name as language, count(languages_users.id) as "number of users" from languages, languages_users, descriptions, descriptions_users where languages.id=languages_users.language_id and languages_users.uuid=descriptions_users.uuid and descriptions_users.description_id=descriptions.id and descriptions.name="Businessman" group by languages_users.language_id order by count(languages_users.id) desc');
+            </script>
+        </div>
+        <div id="services2">
+            <script type="text/javascript">
+                makeTable('#services2', 'select services.name as service, case when paid=0 then "" else "$" end as "paid?", count(services_users.id) as "number of users" from services, services_users, descriptions, descriptions_users where services.id=services_users.service_id and services_users.uuid=descriptions_users.uuid and descriptions_users.description_id=descriptions.id and descriptions.name="Businessman" group by services_users.service_id, paid order by count(services_users.id) desc');
+            </script>
+        </div>
+        <h2>Only users who pay for at least one online service</h2>
+        <div id="main_use3">
+            <script type="text/javascript">
+                makeTable('#main_use3', 'select users.use as "main use", count(users.uuid) as "number of users" from users where incomplete=0 and users.uuid in (select users.uuid from users, services_users where users.uuid=services_users.uuid and services_users.paid=1 group by users.uuid) group by users.use order by count(users.uuid) desc');
+            </script>
+        </div>
+        <div id="languages3">
+            <script type="text/javascript">
+                makeTable('#languages3', 'select languages.name as language, count(languages_users.id) as "number of users" from languages, languages_users where languages.id=languages_users.language_id and languages_users.uuid in (select users.uuid from users, services_users where users.uuid=services_users.uuid and services_users.paid=1 group by users.uuid) group by languages_users.language_id order by count(languages_users.id) desc');
+            </script>
+        </div>
+        <div id="services3">
+            <script type="text/javascript">
+                makeTable('#services3', 'select services.name as service, case when paid=0 then "" else "$" end as "paid?", count(services_users.id) as "number of users" from services, services_users where services.id=services_users.service_id and services_users.uuid in (select users.uuid from users, services_users where users.uuid=services_users.uuid and services_users.paid=1 group by users.uuid) group by services_users.service_id, paid order by count(services_users.id) desc');
+            </script>
+        </div>
+        <div id="disappointed2">
+            <script type="text/javascript">
+                makeTable('#disappointed2', 'select case when disappointed is null then "(skipped)" else disappointed end as "disappointed if we disappeared?", count(uuid) as "number of users" from users where incomplete=0 and users.uuid in (select users.uuid from users, services_users where users.uuid=services_users.uuid and services_users.paid=1 group by users.uuid) group by disappointed');
+            </script>
+        </div>
+        <div id="disappointed3">
+            <script type="text/javascript">
+                makeTable('#disappointed2', 'select case when users.username is null then "(anonymous)" else users.username end as username, case when disappointed is null then "(skipped)" else disappointed end as "disappointed if we disappeared?", case when disappointed_why is null then "(skipped)" else disappointed_why end as "Why?" from users, services_users where users.uuid=services_users.uuid and services_users.paid=1 group by users.uuid');
+            </script>
+        </div>
+        <div id="recommend2">
+            <script type="text/javascript">
+                makeTable('#recommend2', 'select case when recommend is null then "(skipped)" else recommend end as "would you recommend us?", count(uuid) as "number of users" from users where incomplete=0 and users.uuid in (select users.uuid from users, services_users where users.uuid=services_users.uuid and services_users.paid=1 group by users.uuid) group by recommend order by recommend desc');
+            </script>
+        </div>
+        <div id="recommend3">
+            <script type="text/javascript">
+                makeTable('#recommend3', 'select case when users.username is null then "(anonymous)" else users.username end as username, case when recommend is null then "(skipped)" else recommend end as "would you recommend us?", case when recommend_why is null then "(skipped)" else recommend_why end as "Why?" from users, services_users where users.uuid=services_users.uuid and services_users.paid=1 group by users.uuid');
+            </script>
+        </div>
+    </body>
 </html>

@@ -199,4 +199,205 @@ text.append("svg:text")
 
     </script>
   </body>
+</html><html>
+  <head>
+<!-- http://bl.ocks.org/1153292 -->
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>Cloudworks</title>
+    <script type="text/javascript" src="https://raw.github.com/mbostock/d3/master/d3.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+//---
+//http://jquery-howto.blogspot.com/2009/09/get-url-parameters-values-with-jquery.html
+$.extend({
+  getUrlVars: function(){
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+      hash = hashes[i].split('=');
+      vars.push(hash[0]);
+      vars[hash[0]] = hash[1];
+    }
+    return vars;
+  },
+  getUrlVar: function(name){
+    return $.getUrlVars()[name];
+  }
+});
+//---
+</script>
+
+    <style type="text/css">
+
+path.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
+
+marker#licensing {
+  fill: green;
+}
+
+path.link.licensing {
+  stroke: green;
+}
+
+path.link.resolved {
+  stroke-dasharray: 0,2 1;
+}
+
+circle {
+  fill: #ccc;
+  stroke: #333;
+  stroke-width: 1.5px;
+}
+
+text {
+  font: 10px sans-serif;
+  pointer-events: none;
+}
+
+text.shadow {
+  stroke: #fff;
+  stroke-width: 3px;
+  stroke-opacity: .8;
+}
+
+    </style>
+  </head>
+  <body>
+
+<div style="position:absolute;bottom:0;font-size:18px;">force: <input style="position:relative;top:3px;" type="range" min="-1500" max="0" value="-300"></div>
+
+<div id='output'></div>
+
+    <script type="text/javascript">
+if (!($.getUrlVar('cloudscapeID')) )
+    q='?'
+  else
+    q="?cloudscapeID="+escape($.getUrlVar('cloudscapeID'))
+
+if (!($.getUrlVar('userID')) )
+    uid=''
+  else
+    uid="&userID="+escape($.getUrlVar('userID'))
+
+
+if (!($.getUrlVar('filterNdegree')) )
+    fd=''
+  else
+    fd="&filterNdegree="+escape($.getUrlVar('filterNdegree'))
+
+if (!($.getUrlVar('viewtype')) )
+    vt=''
+  else
+    vt="&viewtype="+escape($.getUrlVar('viewtype'))
+
+var w = 1160,
+    h = 790;
+
+var svg = d3.select("body").append("svg:svg")
+    .attr("width", w)
+    .attr("height", h);
+
+var color = d3.scale.category20();
+
+d3.json("https://views.scraperwiki.com/run/cloudworks_network/"+q+vt+uid+fd, function(error, graph) {
+True=1
+False=0
+var links=graph.links
+var nodes=graph.nodes
+// Compute the distinct nodes from the links.
+links.forEach(function(link) {
+  link.source = nodes[link.source] || (nodes[link.source] = {name: link.source});
+  link.target = nodes[link.target] || (nodes[link.target] = {name: link.target});
+});
+
+
+
+var force = d3.layout.force()
+    .nodes(d3.values(nodes))
+    .links(links)
+    .size([w, h])
+    .linkDistance(80)
+    .charge(-400)
+    .start();
+
+
+// Per-type markers, as they don't inherit styles.
+svg.append("svg:defs").selectAll("marker")
+    .data(["tag", "user", "cloud"])
+  .enter().append("svg:marker")
+    .attr("id", String)
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 15)
+    .attr("refY", -1.5)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+  .append("svg:path")
+    .attr("d", "M0,-5L10,0L0,5");
+
+var path = svg.append("svg:g").selectAll("path")
+    .data(force.links())
+  .enter().append("svg:path")
+    .attr("class", function(d) { return "link " + d.group; })
+    .attr("marker-end", function(d) { return "url(#" + d.group + ")"; });
+
+var circle = svg.append("svg:g").selectAll("circle")
+    .data(force.nodes())
+  .enter().append("svg:circle")
+  .style("fill", function(d) { return color(d.group); })
+    .attr("r", 6)
+    .call(force.drag);
+
+var text = svg.append("svg:g").selectAll("g")
+    .data(force.nodes())
+  .enter().append("svg:g");
+
+// A copy of the text with a thick white stroke for legibility.
+text.append("svg:text")
+    .attr("x", 8)
+    .attr("y", ".31em")
+    .attr("class", "shadow")
+    .text(function(d) { return d.name; });
+
+text.append("svg:text")
+    .attr("x", 8)
+    .attr("y", ".31em")
+    .text(function(d) { return d.name; });
+
+ force.on("tick", function() {
+// Use elliptical arc path segments to doubly-encode directionality.
+  path.attr("d", function(d) {
+    var dx = d.target.x - d.source.x,
+        dy = d.target.y - d.source.y,
+        dr = Math.sqrt(dx * dx + dy * dy);
+    return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+  });
+
+  circle.attr("transform", function(d) {
+    return "translate(" + d.x + "," + d.y + ")";
+  });
+
+  text.attr("transform", function(d) {
+    return "translate(" + d.x + "," + d.y + ")";
+  });
+
+ d3.select("input[type=range]").on("change", function() {
+ //   what do we do here?
+    force.charge(this.value);
+    force.start();
+  });
+
+  });
+
+})
+
+
+    </script>
+  </body>
 </html>

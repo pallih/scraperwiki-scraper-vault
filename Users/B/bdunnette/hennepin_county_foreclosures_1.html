@@ -40,4 +40,46 @@
     };
 
   </script>
+</body></html><html><body>
+  <div id="mapdiv"></div>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+  <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+  <script>
+    map = new OpenLayers.Map("mapdiv");
+    map.addLayer(new OpenLayers.Layer.OSM());
+ 
+    var lonLat = new OpenLayers.LonLat(-93.4787137352813, 45.0059320318464)
+          .transform(
+            new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+            map.getProjectionObject() // to Spherical Mercator Projection
+          );
+ 
+    var zoom=12;
+ 
+    var markers = new OpenLayers.Layer.Markers( "Markers" );
+    map.addLayer(markers);
+    
+    var size = new OpenLayers.Size(21,25);
+    var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
+    var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png',size,offset);
+    markers.addMarker(new OpenLayers.Marker(new OpenLayers.LonLat(-93.4787137352813, 45.0059320318464), icon));
+    
+            
+    map.setCenter (lonLat, zoom);
+
+    $.ajax({
+        url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=hennepin_county_foreclosures&query=select%20*%20from%20swdata',
+        dataType: 'json',
+        success: function(data){ drop_markers(data); }
+    });
+    
+    function drop_markers(data){
+        for(i = 0; i < 10; i++){
+            var address = data[i]['Unverified Common Address'];
+            console.log(address);
+            $.ajax({url: 'http://open.mapquestapi.com/nominatim/v1/search?format=json&q=' + address, dataType: 'json', success: function(geodata) {console.log(geodata); if (geodata.length > 0) {var address_lon_lat = new OpenLayers.LonLat(geodata[0].lon,geodata[0].lat); console.log(address_lon_lat); marker = new OpenLayers.Marker(address_lon_lat); console.log(marker); markers.addMarker(marker);}}});
+        }
+    };
+
+  </script>
 </body></html>

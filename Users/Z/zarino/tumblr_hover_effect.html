@@ -100,3 +100,105 @@
 
   </body>
 </html>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Recreation of Tumblr hover effect for Loz</title>
+    <meta charset="UTF-8">
+    <style type="text/css">
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Just setting up the blue boxes.
+       Note 'position: relative' so we can place the links where we need them  */
+        
+    div {
+        position: relative;
+        width: 300px;
+        height: 200px;
+        background-color: #39c;
+        float: left;
+        margin: 20px;
+    }
+    
+    /* Styling the links.
+       We position them low down in the box (80%) and make them fully transparent.
+       The transition properties define what'll happen when we hover over the blue divs */
+
+    a {
+        position: absolute;
+        top: 80%;
+        left: 50%;
+        display: block;
+        width: 25px;
+        height: 25px;
+        margin-left: -30px;
+        margin-top: -12px;
+        background: transparent url(http://static.tumblr.com/dbek3sy/ZQDlsyx5t/icons.png) 0 0 no-repeat;
+        opacity: 0;
+        -webkit-transition: all 0.25s ease;
+        -moz-transition: all 0.25s ease;
+        transition: all 0.25s ease;
+        -o-transition: all 0.25s ease;
+        cursor: pointer;
+    }
+
+    a.second {
+        background-position: -25px 0;
+        margin-left: 5px;
+        -webkit-transition: all 0.45s ease;
+        -moz-transition: all 0.45s ease;
+        transition: all 0.45s ease;
+        -o-transition: all 0.45s ease;
+    }
+
+    /* Here you go, we're setting how we want to links to look AFTER we've hovered over the divs.
+       The transition properties of the above two bits will handle the smooth transition  */ 
+
+    div:hover a {
+        top: 50%;
+        opacity: 1;
+    }
+
+    </style>
+  </head>
+  <body>
+    <!-- Ignore me --><span style="display:none"><div id="scraperwikipane"></div></span>
+
+    <div>
+        <a class="first"></a>
+        <a class="second"></a>
+    </div>
+    <div>
+        <a class="first"></a>
+        <a class="second"></a>
+    </div>
+    <div>
+        <a class="first"></a>
+        <a class="second"></a>
+    </div>
+    <div>
+        <a class="first"></a>
+        <a class="second"></a>
+    </div>
+    <div>
+        <a class="first"></a>
+        <a class="second"></a>
+    </div>
+    <div>
+        <a class="first"></a>
+        <a class="second"></a>
+    </div>
+    <div>
+        <a class="first"></a>
+        <a class="second"></a>
+    </div>
+    <div>
+        <a class="first"></a>
+        <a class="second"></a>
+    </div>
+
+  </body>
+</html>

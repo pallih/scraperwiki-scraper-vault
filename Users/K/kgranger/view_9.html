@@ -18,3 +18,23 @@
     </body>
 </html>
 
+<html>
+    <head>
+    <title>Numbers of reviews on Booking.com</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+
+    <script>
+    $.ajax({
+        url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=booking_jdv&query=select%20*%20from%20%60swdata%60%20limit%2010',
+        dataType: 'json',
+        success: function(data){
+            $('#datawarp').append("data loaded")
+        ; }
+    });
+    </script>
+    </head>
+    <body>
+    <div id="datawarp"></div>
+    </body>
+</html>
+

@@ -275,3 +275,280 @@ kampioen " Buttons". De details op deze pagina zijn van Buttons maar de opzet is
     </script>
 </body>
 </html>
+<html>
+    <head>
+        <title>Profcoach - Weekresultaat voor teams in selectie</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.1.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+        <style type="text/css">
+          body {
+            padding-top: 60px;
+            padding-bottom: 40px;
+          }
+           .badges{margin:10px 0 0;}
+           .pclogo {float:right;width:5.2em;}
+           .swlogo {float:right;width:7.2em;}
+           .gerardlogo {float:right;}
+           #errormsg { display:none; }
+        </style>
+    </head>
+
+<body>
+   <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">Profcoach - Weekresultaat voor teams in selectie</a>
+        </div><!-- /.container -->
+      </div><!-- /.navbar-inner -->
+    </div><!-- /.navbar -->
+
+    <div class="container">
+
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="span4">
+          <h2>Over Profcoach</h2>
+           <p><img class="pclogo" src="https://www.profcoach.nl/Content/themes/general/images/Layout/logo.png" title="logo profcoach.nl">Profcoach is een Nederlands voetbalmanagement spel waarmee punten te zijn verdienen. Je kan individueel meedoen, maar leuker is het om het samen in een subleague te doen.</p>
+          <p><a class="btn" href="http://www.profcoach.nl">naar Profcoach.nl &raquo;</a></p>
+        </div>
+        <div class="span4">
+          <h2>Over deze pagina</h2>
+           <p><img class="swlogo" src="https://media.scraperwiki.com/images/footer_tractor.png" title="logo scraperwiki">Deze view is gemaakt door <a href="http://bertjanknoop.nl" title="Website van Bertjan Knoop">Bertjan Knoop</a> en maakt gebruik van de scraper <a href="https://scraperwiki.com/scrapers/buttonsprofcoachscraper/" title="Source scraperdatabase that is being used">buttonsprofcoachscraper</a>. Alle eer naar <a href="http://rubenwoudsma.nl/" title="Ontwikkelaar en testmanager van de profcoach scraper">Ruben Woudsma</a> die de grondlegger van deze pagina is.</p>
+          <p><a class="btn" href="https://scraperwiki.com/scrapersbuttonsprofcoachscraper/">Scraper bekijken &raquo;</a></p>
+       </div>
+        <div class="span4">
+          <h2>Winnaar Seizoen 2011 - 2012</h2>
+            <p><img src="https://lh5.googleusercontent.com/-LGXSPN1Yem0/UJPj5LMxa1I/AAAAAAAAV84/lJZOXBUvY-M/s128/Beker%20BBC%20kleinst.jpg" class="img-polaroid gerardlogo">Voor de 3e keer in de 6 jarige historie is de huidige kampioen " Buttons". De details op deze pagina zijn van Buttons maar de opzet is van Ruben Woudsma, waarvoor hartelijk dank. </p>
+            
+        </div>
+      </div> <!-- row -->
+
+      <!-- Example row of columns -->
+      <div class="row" id="loadingcont">
+        <div class="span12">
+          <div class="well">
+            <div id="loading" class="progress progress-striped active">
+              <div class="bar" style="width: 100%;">Gegevens ophalen en verwerken tot grafieken.</div>
+            </div>
+            <div id="errormsg" class="alert alert-error">
+              <button type="button" class="close" data-dismiss="alert">&times;</button>
+              <strong>Error!</strong> Helaas is er een probleem opgetreden tijdens het verwerken van de resultaten.
+            </div>
+          </div>
+        </div>
+      </div>  <!-- row -->
+
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="span8">
+           <h2>Profcoach - Weekresultaat <span id="pcweekresult"></span></h2>
+           <div id="chart_div"></div>
+        </div>
+        <div class="span4">
+           <h2>Spelersinformatie</h2>
+           <p>Overzicht van de meest geselecteerde spelers binnen de subleague over de laatste speelronde.</p>
+           <div id="table_div"></div>
+        </div>
+      </div>  <!-- row -->
+
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="span6">
+           <h2>En de winnaar is?</h2>
+           <p>De winnaar van deze speelronde is: <strong><span id="winnaaris">DUMMYTEKST</span></strong>. Met een score van <span id="winnaarscore">000</span> en een rendement van <span id="winnaarrendement">88,99</span>% was er niemand die nog kon tippen aan deze score.</p>
+            <p id="winnaarisextra"></p>
+        </div>
+        <div class="span6">
+           <h2>Gerard Kemkers trofee!</h2>
+           <p><img src="http://www.longislandpress.com/wp-content/uploads/2010/02/oly-150x150.jpg" class="img-polaroid gerardlogo">Traditioneel gezien wordt deze prijs toegekend aan de manager met de slechtste wissels. Op basis van de bankscore van <span id="gerardbank">22</span> en een rendement van slechts <span id="gerardrendement">34,55</span>% kan deze prijs niet anders gaan dan naar: <strong><span id="gerardtroffee">DUMMY</span></strong>.</p>
+        </div>
+      </div>  <!-- row -->
+
+      <!-- Example row of columns -->
+      <div class="row" id="loadingcont">
+        <div class="span12">
+           <h2>Weektotaaloverzicht in tabel!</h2>
+           <p>Onderstaand overzicht is de tabelweergave van de grafiek welke hierboven gebruikt wordt. Voordeel van deze tabel is dat de kolommen te sorteren zijn voor verdere analyse van de resultaten.</p>
+           <div id="tabletotaal_div"></div>
+        </div>
+      </div>  <!-- row -->
+
+<!-- Example row of columns -->
+      <div class="row" id="loadingcont">
+        <div class="span4">
+           <h2>Winnaar Periode 1: Rick van harte gefeliciteerd</h2>
+         <p><img src="https://lh5.googleusercontent.com/-LGXSPN1Yem0/UJPj5LMxa1I/AAAAAAAAV84/lJZOXBUvY-M/s128/Beker%20BBC%20kleinst.jpg" class="img-polaroid gerardlogo">Voor de 3e keer in de 6 jarige historie is de huidige
+kampioen " Buttons". De details op deze pagina zijn van Buttons maar de opzet is van Ruben Woudsma, waarvoor hartelijk dank. </p>
+           <div id="tabletotaal_div"></div>
+        </div>
+      </div>  <!-- row -->
+ 
+
+
+      <hr>
+
+    </div>
+
+   <footer class="footer">
+      <div class="container">
+        
+        <p>Ontwerp en layout door Buttons, 3-voudig winnaar van de Beter Bert Cup. Wie is de volgende? </p>
+        <p class="pull-right"><a href="#">Back to top</a></p>
+      </div>
+   </footer>
+
+
+    <!-- Javascript - placed at the bottom for faster loading of the site -->
+    <script type="text/javascript" src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.1.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+
+   <script type="text/javascript">
+
+        google.load("visualization", "1", {packages:["table", "corechart"]});
+        google.setOnLoadCallback(initialize);
+
+        function initialize() {
+            // The URL here is the URL of the SQLLite API.
+            // Other information is used to query the dataset.
+
+            var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+            var srcname = "buttonsprofcoachscraper";
+            var sqlselect = "select team_name, team_roundscore, team_benchscore, team_maxscore, team_round, team_totalscore from pcteams where team_round in (select distinct team_round from pcteams order by CAST(replace(team_round, 'speelronde ', '') AS SIGNED) desc limit 1) order by team_roundscore desc";
+            var sqlselectplayers = "select player_name, count(*) as in_teams, sum(player_captain = 'Ja') as iscaptain, sum(player_position = 'Basisspeler') as opgesteld from pcteamplayers where player_round in (select distinct team_round from pcteams order by CAST(replace(team_round, 'speelronde ', '') AS SIGNED) desc limit 1) group by player_name order by in_teams desc limit 12";
+
+            console.log ('start AJAX call for JSONLIST');
+            $.ajax({url:apiurl, data:{name:srcname, query:sqlselect, format:"jsonlist"}, dataType:"jsonp", success:ProcessTeamInfo, error: ProcessError });
+            $.ajax({url:apiurl, data:{name:srcname, query:sqlselectplayers, format:"jsonlist"}, dataType:"jsonp", success:ProcessPlayerInfo, error: ProcessError });
+
+            jQuery('#loadingcont').hide();
+        }
+
+        function ProcessTeamInfo(tdata) {
+            console.log ('Teaminformation is being processed');
+            var weekwinner, winnerscore, winnerbench, winnereff;
+            var gerardname, gerardscore, gerardbench, gerardeff;
+            var weekmaxwinner, weekmaxscore = 0, weekmaxnormal, weekmaxeff;
+            var wkGKT = 100;
+            var PCRound;
+            var data = new google.visualization.DataTable();
+            data.addColumn('string', 'Teamname');
+            data.addColumn('number', 'RoundScore');
+            data.addColumn('number', 'BenchScore');
+            data.addColumn('number', 'MaxScore');
+            data.addColumn('number', 'Rendement');
+            data.addColumn('number', 'TotalScore');
+            data.addRows(tdata.data.length);
+            for (var i = 0; i < tdata.data.length; i++)
+            {
+                data.setValue(i, 0, tdata.data[i][0]);
+                var tScore = parseFloat(tdata.data[i][1]);
+                var tBench = parseFloat(tdata.data[i][2]);
+                var tMax = parseFloat(tdata.data[i][3]);
+                var tEff = Math.round(((tScore / tMax ) * 100)*100)/100;
+                data.setValue(i, 1, tScore);
+                data.setValue(i, 2, tBench);
+                data.setValue(i, 3, tMax);
+                data.setValue(i, 4, tEff);
+                data.setValue(i, 5, parseFloat(tdata.data[i][5]));
+
+                if (i==0) {
+                    weekwinner = tdata.data[i][0];
+                    winnerscore = tScore;
+                    winnerbench = tBench;
+                    winnereff = tEff;
+                    PCRound = tdata.data[i][4];
+                    UpdatePCData ( weekwinner, winnerscore, winnerbench, winnereff, "winner" );
+                }
+
+                if (winnerscore <= tMax && weekmaxscore <= tMax) {
+                    weekmaxwinner = tdata.data[i][0];
+                    weekmaxscore = tMax;
+                    weekmaxnormal = tScore;
+                    weekmaxeff = tEff;
+                }
+
+                if (tEff < wkGKT) {
+                    wkGKT = tEff;
+                    gerardname = tdata.data[i][0];
+                    gerardscore = tScore;
+                    gerardbench = tBench;
+                    gerardeff  = tEff;
+                }
+            }
+
+            var datacopy = data.clone();
+            data.removeColumn(5);
+
+            var chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
+            chart.draw(data, {width: 630, height: 380, legend: {position: "top"}, chartArea:{left:20,top:30,width:"100%",height:"75%"}, seriesType: "bars", series: {3: {type: "line"} } });
+
+            var table = new google.visualization.Table(document.getElementById('tabletotaal_div'));
+            table.draw(datacopy, {showRowNumber: true, pageSize: 20});
+
+            UpdatePCData ( gerardname, gerardscore, gerardbench, gerardeff , "gerardkemkers" );
+            jQuery('#pcweekresult').text(PCRound);
+
+            if (weekwinner != weekmaxwinner) {
+                jQuery('#winnaarisextra').text('Helaas en jammer voor ' + weekmaxwinner + ' aangezien deze manager met een maximaal haalbare score van ' + weekmaxscore +  ' er ook met de weekprijs vandoor had kunnen gaan. Nu heeft deze manager slechts een score van ' +  weekmaxnormal + ' en kwam ' + weekmaxwinner + ' niet hoger dan een rendement van ' + weekmaxeff + '%. Een volgende speelronde beter!');
+            } else {
+                jQuery('#winnaarisextra').text('Gelukkig voor ' + weekwinner + ' was er deze ronde geen enkele andere manager goed genoeg om op basis van de maximaal haalbare score deze manager te verslaan.');
+            }
+        }
+        
+        function UpdatePCData ( uname, uscore, ubench, ueff, utype) {
+
+            if (utype == "winner") {
+                jQuery('#winnaaris').text(uname);
+                jQuery('#winnaarscore').text(uscore);
+                //jQuery('#winnaarbank').text(ubench);
+                jQuery('#winnaarrendement').text(ueff);
+            } else if (utype = "gerardkemkers") {
+                jQuery('#gerardtroffee').text(uname);
+                //jQuery('#gerardscore').text(uscore);
+                jQuery('#gerardbank').text(ubench);
+                jQuery('#gerardrendement').text(ueff);
+            }
+
+        }
+
+        function ProcessPlayerInfo(tdata) {
+        
+            var data = new google.visualization.DataTable();
+            data.addColumn('string', 'Spelernaam');
+            data.addColumn('number', 'Selectie?');
+            data.addColumn('number', 'Opgesteld?');
+            data.addColumn('number', 'Captain?');
+            data.addRows(tdata.data.length);
+            for (var i = 0; i < tdata.data.length; i++)
+            {
+                data.setValue(i, 0, tdata.data[i][0]);
+                var tInteams = parseFloat(tdata.data[i][1]);
+                var tTimesCaptain = parseFloat(tdata.data[i][2]);
+                var tBasisPlayer = parseFloat(tdata.data[i][3]);
+                data.setValue(i, 1, tInteams );
+                data.setValue(i, 2, tBasisPlayer );
+                data.setValue(i, 3, tTimesCaptain );
+
+            }
+
+            var table = new google.visualization.Table(document.getElementById('table_div'));
+            table.draw(data, {showRowNumber: false, pageSize: 10});
+
+        }
+
+        function ProcessError() {
+
+            jQuery("#errormsg").show();
+
+        }
+
+    </script>
+</body>
+</html>

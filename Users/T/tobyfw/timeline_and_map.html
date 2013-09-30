@@ -104,3 +104,109 @@ $(function() {
     </div>
   </body>
 </html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Basic Example</title>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+    <script type="text/javascript" src="https://timemap.googlecode.com/svn/tags/2.0.1/lib/mxn/mxn.js?(googlev3)"></script>
+    <script type="text/javascript" src="https://timemap.googlecode.com/svn/tags/2.0.1/lib/timeline-1.2.js"></script>
+    <script src="https://timemap.googlecode.com/svn/tags/2.0.1/src/timemap.js" type="text/javascript"></script>
+    <script type="text/javascript">
+var tm;
+$(function() {
+    
+    // make a custom map style
+    var styledMapType = new google.maps.StyledMapType([
+        {
+            featureType: "water",
+            elementType: "all",
+            stylers: [
+              { saturation: 0 },
+              { lightness: 100 }
+            ]
+        },
+        {
+            featureType: "all",
+            elementType: "all",
+            stylers: [
+              { saturation: -100 }
+            ]
+        }
+    ], {
+        name: "white"
+    });
+// https://scraperwiki.com/docs/api?name=cases_with_geolocation#sqlite
+// select swdata.'Date of Trial' as 'start', swdata.'Release' as 'end', swdata.'name' as 'title', swdata.lat as 'lat', swdata.Lng as  'lon', swdata.'Remarks' as remarks, swdata.Court as court, swdata.Address as address, swdata.'Date of Trial' as trialdate, swdata.Fine as fine, swdata.Arrest as arrest, swdata.Telephone as telephone, swdata.'Article of law' as article from `swdata` where start>'2007' 
+    $.ajax({           
+        url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=cases_with_geolocation&query=select%20swdata.'Date%20of%20Trial'%20as%20'start'%2C%20swdata.'Release'%20as%20'end'%2C%20swdata.'name'%20as%20'title'%2C%20swdata.lat%20as%20'lat'%2C%20swdata.Lng%20as%20%20'lon'%2C%20swdata.'Remarks'%20as%20remarks%2C%20swdata.Court%20as%20court%2C%20swdata.Address%20as%20address%2C%20swdata.'Date%20of%20Trial'%20as%20trialdate%2C%20swdata.Fine%20as%20fine%2C%20swdata.Arrest%20as%20arrest%2C%20swdata.Telephone%20as%20telephone%2C%20swdata.'Article%20of%20law'%20as%20article%20from%20%60swdata%60%20where%20start%3E'2007'%20",
+        dataType: 'json',
+        success: function(data){
+            // Make flat date hierarchical
+            for (var i = 0; i < data.length; i++) {
+                data[i].point = new Object();
+                data[i].point.lat = data[i].lat;
+                data[i].point.lon = data[i].lon;
+                data[i].options = new Object();
+                data[i].options.infoHtml = '<h3>'+ data[i].title + '</h3> ' + (data[i].arrest || '') + ' ' + (data[i].fine || '') + '<br>' + (data[i].article || '') + '<br>' +(data[i].remarks|| '') + '<br><br>Trial: ' + (data[i].trialdate || '') + '<br>' + (data[i].court|| '') + '<br>' + (data[i].address|| '') + '<br>' + (data[i].telephone|| '');
+            }
+            // Init time map
+            tm = TimeMap.init({
+            mapId: "map",               // Id of map div element (required)
+            timelineId: "timeline",     // Id of timeline div element (required),
+            options: {
+                eventIconPath: "https://timemap.googlecode.com/svn/tags/2.0.1/images/"
+            },
+            datasets: [
+                {
+                   id: "cases",
+                   title: "Administrative Cases",
+                   theme: "orange",
+                   type: "basic",
+                   options: {
+                        items: data
+                   }
+                }
+            ],
+            bandIntervals: [
+                Timeline.DateTime.DAY, 
+                Timeline.DateTime.YEAR
+            ]
+        });     
+        // set the map to our custom style
+        var gmap = tm.getNativeMap();
+        gmap.mapTypes.set("white", styledMapType);
+        gmap.setMapTypeId("white");
+        }
+    });
+   
+    
+});
+    </script>    
+    <link href="https://timemap.googlecode.com/svn/tags/2.0.1/examples/examples.css" type="text/css" rel="stylesheet"/>
+    <style>
+    div#timelinecontainer{ height: 300px; }
+    div#timeline{ overflow-x:hidden; overflow-y:scroll; }
+    div.timeline-band{ }
+    div.timeline-band-inner{  }
+    div#mapcontainer{height:450px; }
+    </style>
+  </head>
+
+  <body>
+    <div id="help">
+    <h2>&nbsp;Administrative persecution in Belarus</h2>
+    </div>
+    <div id="timemap">
+        <div id="mapcontainer">
+          <div id="map"></div>
+        </div>
+        <div id="timelinecontainer">
+          <div id="timeline"></div>
+        </div>
+    </div>
+  </body>
+</html>

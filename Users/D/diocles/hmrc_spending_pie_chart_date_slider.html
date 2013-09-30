@@ -55,4 +55,61 @@ $("#slider").dateRangeSlider(
    );
 });
 
+</script><link rel="stylesheet" href="http://media.scraperwiki.com/css/jquery-ui-1.8.12.css">  
+<link rel="stylesheet" href="http://media.scraperwiki.com/css/jqrangeslider.css">  
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-1.5.2.min.js"></script>
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-ui-1.8.12.custom.min.js"></script>
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery.mousewheel.js"></script>
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jQRangeSlider.js"></script>
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jQDateRangeSlider.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+google.load("visualization", "1", {packages:["corechart"]});
+</script>
+
+<h1><font color=#0000CC>Pie Chart of HMRC Spending by supplier</font></h1>
+
+<h2>Date Slider: move the bar and adjust the beginning and end dates</h2>
+
+<div id="sliderBox">
+  <div id="slider"/>
+</div>
+
+<div id="pie" />
+
+<script type="text/javascript">
+
+$("#slider").dateRangeSlider(
+    {
+        defaultValues:{min:new Date(2011,2,1), max:new Date(2011,2,31)},
+        bounds:{min:new Date(2010,3,1), max:new Date(2011,3,30)},
+    }
+  ).bind("valuesChanged", function(event, ui){ 
+   var start = $.datepicker.formatDate("yy-mm-dd", ui.values.min);
+   var end = $.datepicker.formatDate("yy-mm-dd", ui.values.max);
+
+   $.getJSON("http://api.scraperwiki.com/api/1.0/datastore/sqlite?callback=?",
+        {"format": "jsonlist",
+        "name": "hmrc_spending",
+        "query": "SELECT Supplier, sum(Amount) as Total FROM Refined WHERE Date >='" + start + "' AND Date <='" + end + "' GROUP BY Supplier ORDER BY Total DESC"
+        },
+     function(data, textStatus, jqXHR){
+        var suppliers = data.data;
+
+        var table = new google.visualization.DataTable();
+        table.addColumn('string', 'Supplier');
+        table.addColumn('number', 'Total spent');
+        table.addRows(suppliers.length);
+
+        for (i=0;i<suppliers.length;i++) {
+            table.setValue(i, 0, suppliers[i][0]);
+            table.setValue(i, 1, suppliers[i][1]);
+        }
+
+        var chart = new google.visualization.PieChart(document.getElementById('pie'));
+        chart.draw(table, {width: 1024, height: 768, title: 'HMRC Spending (£)'});
+     }
+   );
+});
+
 </script>

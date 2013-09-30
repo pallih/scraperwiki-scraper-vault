@@ -50,3 +50,55 @@ for a in tds:
 # more complex scraping methods.
 # -----------------------------------------------------------------------------
 
+###############################################################################
+# START HERE: Tutorial 2: Basic scraping and saving to the data store.
+# Follow the actions listed in BLOCK CAPITALS below.
+###############################################################################
+
+import scraperwiki
+import urllib
+import urllib2
+import simplejson
+html = scraperwiki.scrape('http://www.wien.gv.at/ma50/cgi-bin/dap?r1=on&r2=on&r3=on&r4=on&t5=on')
+print "Click on the ...more link to see the whole page"
+print html
+
+# -----------------------------------------------------------------------------
+# 1. Parse the raw HTML to get the interesting bits - the part inside <td> tags.
+# -- UNCOMMENT THE 6 LINES BELOW (i.e. delete the # at the start of the lines)
+# -- CLICK THE 'RUN' BUTTON BELOW
+# Check the 'Console' tab again, and you'll see how we're extracting 
+# the HTML that was inside <td></td> tags.
+# We use lxml, which is a Python library especially for parsing html.
+# -----------------------------------------------------------------------------
+
+import lxml.html
+root = lxml.html.fromstring(html) # turn our HTML into an lxml object
+tds = root.cssselect('tr small a') # get all the <td> tags
+for a in tds:
+    print lxml.html.tostring(a) # the full HTML tag
+    print a.text                # just the text inside the HTML tag
+    street_address = a.text
+    geocode_url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+urllib.quote_plus(street_address)+'&sensor=false&output=json'
+    print geocode_url
+    georeq = urllib2.Request(geocode_url)
+    geo_response = urllib2.urlopen(georeq)
+    geocode = simplejson.loads(geo_response.read())
+    print geocode
+
+# -----------------------------------------------------------------------------
+# 2. Save the data in the ScraperWiki datastore.
+# -- UNCOMMENT THE THREE LINES BELOW
+# -- CLICK THE 'RUN' BUTTON BELOW
+# Check the 'Data' tab - here you'll see the data saved in the ScraperWiki store. 
+# -----------------------------------------------------------------------------
+
+for a in tds:
+     record = { "a" : small.text } # column name and value
+     scraperwiki.sqlite.save(["a"], record) # save the records one by one
+    
+# -----------------------------------------------------------------------------
+# Go back to the Tutorials page and continue to Tutorial 3 to learn about 
+# more complex scraping methods.
+# -----------------------------------------------------------------------------
+

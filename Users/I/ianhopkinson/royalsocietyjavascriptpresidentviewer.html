@@ -30,4 +30,36 @@ $.getJSON(my_url, function(json) {
   /* Add bottom rule */
   vis.add(pv.Rule).data([10,w-10]).bottom(20);
   vis.render();
+</script><p>Blank HTML page</p>
+<script type="text/javascript" src="https://protovis-js.googlecode.com/svn/trunk/protovis-d3.1.js"></script>
+<script type="text/javascript" src="https://www.ianhopkinson.org.uk/scripts/RSPresidentsData.js"></script>
+var my_json;
+$.getJSON(my_url, function(json) {
+  my_json = json;
+  // here you have the value
+});
+<script type="text/javascript+protovis">
+  var w = 512,    
+      x = pv.Scale.linear(1650, 2005).range(0, w-20),    
+      colours=["red","blue","orange"];
+  var vis =new pv.Panel()    
+      .width(w)
+      .height(80)    
+      .def("j",-1);
+  /* Add bars */  
+  vis.add(pv.Bar).data(FRS).height(50).bottom(20)
+    .width(function(d) (w-20)*(d.endyear-d.startyear)/(2005-1650))
+    .left(function(d) 10+(w-20)*(d.startyear-1650)/(2005-1650))
+    .fillStyle(function() 
+  vis.j()==this.index ? "orange":((this.index%2>0)?"red":"blue"))    
+    .title(function(d) d.name)    
+    .event("mouseover", function() vis.j(this.index))    
+    .event("mouseout", function() vis.j(-1));
+  /* Add labels */
+  vis.add(pv.Rule).data(pv.range(1650, 2005,50))
+    .left(function(d) 10+(w-20)*(d-1650)/(2005-1650))
+    .bottom(15).height(5).anchor("bottom").add(pv.Label);
+  /* Add bottom rule */
+  vis.add(pv.Rule).data([10,w-10]).bottom(20);
+  vis.render();
 </script>

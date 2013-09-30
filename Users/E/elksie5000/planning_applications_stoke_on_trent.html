@@ -68,3 +68,73 @@ L.tileLayer('http://{s}.tile.cloudmade.com/4a343c1ba1e044218b34c0d791838e70/997/
 </body>
 </html>    
 
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+  <title></title>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.4/leaflet.css" />
+ <!--[if lte IE 8]>
+     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.4/leaflet.ie.css" />
+ <![endif]-->
+  <script src="http://cdn.leafletjs.com/leaflet-0.4/leaflet.js"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<style type="text/css">
+  #wrap{width: 600px;}
+    #map{height: 600px;width: 1200px;}
+  
+</style>
+
+
+</head>
+<body>
+<div id="wrap">
+  <div id="map">
+
+<script type="text/javascript">
+  var map = L.map('map').setView([52.956705, -1.14786], 7);
+
+L.tileLayer('http://{s}.tile.cloudmade.com/4a343c1ba1e044218b34c0d791838e70/997/256/{z}/{x}/{y}.png', {
+    attribution: 'Map data &copy; <a href="http://www.flickr.com">Flickr</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+    maxZoom: 18
+}).addTo(map);
+  console.log("got heere");
+  var base_url = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=stoke_on_trent_planning&query=select%20*%20from%20%60applications%60%20%0A";
+  $.ajax({
+
+    dataType: 'jsonp',
+        url: base_url,
+        success: function(data){
+          console.log(data.length);
+          
+          for (i=0; i<data.length; i++){
+         
+            var circle = L.circle([data[i]['lat'],data[i]['lng']],20, { color: 'red', fillColor: 'red', fillOpacity: 1}).addTo(map).bindPopup("<h2>"+data[i]['description']+"</h2>"
+            /*    +
+
+                ": "Change of use of ground floor to retail pharmacy (Use Class A1) with elevational alterations including shopfront windows and new entrances",
+        "info_url": "http://www.planning.stoke.gov.uk/dataonlineplanning/AcolNetCGI.exe?ACTION=UNWRAP&RIPNAME=Root.PgeResultDetail&TheSystemkey=60095",
+        "scrape_date": "2012-12-16",
+        "validated_date": "2012-10-12",
+        "authority": "Stoke on Trent",
+        "postcode": "ST1 3AY",
+        "address": "78 Regent Road, Hanley, Stoke On Trent, ST1 3AY",
+        "lat": "53.0194481681",
+        "lng": "-2.17602665646",
+        "reference": "54190/FUL",
+        "received_date": "2012-10-12"*/
+
+
+
+        ) ;
+          };
+        },
+    error: function(jqXHR, textStatus, errorThrown){ 
+                        $('#results').html('<h2>Something went wrong!</h2><p><b>' + textStatus  + '</b> ' + errorThrown  + '</p>');
+        }
+    });
+
+  </script>
+</body>
+</html>    
+

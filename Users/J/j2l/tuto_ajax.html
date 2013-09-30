@@ -73,3 +73,78 @@ function consumedata(tdata)
     <body>
     </body>
 <html>
+<!DOCTYPE html>           
+<html>
+    <head>
+        <script type="text/javascript">
+/*var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+var srcname = "new_americ_foundation_drone_strikes"; 
+var sqlselect = "select * from swdata limit 10"; 
+$.ajax({
+    url: apiurl, 
+    dataType: "jsonp", 
+    data:{
+        name: srcname, 
+        query: sqlselect, 
+        format: "jsonlist"
+    }, 
+    success: function(data){
+        alert(data);
+    }
+}); */
+
+var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+$.ajaxSetup({
+    type: "GET", 
+    dataType: "jsonp", 
+    url: apiurl, 
+    error: function(jq, status) { 
+        alert(status); 
+    }
+}); 
+
+var sqlselect = "select latlng_lat, latlng_lng, date, lowerest, higherest from swdata order by date limit 500";
+var name = "new_americ_foundation_drone_strikes";
+$.ajax({
+    data:{
+        name: name, 
+        query: sqlselect
+    }, 
+    success: consumedata
+}); 
+
+var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+$.ajaxSetup({
+    type: "GET", 
+    dataType: "jsonp", 
+    url: apiurl, 
+    error: function(jq, status) { 
+        alert(status); 
+    }
+}); 
+
+var sqlselect = "select latlng_lat, latlng_lng, date, lowerest, higherest from swdata order by date limit 500";
+var name = "new_americ_foundation_drone_strikes";
+$.ajax({
+    data:{
+        name: name, 
+        query: sqlselect
+    }, 
+    success: consumedata
+}); 
+
+function consumedata(tdata)
+{
+    var keys = tdata[0]["keys"]; 
+    var data = tdata[0]["data"]; 
+    var tab = $("<table>"); 
+    $(window).append(tab); 
+    tab.append($("<tr><th>" + keys.join("</th><th>") + "</th></tr>")); 
+    for (var i = 0; i < data.length; i++)
+        tab.append($('<tr><td>' + data[i].join("</td><td>") + "</td></tr>")); 
+}
+        </script>
+    </head>
+    <body>
+    </body>
+<html>

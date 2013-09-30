@@ -64,4 +64,70 @@
     <!-- Ignore me --><span style="display:none"><div id="scraperwikipane"></div></span>
     <div id="map_canvas"></div>
 </body>
+</html><!DOCTYPE html>
+<html>
+    <head>
+        <title>UK Universities and Colleges</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+    var map;
+    var markers = {};
+
+    $.ajax({
+        url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite?",
+        data: {
+            format: 'jsondict', 
+            name: 'hyper_island_student_profiles', 
+            query: "select * from students where lat is not null"
+        },
+        success: function(students){
+            $.each(students, function(i,student) {
+
+                var latlng = new google.maps.LatLng(student.lat, student.lng)
+                markers[student.url] = new google.maps.Marker({
+                    map: map,
+                    position: latlng
+                });
+                markers[student.url]['data'] = student;
+
+                infowindow = new google.maps.InfoWindow({
+                    content: 'Click a marker to show student info here'
+                });
+
+                google.maps.event.addListener(markers[student.url], 'click', function() {
+                    popuphtml = '<h1><a href="' + this.data.url + '" target="_blank">' + this.data.name + '</a></h1>';
+                    if(this.data.course){
+                        popuphtml += '<p style="font-size: 14px; color: #666">' + this.data.course + ' (' + this.data.year + ')</p>';
+                    }
+                    if(this.data.avatar){
+                        popuphtml += '<a href="' + this.data.url + '" target="_blank" style="display: block; margin-top: 10px">';
+                        popuphtml += '<img src="' + this.data.avatar + '" width="200" height="200" />'
+                        popuphtml += '</a>';
+                    }
+                    infowindow.setContent(popuphtml);
+                    infowindow.open(map, this);
+                });
+            });
+        }
+    });
+
+    $('<a>').attr('id', 'scraperwikitag').attr('href', $('#scraperwikipane a').attr('href')).appendTo('body');
+
+});
+    </script>
+</head>
+<body>
+    <!-- Ignore me --><span style="display:none"><div id="scraperwikipane"></div></span>
+    <div id="map_canvas"></div>
+</body>
 </html>

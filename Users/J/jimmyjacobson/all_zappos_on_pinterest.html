@@ -52,3 +52,57 @@
 
 </body>
 </html>
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-size: 10px;
+            font-family: helvetica;
+        }
+        div.pinned {
+            float:left;
+            padding-top: 5px;
+            margin: 5px;
+            width: 85px;
+            text-align: center;
+        }
+        img.pinage {
+            display: block;
+            height: 80px;
+        }
+    </style>
+  <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script type="text/javascript" src="//assets.pinterest.com/js/pinit.js"></script>
+  <script>
+  $(document).ready(function () {
+    var url = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=pinterest_for_source_1&query=select%20*%20from%20%60swdata%60&callback=jsonp";
+    var options = {
+        url: url,
+        dataType: 'jsonp',
+        jsonpCallback: 'jsonp',
+        success: function(data) {            
+            $.each(data, function(key, val) {
+                $('#container').append("<div class='pinned'><img class='pinage' src='" + 
+                    val.img + "'/><a href='" + val.url + "'>" + val.brand + "<br />" + val.description + "</a><br />" +
+                    "<a href='http://pinterest.com/pin/create/button/?url=" +
+                     encodeURIComponent(val.url) + 
+                    "&media=" + encodeURIComponent(val.img) + 
+                    "&description=" + encodeURIComponent(val.brand) + " " + encodeURIComponent(val.description) + 
+                    "' class='pin-it-button' target='_new'>" + 
+                    "<img border='0'src='http://assets.pinterest.com/images/PinExt.png' title='Pin It' /></a>" +
+                    "</div>");
+            });
+        }
+    };
+    $.ajax(options);  
+  });
+  </script>
+
+</head>
+<body>
+  <div id="container">
+  </div>
+
+</body>
+</html>

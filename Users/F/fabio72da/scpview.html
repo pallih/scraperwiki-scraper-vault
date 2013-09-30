@@ -111,3 +111,116 @@ $(function () {
  </body>
 </html>
 
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Flot Examples</title>
+    <!--[if lte IE 8]><script language="javascript" type="text/javascript" src="../excanvas.min.js"></script><![endif]-->
+    <script language="javascript" type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+    <script language="javascript" type="text/javascript" src="http://flot.googlecode.com/svn/trunk/jquery.flot.js"></script>
+ </head>
+    <body>
+    <h1>Flot Examples</h1>
+
+    <div id="placeholder" style="width:1000px;height:300px;"></div>
+
+    <p>
+      <input class="fetchSeries" type="button" value="First dataset"> -
+      <a href="data-eu-gdp-growth.json">data</a> -
+      <span></span>
+    </p>
+
+    <p>
+      <input class="dataUpdate" type="button" value="Poll for data">
+    </p>
+
+<script type="text/javascript">
+$(function () {
+    var options = {
+        lines: { show: true },
+        points: { show: true },
+        xaxis: { tickDecimals: 0, tickSize: 10 }
+    };
+    var data = [];
+    var placeholder = $("#placeholder");
+    
+    $.plot(placeholder, data, options);
+
+    
+    // fetch one series, adding to what we got
+    var alreadyFetched = {};
+    
+    $("input.fetchSeries").click(function () {
+        var button = $(this);
+        
+        // find the URL in the link right next to us 
+        var dataurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsonlist&name=tenderscraper&query=select%20distinct%20substr(load_date%2C5%2C4)%20as%20md%2C%20count(*)%20as%20num%0Afrom%20%60swdata%60%0Agroup%20by%20substr(load_date%2C5%2C4)";
+
+        // then fetch the data with jQuery
+        function onDataReceived(series) {
+                
+                data.push({label:"test"});
+                data.push(series);
+            
+            // and plot all we got
+            $.plot(placeholder, data, options);
+         }
+        
+        $.ajax({
+            url: dataurl,
+            method: 'GET',
+            dataType: 'json',
+            success: onDataReceived
+        });
+    });
+
+
+    // initiate a recurring data update
+    $("input.dataUpdate").click(function () {
+        // reset data
+        data = [];
+        alreadyFetched = {};
+        
+        $.plot(placeholder, data, options);
+
+        var iteration = 0;
+        
+        function fetchData() {
+            ++iteration;
+
+            function onDataReceived(series) {
+                // we get all the data in one go, if we only got partial
+                // data, we could merge it with what we already got
+                data = [ series ];
+                
+                $.plot($("#placeholder"), data, options);
+            }
+        
+            $.ajax({
+                // usually, we'll just call the same URL, a script
+                // connected to a database, but in this case we only
+                // have static example files so we need to modify the
+                // URL
+                url: "data-eu-gdp-growth-" + iteration + ".json",
+                method: 'GET',
+                dataType: 'json',
+                success: onDataReceived
+            });
+            
+            if (iteration < 5)
+                setTimeout(fetchData, 1000);
+            else {
+                data = [];
+                alreadyFetched = {};
+            }
+        }
+
+        setTimeout(fetchData, 1000);
+    });
+});
+</script>
+
+ </body>
+</html>
+

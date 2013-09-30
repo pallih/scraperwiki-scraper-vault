@@ -112,4 +112,118 @@ def scrape_people():
                 }
                 scraperwiki.sqlite.save(['Status URL'], d)
 
+scrape_people()# Zarino will put code in here.
+
+# Follow along by creating your own scraper
+# -> https://scraperwiki.com/scrapers/new/python
+# and typing / copying / pasting into that
+
+import scraperwiki
+import requests
+import lxml.html
+
+def scrape_people():
+        fred = ['http://twitter.com/44thfloor/status/242909398048059395',
+                'http://twitter.com/44thfloor/status/242917106163785728',
+                'http://twitter.com/44thfloor/status/243118878161510400',
+                'http://twitter.com/44thfloor/status/243269559967166464',
+                'http://twitter.com/44thfloor/status/243272810456293377',
+                'http://twitter.com/44thfloor/status/243276511006826498',
+                'http://twitter.com/44thfloor/status/243276652803657728',
+                'http://twitter.com/44thfloor/status/243280755646676993',
+                'http://twitter.com/44thfloor/status/243281716045824000',
+                'http://twitter.com/44thfloor/status/243283314088230912',
+                'http://twitter.com/44thfloor/status/243307516077957121',
+                'http://twitter.com/44thfloor/status/243388941217189888',
+                'http://twitter.com/44thfloor/status/244368335712694272',
+                'http://twitter.com/44thfloor/status/244370724649840640',
+                'http://twitter.com/44thfloor/status/244377549793267712',
+                'http://twitter.com/44thfloor/status/244382904661180417',
+                'http://twitter.com/44thfloor/status/244560302186840064',
+                'http://twitter.com/44thfloor/status/244564130823028737',
+                'http://twitter.com/44thfloor/status/244565500481392640',
+                'http://twitter.com/44thfloor/status/244573826707488768',
+                'http://twitter.com/44thfloor/status/244575312539701248',
+                'http://twitter.com/44thfloor/status/244590548994883584',
+                'http://twitter.com/44thfloor/status/244591269328875521',
+                'http://twitter.com/44thfloor/status/244593376064856064',
+                'http://twitter.com/44thfloor/status/244674417324609536',
+                'http://twitter.com/44thfloor/status/244686233501057024',
+                'http://twitter.com/44thfloor/status/244699690778652672',
+                'http://twitter.com/44thfloor/status/244775382740525056',
+                'http://twitter.com/44thfloor/status/244791667230666752',
+                'http://twitter.com/44thfloor/status/244804153635897345',
+                'http://twitter.com/44thfloor/status/244825743698305024',
+                'http://twitter.com/44thfloor/status/244830778784108544',
+                'http://twitter.com/44thfloor/status/244850039317483520',
+                'http://twitter.com/44thfloor/status/244852655653003266',
+                'http://twitter.com/44thfloor/status/245383730154323968',
+                'http://twitter.com/44thfloor/status/245384695200759808',
+                'http://twitter.com/44thfloor/status/245387644811497472',
+                'http://twitter.com/44thfloor/status/245391386571063296',
+                'http://twitter.com/44thfloor/status/245398297181818881',
+                'http://twitter.com/44thfloor/status/245455697985282048',
+                'http://twitter.com/44thfloor/status/245949997533777920',
+                'http://twitter.com/44thfloor/status/246007320272842752',
+                'http://twitter.com/44thfloor/status/247964430791479297',
+                'http://twitter.com/44thfloor/status/248323561197027328',
+                'http://twitter.com/44thfloor/status/248906579179622400',
+                'http://twitter.com/44thfloor/status/250518380971454464',
+                'http://twitter.com/44thfloor/status/250524553187569664',
+                'http://twitter.com/44thfloor/status/250559480448827393',
+                'http://twitter.com/44thfloor/status/250585686435049472',
+                'http://twitter.com/44thfloor/status/252134869612781569',
+                'http://twitter.com/44thfloor/status/252159664798703616',
+                'http://twitter.com/44thfloor/status/252176470674386944',
+                'http://twitter.com/44thfloor/status/252511043350323200',
+                'http://twitter.com/44thfloor/status/252525587141373952',
+                'http://twitter.com/44thfloor/status/254127054407229440',
+                'http://twitter.com/44thfloor/status/254130895278182400',
+                'http://twitter.com/44thfloor/status/254131028942286848',
+                'http://twitter.com/44thfloor/status/254966226533629952',
+                'http://twitter.com/44thfloor/status/256118818454257666',
+                'http://twitter.com/44thfloor/status/256143087766736896',
+                'http://twitter.com/44thfloor/status/256466898374492161',
+                'http://twitter.com/44thfloor/status/256667457442443264',
+                'http://twitter.com/44thfloor/status/256847509966696449',
+                'http://twitter.com/44thfloor/status/256848894120574976',
+                'http://twitter.com/44thfloor/status/256851639179292672',
+                'http://twitter.com/44thfloor/status/257293360849637376',
+                'http://twitter.com/44thfloor/status/257759291086364672',
+                'http://twitter.com/44thfloor/status/257765221790269440',
+                'http://twitter.com/44thfloor/status/257778810542518272',
+                'http://twitter.com/44thfloor/status/257784507866939392',
+                'http://twitter.com/44thfloor/status/257843624543404032',
+                'http://twitter.com/44thfloor/status/257947372972290048',
+                'http://twitter.com/44thfloor/status/257972239008423937',
+                'http://twitter.com/44thfloor/status/257975969242038272',
+                'http://twitter.com/44thfloor/status/257981100083793920',
+                'http://twitter.com/44thfloor/status/257995984787873792',
+                'http://twitter.com/44thfloor/status/257996773056995328',
+                'http://twitter.com/44thfloor/status/258248429929652225',
+                'http://twitter.com/44thfloor/status/258259074683133952',
+                'http://twitter.com/44thfloor/status/258276410706247680',
+                'http://twitter.com/44thfloor/status/258465813495963648',
+                'http://twitter.com/44thfloor/status/258686855938203648',
+                'http://twitter.com/44thfloor/status/258695563632062464',
+                'http://twitter.com/44thfloor/status/258705710014136320',
+                'http://twitter.com/44thfloor/status/258709508317138944',
+                'http://twitter.com/44thfloor/status/258711922818547712',
+                'http://twitter.com/44thfloor/status/259338445967749122',
+                'http://twitter.com/44thfloor/status/259803128633884672',
+                'http://twitter.com/44thfloor/status/260282274363359232',
+                'http://twitter.com/44thfloor/status/260342371475148800',
+                'http://twitter.com/44thfloor/status/260350372462354433',
+                'http://twitter.com/44thfloor/status/260539658008678400',
+                'http://twitter.com/44thfloor/status/261094193802399746']
+        for ix in fred:
+            r = requests.get(ix).text
+            dom = lxml.html.fromstring(r)
+            for profile in dom.cssselect('a.tweet-geo-text'):
+                d = {
+                'Status URL':ix,
+                'loc': profile.cssselect('a')[0].get('href'),
+                }
+                scraperwiki.sqlite.save(['Status URL'], d)
+
 scrape_people()

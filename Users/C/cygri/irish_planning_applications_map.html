@@ -73,4 +73,79 @@ $(function() { makemap(); loaddata(); });
         <div id="feedicon"><a href="http://scraperwikiviews.com/run/irish_planning_applications_feed/?county=all"><img src="http://lab.linkeddata.deri.ie/2010/planning-apps/feed-icon-28x28.png" alt="Atom feed" title="Subscribe to Atom feed" /></a></div>
     </div>
 </body>
+</html><!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Irish Planning Applications Map</title>
+    <style type="text/css" media="screen">
+        body { color: #330; margin: 1em; font-family: Georgia; }
+        h1 { font-size: 170%; font-weight: normal; margin: 0 0 1em; padding: 0; }
+        h2 { font-size: 130%; font-weight: normal; margin: 0; padding: 0; }
+        p { margin: 0.7em 0; }
+        h1 small { color: #885; font-size: 50%; }
+        #map { float: left; height: 640px; width: 520px; }
+        #content { margin-left: 520px; padding-left: 1em; }
+    </style>
+    <link rel="alternate" type="application/atom+xml" href="http://scraperwikiviews.com/run/irish_planning_applications_feed/?county=all" />
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+
+var map;
+function makemap() {
+    var mapOptions = { 
+        "zoom": 7,
+        "center": new google.maps.LatLng(53.5, -8.0),
+        "mapTypeId": google.maps.MapTypeId.HYBRID
+    };
+    map = new google.maps.Map(document.getElementById("map"), mapOptions);
+}
+
+function addMarker(record) {
+    if (!('lat' in record)) return;
+    pos = new google.maps.LatLng(record['lat'], record['lng']);
+    marker = new google.maps.Marker({position:pos, map:map});
+    (function(j) {
+        google.maps.event.addListener(j.marker, "click", function(){
+            document.location = j.record.url;
+        });
+    })({'marker':marker, 'record':record});
+}
+
+function data_callback(result) {
+    for (i = 0; i < result.length; i++) {
+        addMarker(result[i]);
+    }
+    $("#message").html("Total records: " + result.length);
+}
+
+function pad(n) { return n<10 ? '0'+n : n }
+function loaddata() {
+    $("#message").html("Loading ...");
+    start = new Date(new Date().getTime() - 28 * 24 * 60 * 60 * 1000);
+    formatted = start.getFullYear() + '-' + pad(start.getMonth() + 1) + '-' + pad(start.getDate());
+    query = "SELECT appref, date, url, address, applicant, details, lat, lng FROM swdata WHERE date >= '" + formatted + "' ORDER BY date DESC";
+    url = "http://api.scraperwiki.com/api/1.0/datastore/sqlite?&format=jsondict&name=irish_planning_applications&query=" + encodeURIComponent(query) + "&callback=data_callback";
+    s = document.createElement('script');
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}
+
+$(function() { makemap(); loaddata(); });
+
+    </script>
+</head>
+
+<body>
+    <h1>Recent planning applications to Irish local councils <small id="message">...</small></h1>
+    <div id="map"></div>
+    <div id="content">
+    <p>Based on planning data from various ePlan systems around the country,
+        extracted and visualised with
+        <a href="http://scraperwiki.com/scrapers/irish-planning-applications/">ScraperWiki</a>.</p>
+        <div id="feedicon"><a href="http://scraperwikiviews.com/run/irish_planning_applications_feed/?county=all"><img src="http://lab.linkeddata.deri.ie/2010/planning-apps/feed-icon-28x28.png" alt="Atom feed" title="Subscribe to Atom feed" /></a></div>
+    </div>
+</body>
 </html>

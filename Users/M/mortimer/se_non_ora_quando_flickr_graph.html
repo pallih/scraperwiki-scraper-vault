@@ -133,3 +133,138 @@ Source: Flickr via <a href="https://scraperwiki.com/scrapers/se_non_ora_quando_f
 
 
              </body></html>
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8">
+   <title>Se Non Ora Quando?!</title>
+   <link type="text/css" rel="stylesheet" href="colorbrewer.css"/>
+
+   <link rel="stylesheet" type="text/css" href="http://cdn.ucb.org.br/Scripts/tipsy/stylesheets/tipsy.css" />
+   <style>
+
+circle.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+line.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+</style>
+<header>
+Author: Pierre Andrews
+Source: Flickr via <a href="https://scraperwiki.com/scrapers/se_non_ora_quando_flickr/">ScraperWiki</a>
+     </header>
+
+     <h1>Se non Ora Quando? Flickr tag co-occurrence on photos</h1>
+
+     <div id="chart"></div>
+
+     <footer>
+     author: Pierre Andrews
+     </footer>
+
+     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+     <script type="text/javascript"  src="https://raw.github.com/mbostock/d3/master/d3.v2.min.js"></script>
+     <script>
+
+     jQuery(function(){
+
+          var width = 960,
+            height = 960;
+
+    var color = d3.scale.category10();
+
+         d3.json("https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=se_non_ora_quando_flickr&query=select%20*%20from%20%60tag_tag%60%20where%20count%20%3E%20500", function(tag_tag) {
+             var nodes = []; //tags
+             var links = []; //tag-tag
+             var count =[];
+             var max = 0;
+             var total = 0;
+             var node_idx = {};
+             var idx_cnt = 0;
+
+             tag_tag.forEach(function(tagpair) {
+                 var source = -1;
+                 var target = -1;
+                 var tag1 = (tagpair.tag1=="maniefstazione")?"manifestazione":((tagpair.tag1=="se" || tagpair.tag1=="non" || tagpair.tag1=="ora" || tagpair.tag2=="quando" )?"senonoraquando":tagpair.tag1);
+                 var tag2 = (tagpair.tag2=="maniefstazione")?"manifestazione":((tagpair.tag2=="se" || tagpair.tag2=="non" || tagpair.tag2=="ora" || tagpair.tag2=="quando" )?"senonoraquando":tagpair.tag2);
+
+                 var src, targ;
+                 if(node_idx[tag1] == undefined) {
+                    var group = 1;
+                    if(tag1 == "turin" || tag1 == "torino") group = 2;
+                    if(tag1 == "rome" || tag1 == "roma") group = 3;
+                    if(tag1 == "milan" || tag1 == "milano") group = 4;  
+                   node_idx[tag1] = nodes.push({name: tag1, group:group, count: 0}) - 1;
+                 }
+                 src = node_idx[tag1];
+                 if(node_idx[tag2] == undefined) {
+                    var group = 1;
+                    if(tag2 == "turin" || tag2 == "torino") group = 2;
+                    if(tag2 == "rome" || tag2 == "roma") group = 3;
+                    if(tag2 == "milan" || tag2 == "milano") group = 4;  
+                   node_idx[tag2] = nodes.push({name: tag2, group:group, count: 0}) -1;
+                 }
+                 targ = node_idx[tag2];
+
+                 nodes[src].count += tagpair.count;
+                 nodes[targ].count += tagpair.count;
+                 total += tagpair.count;
+
+                 links.push({source: src, target: targ, value: count});
+
+                 max = Math.max(max, nodes[src].count, nodes[targ].count);
+               });
+
+             console.log("done with matrix", nodes, links);
+
+             var force = d3.layout.force()
+               .charge(-200)
+               .linkDistance(100)
+               .size([width, height]);
+
+             var svg = d3.select("#chart").append("svg")
+               .attr("width", width)
+               .attr("height", height);
+
+                 force
+                   .nodes(nodes)
+                   .links(links)
+                   .start();
+
+                 var link = svg.selectAll("line.link")
+                   .data(links)
+                   .enter().append("line")
+                   .attr("class", "link")
+                   .style("stroke-width", function(d) { 100 });
+
+                 var node = svg.selectAll("circle.node")
+                   .data(nodes)
+                   .enter().append("circle")
+                   .attr("class", "node")
+                   .attr("r", function(d) {return Math.sqrt(d.count)/30;})
+                   .style("fill", function(d) { return color(d.group); })
+                   .call(force.drag);
+
+                 node.append("title")
+                   .text(function(d) { console.log(d.count, max); return d.name+": "+(d.count*100/total)+"%"; });
+
+                 force.on("tick", function() {
+                     link.attr("x1", function(d) { return d.source.x; })
+                       .attr("y1", function(d) { return d.source.y; })
+                       .attr("x2", function(d) { return d.target.x; })
+                       .attr("y2", function(d) { return d.target.y; });
+
+                     node.attr("cx", function(d) { return d.x = Math.max(Math.sqrt(d.count)/10, Math.min(width - Math.sqrt(d.count)/10, d.x)); })
+                       .attr("cy", function(d) { return d.y = Math.max(Math.sqrt(d.count)/10, Math.min(height - Math.sqrt(d.count)/10, d.y)); });
+                   });
+           });
+
+       });
+
+         </script>
+
+
+             </body></html>

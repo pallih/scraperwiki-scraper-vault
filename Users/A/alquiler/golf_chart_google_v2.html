@@ -81,4 +81,87 @@ var sql= 'select price, CASE cv WHEN 105 THEN mileage ELSE null END as cv_105, p
         <div id="graph_canvas"></div>
         <div id="table_canvas"></div>
     </body>
+<html><html>
+    <head>
+        <title>used vw golf prices</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #graph_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript">
+          google.load("visualization", "1", {packages:['corechart', 'table']});
+          google.setOnLoadCallback(getData);
+          function getData() {
+              var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";            
+              var src = "autoscout_golf"; 
+              var sqlselect = "select price, mileage from swdata"; 
+var sql= 'select price, CASE cv WHEN 105 THEN mileage ELSE null END as cv_105, price || " €\n" || mileage || " km\n" || description as description , CASE cv WHEN 140 THEN mileage ELSE null END as cv_140, price || " €\n" || mileage || " km\n" || description as description , CASE cv WHEN 150 THEN mileage ELSE null END as cv_150, price || " €\n" || mileage || " km\n" || description as description from `swdata`';
+              $.ajax({
+                url: apiurl, 
+                dataType: "jsonp", 
+                data:{
+                    name: src, 
+                    query: sql, 
+                    format: "jsonlist"
+                }, 
+                success: drawChart
+              });
+          }
+          function drawChart(tdata) {
+              var data = new google.visualization.DataTable();
+              data.addColumn('number', 'euros');
+              data.addColumn('number', '105 cv');
+              data.addColumn({type:'string',role:'tooltip'});
+              data.addColumn('number', '140 cv');
+              data.addColumn({type:'string',role:'tooltip'});
+              data.addColumn('number', '150 cv');
+              data.addColumn({type:'string',role:'tooltip'});
+
+              console.log(tdata);
+              
+              data.addRows(tdata.data);
+              
+              var options = {
+                  title: 'used vw golf',
+                      vAxis: {title: "mileage", titleTextStyle: {color: "black"}},
+                      hAxis: {title: "price", titleTextStyle: {color: "black"}}
+
+              };
+
+        var chart = new google.visualization.ScatterChart(document.getElementById('graph_canvas'));
+        chart.draw(data, options);
+        var table = new google.visualization.Table(document.getElementById('table_canvas'));
+        table.draw(data);
+              console.log(data);
+
+
+//        google.visualization.events.addListener(chart, 'select',
+//            function(e) {
+//                var aSelection = chart.getSelection();
+
+//                window.location.href=data.getProperties(aSelection[0].row, aSelection[0].column).price;
+//console.log(aSelection );
+//console.log(data.getProperties(aSelection[0].row, aSelection[0].column));
+//            });
+
+    // Add our over/out handlers.
+//    google.visualization.events.addListener(chart, 'onmouseover', barMouseOver);
+//    google.visualization.events.addListener(chart, 'onmouseout', barMouseOut);
+  }
+
+
+    </script>
+    </head>
+    <body>
+        <div id="graph_canvas"></div>
+        <div id="table_canvas"></div>
+    </body>
 <html>

@@ -132,3 +132,137 @@ plotParty();
 
 </body>
 </html>
+<html>
+<head>
+<title>Freqüência na sessão</title>
+
+<!-- Load the required javascript to plot the graphs -->
+  <script src="https://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+  <script src="https://media.scraperwiki.com/js/json-min.js"></script>
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<!-- Load the visualization packages -->
+<script type="text/javascript">
+google.load('visualization', '1', {'packages':['corechart']});
+</script>
+
+ <script type="text/javascript">
+
+
+function plotParty() {
+    var divSelector = 'div#party';
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    var adata = {name:'votacao_deputado_br', query:"select party, presente, count(sessao_id) as count from presence as p, deputados as d where p.deputado_id=d.id group by party, presente order by party", format:"jsondict"};
+    $(divSelector).html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        var presence = {};        
+        var curDept = "";
+        var lastSum = 0;
+        var max=0;
+        for (var i = 0; i < tdata.length; i++)
+        {
+            pres = tdata[i];
+            if(curDept != pres['party']) {
+                curDept = pres['party'];
+                if(lastSum>max) {max=lastSum}
+                presence[pres['party']] = {
+                                                'party':pres['party'],
+                                                 'presence':[]
+                                                 };
+                presence[pres['party']]['presence'][pres['presente']] = pres['count'];
+                lastSum = pres['count'];
+            } else {             
+                presence[pres['party']]['presence'][pres['presente']] = pres['count'];
+                lastSum += pres['count'];
+            }
+        }
+            $(divSelector).html("<dl></dl>");
+        for(var pres  in presence) {
+            dept = presence[pres];
+            $(divSelector+" dl").append("<dt>"+dept['party']+
+'</dt><dd><img src="http://chart.apis.google.com/chart?chbh=a&chs=220x22&cht=bhs&chco=F02311,C3FF68&chds=0,100,0,100&chd=t:'+(dept['presence'][0]*100/max)+'|'+(dept['presence'][1]*100/max)+'"/></dd>');
+        }
+    }});
+}
+
+function plot() {
+    var divSelector = 'div#list';
+    var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    var adata = {name:'votacao_deputado_br', query:"select name, party, presente, deputado_id, count(sessao_id) as count from presence as p, deputados as d where p.deputado_id=d.id group by deputado_id, presente order by name", format:"jsondict"};
+    $(divSelector).html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        var presence = {};        
+        var curDept = "";
+        var lastSum = 0;
+        var max=0;
+        for (var i = 0; i < tdata.length; i++)
+        {
+            pres = tdata[i];
+            if(curDept != pres['deputado_id']) {
+                curDept = pres['deputado_id'];
+                if(lastSum>max) {max=lastSum}
+                presence[pres['deputado_id']] = {'name':pres['name'],
+                                                'party':pres['party'],
+                                                 'presence':[]
+                                                 };
+                presence[pres['deputado_id']]['presence'][pres['presente']] = pres['count'];
+                lastSum = pres['count'];
+            } else {              
+                presence[pres['deputado_id']]['presence'][pres['presente']] = pres['count'];
+                lastSum += pres['count'];
+            }
+        }
+            $(divSelector).html("<dl></dl>");
+        for(var pres  in presence) {
+            dept = presence[pres];
+            $(divSelector+" dl").append('<dt><a href="http://www.camara.gov.br/internet/deputado/Dep_Detalhe.asp?id='+pres+'">'+dept['name']+
+'</a></dt><dd><img src="http://chart.apis.google.com/chart?chbh=a&chs=220x22&cht=bhs&chco=F02311,C3FF68&chds=0,100,0,100&chd=t:'+(dept['presence'][0]*100/max)+'|'+(dept['presence'][1]*100/max)+'"/></dd>');
+        }
+    }});
+}
+
+
+
+
+///////////////////////////////////////////////
+//
+// Start Everything
+//
+///////////////////////////////////////////////
+
+//Start the drawing of the plots when the page loads.
+$(window).ready(function()
+{
+plot();
+plotParty();
+});
+
+
+</script>
+
+<style>
+#p-top {float:left}
+#d-top {float:right}
+</style>
+
+
+</head>
+
+<body>
+
+<div id="d-top">
+<h1>Freqüência Deputados</h1>
+<div id="list"></div>
+</div>
+
+<div id="p-top">
+<h1>Freqüência Partido</h1>
+<div id="party"></div>
+</div>
+
+</body>
+</html>

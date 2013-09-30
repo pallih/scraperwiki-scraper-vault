@@ -27,4 +27,33 @@ $(function(){
     $("#map").gMap({ markers:options,zoom: 13 });
   });
 });
+</script><style> #map {width: 100%; height: 100%; text-align: center;} img#loading{margin-top: 150px;} body {padding: 0; margin: 0} </style>
+<div id="map"><img id="loading" src="http://thomaslevine.com/tahrir_ajax_loader.gif" alt="Loading"></div>
+<script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;v=2&amp"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+<script src="http://thomaslevine.com/jquery.gmap-1.1.0-min.js"></script>
+<script type="text/javascript">
+function swajax(sqlselect,theformat,callback){
+  var apiurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+  var srcname = "fix_coordinates"; 
+
+  $.ajax({
+    url:apiurl
+  , dataType:"jsonp"
+  , data:{
+      name:srcname
+    , query:sqlselect
+    , format:theformat
+  }
+  , success:callback
+  });
+}
+
+$(function(){
+  sql="select latitude, longitude, street_number || ' ' || street_name || ' ' || street_suffix as 'html', 0 as 'popup' from `swdata` where latitude is not null"
+  swajax(sql,'jsondict',function(options){
+    console.log(options);
+    $("#map").gMap({ markers:options,zoom: 13 });
+  });
+});
 </script>

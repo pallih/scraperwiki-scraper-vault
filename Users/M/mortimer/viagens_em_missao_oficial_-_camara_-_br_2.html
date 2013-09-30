@@ -314,4 +314,320 @@ plotBrazil(sel_name, selmin, selmax);
 </div>
 
 </body>
+</html><html>
+<head>
+<title>viagens em missao oficial - camara - br</title>
+
+<!-- Load the required javascript to plot the graphs -->
+<link rel="stylesheet" href="//media.scraperwiki.com/css/jquery-ui-1.8.12.css">
+<link rel="stylesheet" href="//media.scraperwiki.com/css/jqrangeslider.css">
+
+<script type="text/javascript" src="//media.scraperwiki.com/js/jquery-1.5.2.min.js"></script>
+<script type="text/javascript" src="//media.scraperwiki.com/js/jquery-ui-1.8.12.custom.min.js"></script>
+<script type="text/javascript" src="//media.scraperwiki.com/js/jquery.mousewheel.js"></script>
+<script type="text/javascript" src="//media.scraperwiki.com/js/jQRangeSlider.js"></script>
+<script type="text/javascript" src="//media.scraperwiki.com/js/jQDateRangeSlider.js"></script>
+<script src="//media.scraperwiki.com/js/json-min.js"></script>
+
+  <script type="text/javascript" src="//www.google.com/jsapi"></script>
+
+<!-- Load the visualization packages -->
+<script type="text/javascript">
+google.load('visualization', '1', {'packages':['corechart', 'geochart']});
+</script>
+
+ <script type="text/javascript">
+
+//plot a naive column chart
+function plotMap(name, selmin, selmax) {
+
+    var date_query = undefined;
+    if(selmin != undefined && selmin.length >0 && selmax != undefined && selmax.length >0) {
+        date_query= " and inicio_date > '"+selmin.replace(/^2/,"0").replace(/'/g,"\\'")+"' and termino_date < '"+selmax.replace(/^2/,"0").replace(/'/g,"\\'")+"'"
+    }
+    
+    //The query
+    var avgusertotalq = "select destino, count(name) from `participants` where destino not like '%/%' "+((name != undefined && name.length >0)?"and name='"+name.replace(/'/g,"\\'")+"'":"")+((date_query!=undefined)?date_query:"")+" group by destino";
+ 
+    var dbname= "viagens_em_missao_oficial_-_camara_-_br";
+
+    //Column definition
+    var columns = [{type: 'string', label: 'Country', index: 0, cleanFunction: function(data) {
+                                                                                                if(data == 'ESTADOS UNIDOS DA AMERICA') {return 'United States of America';}
+                                                                                                else if(data == 'GRA-BRETANHA') {return 'United Kingdom';}
+                                                                                                else return data;
+                                                                                                }},
+               {type: 'number', label: 'Travels', index: 1}];
+
+    //Graph options
+     var options = {
+          width: 830, height: 600,
+        datalessRegionColor: 'white',
+      colorAxis: {colors: ['F5F5F5', 'green']}
+};
+
+    googlePlot(dbname, avgusertotalq, "#map", columns,
+             options, function(element) {return new google.visualization.GeoChart(element)});
+
+}
+
+//plot a naive column chart
+function plotBrazil(name,selmin, selmax) {
+
+var date_query = undefined;
+    if(selmin != undefined && selmin.length >0 && selmax != undefined && selmax.length >0) {
+        date_query= " and inicio_date > '"+selmin.replace(/^2/,"0").replace(/'/g,"\\'")+"' and termino_date < '"+selmax.replace(/^2/,"0").replace(/'/g,"\\'")+"'"
+    }
+
+    //The query
+    var avgusertotalq = "select destino, count(name) from `participants` where destino like '%/%'"+((name != undefined && name.length >0)?" and name='"+name.replace(/'/,"\\'")+"'":"")+((date_query!=undefined)?date_query:"")+" group by destino";
+ 
+    var dbname= "viagens_em_missao_oficial_-_camara_-_br";
+
+    //Column definition
+    var columns = [{type: 'string', label: 'Country', index: 0, cleanFunction: function(data) {return data; return data.replace(/.*\/(.*)/,'$1, Brasil');}},
+               {type: 'number', label: 'Travels', index: 1}];
+
+    //Graph options
+     var options = {
+      region: 'BR',
+      displayMode: 'markers',
+        resolution: 'provinces',
+        datalessRegionColor: 'white',
+      colorAxis: {colors: ['F5F5F5', 'green']},
+      width: 600, height: 500
+};
+
+    googlePlot(dbname, avgusertotalq, "#brazil", columns,
+             options, function(element) {return new google.visualization.GeoChart(element)});
+
+}
+
+/**
+Google Plot helper method that will fetch the data with json and draw a graph of the specified type.
+*/
+function googlePlot(dbname, query, divSelector, columns, options, graphConstructor) {
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    var adata = {name:dbname, query:query, format:"jsonlist"};
+            $(divSelector).parent().find('h3').show(); //TODO make generic
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        for(var coli  in columns) {
+            if(columns[coli] != undefined) {
+                data.addColumn(columns[coli].type, columns[coli].label);
+                if(columns[coli].cleanFunction == undefined) {
+                    columns[coli].cleanFunction = function(data) {return data};
+                }
+            } else {
+                data.addColumn('string', 'text'+coli);
+            }
+        }
+        var rows = [ ];
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var cols = [];
+            for(var coli  in columns) {
+                if(columns[coli] != undefined) {
+                    cols[coli] = columns[coli].cleanFunction(tdata.data[i][columns[coli].index]);
+                } else {
+                    cols.push(undefined);
+                }
+            }
+            rows.push(cols);
+        }
+        if(rows.length > 0) {
+            data.addRows(rows);
+
+            var chart = graphConstructor($(divSelector)[0]);
+            chart.draw(data, options);
+            google.visualization.events.addListener(chart, 'ready', function() {//TODO this is a hack, not generic
+                $(divSelector).parent().find('h3').hide();
+            });
+        } else {
+            $(divSelector).hide();
+            $(divSelector).parent().find('h3').hide();//TODO this is a hack, not generic
+        }
+    }});
+}
+
+
+// Read a page's GET URL variables and return them as an associative array.
+function getUrlVars()
+{
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split(/[&#]/);
+    for(var i = 0; i < hashes.length; i++)
+    {
+        if(hashes[i] != undefined) {
+            hash = hashes[i].split('=');
+            vars.push(hash[0]);
+            if(hash.length>1) {
+                vars[hash[0]] = decodeURIComponent(hash[1].replace(/\+/g, " "));
+            }
+        }
+    }
+    return vars;
+}
+
+function listDeputados() {
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    var adata = {name:"viagens_em_missao_oficial_-_camara_-_br", query:"select distinct name from `participants` order by name", format:"jsonlist"};
+    var vars = getUrlVars();
+    var sel_name = '';
+    if(vars != undefined && vars.length >0) {
+      sel_name = vars['name'];
+    }
+    if(sel_name != undefined && sel_name.length > 0) {
+            $('h1#name_h').html(sel_name);
+    }
+    $('h1#name_h').show()
+     $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        select = $('select#name')
+        for (var i = 0; i < tdata.data.length; i++) {
+            var name = tdata.data[i][0];
+            var opt = '<option value="'+name+'"'+((name==sel_name)?' selected="true"':"")+'>'+name+"</option>";
+            select.append(opt);
+        }
+
+    }});
+    return sel_name;
+}
+
+function setUpSlider(selmin, selmax, name) {
+
+     var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+      var querydb= "select max(termino_date), min(inicio_date) from `participants`"+((name != undefined && name.length >0)?" where name='"+name.replace(/'/g,"\\'")+"'":"");
+    var adata = {name:"viagens_em_missao_oficial_-_camara_-_br",
+                query:querydb,
+                 format:"jsonlist"};
+
+     $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+       var mindate = tdata.data[0][1].split(/-/);
+       var maxdate = tdata.data[0][0].split(/-/);
+        mindate[0] = mindate[0].replace(/^0/, '2');
+        maxdate[0]= maxdate[0].replace(/^0/, '2');
+        if(selmin != undefined && selmin.length>0) {
+            selmin = selmin.split(/-/);
+        } else {
+            selmin = mindate;
+        }
+        if(selmax  != undefined && selmax.length>0) {
+            selmax = selmax.split(/-/);
+        } else {
+            selmax = maxdate;
+        }
+
+        var ticks = [];
+
+        for(var i = mindate[0]; i<=maxdate[0];i++) {
+            ticks[i-mindate[0]]=i;
+        }
+
+
+       var slider = $("#slider").dateRangeSlider( {
+                        defaultValues:{min:new Date(selmin[0],selmin[1],selmin[2]), max:new Date(selmax[0],selmax[1],selmax[2])},
+                        bounds:{min:new Date(mindate[0],1,1), max:new Date(maxdate[0],12,31)},
+                            }
+        ).bind("valuesChanged", function(event, ui){
+            var start = $.datepicker.formatDate("yy-mm-dd", ui.values.min);
+            var end = $.datepicker.formatDate("yy-mm-dd", ui.values.max);
+            window.location.hash="#mindate="+start+"&maxdate="+end;
+            plotMap(name, start, end);
+            plotBrazil(name, start, end);
+        });   
+
+        
+        $(ticks).each(function(i) {
+            var tick = $('<div class="tick ui-widget-content">' + this + '</div>').appendTo(slider);
+            tick.css({
+                left: (100 / ticks.length * i) + '%',
+                width: (100 / ticks.length) + '%'
+            });
+        })
+
+        slider.find(".tick:first").css("border-left", "none");
+
+        slider.find(".ui-slider-handle").css("opacity", 0.8);
+
+        slider.find(".ui-slider-handle:first").addClass("ui-slider-handle-lo").removeClass("ui-corner-all").addClass("ui-corner-right");
+        slider.find(".ui-slider-handle:last").addClass("ui-slider-handle-hi").removeClass("ui-corner-all").addClass("ui-corner-left");    
+
+    }});
+
+   
+}
+
+///////////////////////////////////////////////
+//
+// Start Everything
+//
+///////////////////////////////////////////////
+
+//Start the drawing of the plots when the page loads.
+$(window).ready(function()
+{
+var sel_name = listDeputados();
+        var vars= getUrlVars();
+        var selmin = vars['mindate'];
+        var selmax = vars['maxdate'];
+setUpSlider(selmin,selmax, sel_name)
+plotMap(sel_name, selmin, selmax);
+plotBrazil(sel_name, selmin, selmax);
+});
+
+
+</script>
+
+
+<!-- some styling for the page, you can change this to what you want -->
+<style>
+    #map_t h3 {left: 350px;
+    position: relative;
+    top: 300px;
+    z-index: 1000;}
+
+    #brazil_t h3 {left: 250px;
+    position: relative;
+    top: 300px;
+    z-index: 1000;}
+    
+    #sliderBox {margin-top: 2em; margin-bottom:2em;}
+
+#slider { border-width:0px 1px; height: 3.5em; }
+    #slider .ui-slider-range { z-index: 1; }
+    #slider .tick { z-index: 2; position: absolute; height: 100%; font-size: 1.8em; line-height: 1.8em; background: none; border-top: none; border-right: none; border-bottom: none; text-align: center; }
+    #slider .ui-slider-handle { z-index: 3; height: 2.5em; width: 0.6em; margin-left: -0.3em; top: 0; border: none; margin-top: 0.5em; cursor: e-resize; }
+    .ui-slider-mousesliding, .ui-slider-mousesliding .ui-slider-range, .ui-slider-mousesliding .tick { cursor: e-resize; }
+    .ui-slider-handle-lo { width: .5em !important; margin-left: 1px !important; }
+    .ui-slider-handle-hi { width: .5em !important; margin-left: -.5em !important; }
+
+</style>
+
+</head>
+
+<body>
+
+<h1 id="name_h" style="display:none;">All Deputados</h1>
+<form>
+<select name="name" id="name"><option value="">All</option></select>
+<input type="submit" value=">" />
+</form>
+
+<div id="sliderBox">
+<div id="slider"/>
+</div>
+
+<div id="map_t">
+<h3>loading...</h3>
+<div id="map"></div>
+</div>
+<div id="brazil_t">
+<h3>loading...</h3>
+<div id="brazil"></div>
+</div>
+
+</body>
 </html>

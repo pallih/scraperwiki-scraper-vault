@@ -266,3 +266,271 @@
     </script>
 </body>
 </html>
+<!doctype html>
+<html lang="cs">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Znečištění ovzduší v ČR</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style type="text/css" media="screen">
+        html { font-size: 100%; overflow-y: scroll; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        body { margin: 1em; font-size: 13px; line-height: 1.231; }
+        body, button, input, select, textarea { font-family: sans-serif; color: #222; }
+        table { border-collapse: collapse; border-spacing: 0; border: solid 1px #ccc; }
+        table td, table th { border: solid 1px #aaa; }
+        #map { display: none; width: 100%; height: 500px; border: solid 1px #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Znečištění ovzduší v ČR</h1>
+    <div id="main">
+        <label for="pollutants">Škodlivina:</label>
+        <select id="pollutants" name="pollutants">
+            <option>---</option>
+        </select>
+        <div id="map">
+        </div>
+        <h2>Legenda</h2>
+        <table cellspacing="1">
+            <tr align="center">
+                <th rowspan="2">Index</th>
+                <th rowspan="2">Kvalita ovzduší</th>
+                <th>SO<sub>2</sub>
+                </th>
+                <th>NO<sub>2</sub>
+                </th>
+                <th>CO</th>
+                <th>O<sub>3</sub>
+                </th>
+                <th>PM<sub>10</sub>
+                </th>
+            </tr>
+            <tr align="center">
+                <th>1h<br/>µg/m<sup>3</sup></th>
+                <th>1h<br/>µg/m<sup>3</sup></th>
+                <th>8h<br/>µg/m<sup>3</sup></th>
+                <th>1h<br/>µg/m<sup>3</sup></th>
+                <th>1h<br/>µg/m<sup>3</sup></th>
+            </tr>
+            <tr>
+                <td align="center" style="background-color: #C7EAFB">
+                    <span style="color: #000000">     1     </span>
+                </td>
+                <td>velmi dobrá</td>
+                <td align="center">0 - 25</td>
+                <td align="center">0 - 25</td>
+                <td align="center">0 - 1000</td>
+                <td align="center">0 - 33</td>
+                <td align="center">0 - 20</td>
+            </tr>
+            <tr>
+                <td align="center" style="background-color: #9BD3AE">
+                    <span style="color: #000000">     2     </span>
+                </td>
+                <td>dobrá</td>
+                <td align="center">&gt; 25 - 50</td>
+                <td align="center">&gt; 25 - 50</td>
+                <td align="center">&gt; 1000 - 2000</td>
+                <td align="center">&gt; 33 - 65</td>
+                <td align="center">&gt; 20 - 40</td>
+            </tr>
+            <tr>
+                <td align="center" style="background-color: #FFF200">
+                    <span style="color: #000000">     3     </span>
+                </td>
+                <td>uspokojivá</td>
+                <td align="center">&gt; 50 - 120</td>
+                <td align="center">&gt; 50 - 100</td>
+                <td align="center">&gt; 2000 - 4000</td>
+                <td align="center">&gt; 65 - 120</td>
+                <td align="center">&gt; 40 - 70</td>
+            </tr>
+            <tr>
+                <td align="center" style="background-color: #FAA61A">
+                    <span style="color: #000000">     4     </span>
+                </td>
+                <td>vyhovující</td>
+                <td align="center">&gt; 120 - 350</td>
+                <td align="center">&gt; 100 - 200</td>
+                <td align="center">&gt; 4000 - 10000</td>
+                <td align="center">&gt; 120 - 180</td>
+                <td align="center">&gt; 70 - 90</td>
+            </tr>
+            <tr>
+                <td align="center" style="background-color: #ED1C24">
+                    <span style="color: #FFFFFF">     5     </span>
+                </td>
+                <td>špatná</td>
+                <td align="center">&gt; 350 - 500</td>
+                <td align="center">&gt; 200 - 400</td>
+                <td align="center">&gt; 10000 - 30000</td>
+                <td align="center">&gt; 180 - 240</td>
+                <td align="center">&gt; 90 - 180</td>
+            </tr>
+            <tr>
+                <td align="center" style="background-color: #671F20">
+                    <span style="color: #FFFFFF">     6     </span>
+                </td>
+                <td>velmi špatná</td>
+                <td align="center">&gt; 500</td>
+                <td align="center">&gt; 400</td>
+                <td align="center">&gt; 30000</td>
+                <td align="center">&gt; 240</td>
+                <td align="center">&gt; 180</td>
+            </tr>
+            <tr>
+                <td style="background-color: #CFCFCF">
+                    <span/>
+                </td>
+                <td colspan="6">Veličina se na uvedené stanici neměří</td>
+            </tr>
+            <tr>
+                <td style="background-color: white">
+                    <span/>
+                </td>
+                <td colspan="6">Neúplná data</td>
+            </tr>
+        </table>
+
+    </div>
+    <p>Data získána z webu <a href="http://portal.chmi.cz/files/portal/docs/uoco/web_generator/actual_hour_data_CZ.html">ČHMÚ</a> a <a href="http://www.zuova.cz/informace/imise.php">Zdravotního ústavu Ostrava</a>.</p>
+    <p>Vizualizaci vytvořil <a href="http://twitter.com/jindrichmynarz">Jindřich Mynarz</a>.</p>
+    <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+    <script type="text/javascript">
+        var G = google.maps; // Zkratka
+        var Pollution = {
+            apiurl : "https://api.scraperwiki.com/api/1.0/datastore/sqlite",
+            map : false,
+            infoWindow : new G.InfoWindow({}),
+            valueTypesMap : {
+                "velmi_dobra" : {
+                    colour : "#C7EAFB",
+                    radius : 500
+                },
+                "dobra" : {
+                    colour : "#9BD3AE",
+                    radius : 1000
+                },
+                "uspokojiva" : {
+                    colour : "#FFF200",
+                    radius : 2000
+                },
+                "vyhovujici" : {
+                    colour : "#FAA61A",
+                    radius : 4000
+                },
+                "spatna" : {
+                    colour : "#ED1C24",
+                    radius : 8000
+                },
+                "velmi_spatna" : {
+                    colour : "#671F20",
+                    radius : 16000
+                },
+                "bezna" : {
+                    colour : "#FFFFFF",
+                    radius : 500
+                },
+                "bezne" : {
+                    colour : "#FFFFFF",
+                    radius : 500
+                }
+            },
+            init : function() {
+                Pollution.loadData("SELECT * FROM pollutants", Pollution.processPollutants);
+            },
+            loadMap : function(pollutant) {
+                var $map = $("#map");
+                Pollution.map = new G.Map(
+                    $map.get(0),
+                    {
+                        center : new G.LatLng(50.6831244444444, 13.9978733333333),
+                        mapTypeId : G.MapTypeId.ROADMAP,
+                        zoom : 8
+                    }
+                );
+                Pollution.loadData(
+                    'SELECT * FROM measurements, stations WHERE'
+                    + ' measurements.code = stations.code AND NOT measurements.value = "" AND measurements.pollutant = "'
+                    + pollutant + '"',
+                    Pollution.processMeasurements
+                );
+                $map.show();
+            },
+            loadData : function(query, callback) {
+                $.ajax(
+                    {
+                        url : Pollution.apiurl,
+                        dataType : "jsonp",
+                        data : {
+                            format : "jsondict",
+                            name : "air_pollution_3",
+                            query : query
+                        },
+                        success : callback
+                    }
+                ); 
+            },
+            processPollutants : function(pollutants) {
+                var $select = $("#pollutants");
+                $.each(pollutants, function(key, pollutant) {
+                    $select.append("<option>" + pollutant["pollutant"] + "</option>");
+                });
+                $select.click(function(event) {
+                    Pollution.loadMap($(this).val());
+                });
+            },
+            processMeasurements : function(data) {
+                var bounds = new G.LatLngBounds();
+                $.each(data, function(key, measurement) {
+                    if (measurement["latitude"]) {
+                        var point = new G.LatLng(
+                            measurement["latitude"],
+                            measurement["longitude"]
+                        );
+                        console.log(measurement);
+                        var valueType = Pollution.valueTypesMap[measurement["valueType"]],
+                            colour = valueType["colour"],
+                            radius = valueType["radius"];
+                        var circle = new G.Circle({
+                            center : point,
+                            fillColor : colour,
+                            fillOpacity : 0.6,
+                            map : Pollution.map,
+                            radius : radius,
+                            strokeColor : "#000",
+                            strokeOpacity : 0.9
+                        });
+                        G.event.addListener(circle, "click", function() {
+                            var content = "<h3>"
+                                + measurement["name"]
+                                + "</h3>" 
+                                + "<p><strong>Škodlivina:</strong> "
+                                + measurement["pollutant"]
+                                + "</p>"
+                                + "<p><strong>Množství (µg/m<sup>3</sup>):</strong> "
+                                + measurement["value"]
+                                + "</p>";
+                            Pollution.infoWindow.setContent(content);
+                            Pollution.infoWindow.open(Pollution.map, new G.Marker({
+                                position : point
+                            }));
+                        });
+                        bounds.extend(point);
+                    }
+                });
+                G.event.addListener(Pollution.map, "click", function() {
+                    Pollution.infoWindow.close();
+                });
+                Pollution.map.fitBounds(bounds);
+            }
+        };
+        
+        (function ($) {
+            $(document).ready(Pollution.init);
+        }(jQuery));
+    </script>
+</body>
+</html>

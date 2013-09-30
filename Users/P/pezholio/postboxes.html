@@ -71,4 +71,77 @@ map.on('dragend', function(e) {
 
 </script>
 </body>
+</html><html>
+<head>
+<title>Postboxes near you</title>
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.4/leaflet.css" />
+<!--[if lte IE 8]>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.4/leaflet.ie.css" />
+<![endif]-->
+<script src="http://cdn.leafletjs.com/leaflet-0.4/leaflet.js"></script>
+<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+<style type="text/css">
+body, html {
+margin: 0;
+padding: 0;
+}
+
+#map {
+height: 100%; 
+width: 100%;
+}
+</style>
+</head>
+<body>
+<div id="map">Can't see the map? Make sure you've allowed your browser to download insecure content.</div>
+<script>
+
+function getBoxes(map) {
+   northeast = map.getBounds().getNorthEast();
+   southwest = map.getBounds().getSouthWest();
+
+   url = "https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=uk_postboxes&query=select%20*%20from%20%60swdata%60%20WHERE%20(lat%20%3C%20"+ northeast.lat +"%20AND%20lat%20%3E%20"+ southwest.lat +")%20AND%20(lng%20%3C%20"+ northeast.lng +"%20AND%20lng%20%3E%20"+ southwest.lng +")";
+
+   console.log(url)
+
+   $.getJSON(url, function(data) {
+       $.each(data, function(key, val) {
+           popup = ''
+           $.each(val, function(key, val) {
+               popup += '<strong>'+key+'</strong> '+val+'<br />'
+           });
+           group.addLayer(L.marker([val.lat, val.lng]).addTo(map).bindPopup(popup));
+       });
+   })
+}
+
+var map = L.map('map').setView([52.680824, -1.827562], 6);
+
+L.tileLayer('http://{s}.tile.cloudmade.com/BC9A493B41014CAABB98F0471D759707/997/256/{z}/{x}/{y}.png', {
+   maxZoom: 18,
+   attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>'
+}).addTo(map);
+
+var group = new L.layerGroup();
+
+map.on('zoomend', function(e) {
+    if (map.getZoom() >= 16) {
+        getBoxes(map);
+    } else {
+        // Clear markers
+        group.clearLayers();
+    }
+});
+
+map.on('dragend', function(e) {
+    if (map.getZoom() >= 16) {
+        getBoxes(map);
+    } else {
+        // Clear markers
+        group.clearLayers();
+    }
+});
+
+</script>
+</body>
 </html>

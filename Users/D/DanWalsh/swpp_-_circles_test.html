@@ -110,4 +110,116 @@ $(function(){
     <!-- Ignore me --><span style="display:none"><div id="scraperwikipane"></div></span>
     <div id="map_canvas"></div>
 </body>
+</html><!doctype html>
+<html>
+<head>
+    <title>SWPP - Heatmap Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <style type="text/css">
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, 
+cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, 
+ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, 
+embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video { 
+margin: 0; padding: 0; border: 0; font-size: 100%; font: inherit; vertical-align: baseline; }
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 18px; line-height: 24px; }
+ol, ul { list-style: none; }
+table { border-collapse: collapse; border-spacing: 0; }
+b, strong { font-weight: bold; }
+i, em { font-style: italic; }
+
+html, body, #map_canvas, #options {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+body {
+    position: relative;
+}
+
+#scraperwikitag {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 122px;
+    width: 188px;
+    height: 30px;
+    padding: 0;
+    background: #f6f6f6 url('https://media.scraperwiki.com/images/powered.png') 50% 50% no-repeat;
+    text-indent: -9000px;
+    cursor: pointer;
+    -webkit-box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.4);
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.4);
+    -webkit-border-bottom-right-radius: 2px;
+    -webkit-border-bottom-left-radius: 2px;
+    -moz-border-radius-bottomright: 2px;
+    -moz-border-radius-bottomleft: 2px;
+    border-bottom-right-radius: 2px;
+    border-bottom-left-radius: 2px;
+}
+
+#scraperwikitag:hover {
+    background-color: #fff;
+    -webkit-box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.3);
+    -moz-box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 3px 6px 0px rgba(0, 0, 0, 0.3);
+}
+
+    </style>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=false"></script>
+    <script type="text/javascript">
+
+// I hate IE8
+$.ajaxTransport("+*", function( options, originalOptions, jqXHR ) { if(jQuery.browser.msie && window.XDomainRequest) { var xdr; return { send: function( headers, completeCallback ) { xdr = new XDomainRequest(); xdr.open("get", options.url); xdr.onload = function() { if(this.contentType.match(/\/xml/)){ var dom = new ActiveXObject("Microsoft.XMLDOM"); dom.async = false; dom.loadXML(this.responseText); completeCallback(200, "success", [dom]); }else{ completeCallback(200, "success", [this.responseText]); } }; xdr.ontimeout = function(){ completeCallback(408, "error", ["The request timed out."]); }; xdr.onerror = function(){ completeCallback(404, "error", ["The requested resource could not be found."]); }; xdr.send(); }, abort: function() { if(xdr)xdr.abort(); } }; } });
+
+// stuff that requires the DOM goes here
+$(function(){
+
+    var map = new google.maps.Map(
+        document.getElementById('map_canvas'), 
+        {zoom: 6, center: new google.maps.LatLng(54.136696, -2.06543), mapTypeId: google.maps.MapTypeId.ROADMAP}
+    );
+
+    var heatmapPoints = []
+
+    $.ajax({
+        url: "https://api.scraperwiki.com/api/1.0/datastore/sqlite?",
+        data: {
+            format: 'jsondict', 
+            name: 'swpp_-_tog_details', 
+            query: "select * from `swdata` where postcode is not null and postcode<>'LL18 3EB' and postcode<>''"
+        },
+        success: function(togs){
+
+            $.each(togs, function(i,business) {
+                var latlng = new google.maps.LatLng(business.lat, business.lng)
+                heatmapPoints.push(latlng);
+            });
+
+            var heatmap = new google.maps.visualization.HeatmapLayer({
+                data: heatmapPoints,
+                dissipating: false,
+                opacity: 0.75,
+                maxIntensity: 25,
+                radius: 0.25
+            });
+            heatmap.setMap(map);
+
+        }
+    });
+
+    $('<a>').attr('id', 'scraperwikitag').attr('href', $('#scraperwikipane a').attr('href')).appendTo('body');
+
+});
+    </script>
+</head>
+<body>
+    <!-- Ignore me --><span style="display:none"><div id="scraperwikipane"></div></span>
+    <div id="map_canvas"></div>
+</body>
 </html>

@@ -88,3 +88,93 @@
         <div id="map_canvas"></div>
     </body>
 <html>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>EBay Markers - Point 3 - D - Exercise 2 - WDEI</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var geocoder;
+            var map;
+            var bounds;
+            var data;
+            var timeout = 600;
+        
+            function set_markers(i) {
+                geocoder.geocode( { 'address': data[i].location}, function(results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                            map.setCenter(results[0].geometry.location);
+                            var marker = new google.maps.Marker({
+                                clickable: true,
+                                draggable: true,
+                                map: map,
+                                position: results[0].geometry.location,
+                                title: data[i].title
+                            });
+                            var infoWindow = new google.maps.InfoWindow({
+                                content: createInfoWindowContent(data[i]),
+                                position: marker.position
+                            });
+                            google.maps.event.addListener(marker, 'click', function () {
+                                infoWindow.open(map, marker);
+                            });
+                            bounds.extend(marker.position);
+                            map.fitBounds(bounds);
+                    } else {
+                        if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+                            //console.debug("Geocode was not successful for the following reason: " + status + "\nWaiting: " + 3*timeout + " msec.");
+                            //setTimeout(set_markers(i), 3*timeout);
+                        }
+                    }
+                    i++;
+                    if(i < data.length) {
+                        setTimeout(set_markers(i), timeout);
+                    }
+                });
+            }
+
+            function createInfoWindowContent(data) {
+                var html = data.title + "<br/>";
+                html += data.user + "<br/>";
+                html += data.location + "<br/>";
+                html += data.sendTo + "<br/>";
+                return html;
+            }
+
+            function callback(d) {
+                data = d;
+                set_markers(0);
+            }
+
+            $(document).ready(function(){
+                geocoder = new google.maps.Geocoder();
+                bounds = new google.maps.LatLngBounds();
+                var status;
+                var myOptions = {
+                    zoom: 7,
+                    center: new google.maps.LatLng(49.5, 12),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+                $.ajax({
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=wdei_ex2_d_p1&query=select%20*%20from%20%60swdata%60',
+                    dataType: 'json',
+                    success: function(data){ callback(data); }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>

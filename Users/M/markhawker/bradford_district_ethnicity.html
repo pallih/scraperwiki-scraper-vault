@@ -54,4 +54,60 @@
   <div id="chart_div" style="width: 900px; height: 500px;"></div>
   <p><button type="button" onclick="tree.goUpAndDraw()">Reset Treemap</button></p>
  </body>
+</html><!DOCTYPE html>
+<html>
+ <head>
+  <title>Ethnicity in the Bradford District</title>
+  <style type="text/css">
+  body { padding: 5px 30px; }
+  h1, p, button { font-size: 150%; }
+  </style>
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+  <script type="text/javascript">
+  google.load("visualization", "1", {packages:["treemap"]});
+  google.setOnLoadCallback(drawChart);
+  var tree;
+  function drawChart() {
+   var data = google.visualization.arrayToDataTable([
+    ["Ethnic Group", "Parent", "People"]
+    ,["All People", null, 0]
+    ,["White", "All People", 0]
+    ,["Mixed", "All People", 0]
+    ,["Asian or Asian British", "All People", 0]
+    ,["Black or Black British", "All People", 0]
+    ,["Chinese or Other Ethnic Group", "All People", 0]
+    ,["British", "White", 354.8]
+    ,["Irish", "White", 3.3]
+    ,["Other White", "White", 10.6]
+    ,["White and Black Carribean", "Mixed", 3.3]
+    ,["White and Black African", "Mixed", 0.8]
+    ,["White and Asian", "Mixed", 4.0]
+    ,["Other Mixed", "Mixed", 1.4]
+    ,["Indian", "Asian or Asian British", 14.8]
+    ,["Pakistani", "Asian or Asian British", 80.0]
+    ,["Bangladeshi", "Asian or Asian British", 5.9]
+    ,["Other Asian", "Asian or Asian British", 4.2]
+    ,["Black Caribbean", "Black or Black British", 3.6]
+    ,["Black African", "Black or Black British", 4.2]
+    ,["Other Black", "Black or Black British", 0.5]
+    ,["Chinese", "Chinese or Other Ethnic Group", 2.8]
+    ,["Other", "Chinese or Other Ethnic Group", 3.3]
+   ]);
+   tree = new google.visualization.TreeMap(document.getElementById("chart_div"));
+   tree.draw(data, {
+    minColor: "#f00",
+    midColor: "#ddd",
+    maxColor: "#0d0",
+    headerHeight: 24,
+    fontColor: "black",
+    fontSize: 20,
+    showScale: false});
+  }
+  </script>
+ </head>
+ <body>
+  <h1>Ethnicity in the Bradford District</h1>
+  <div id="chart_div" style="width: 900px; height: 500px;"></div>
+  <p><button type="button" onclick="tree.goUpAndDraw()">Reset Treemap</button></p>
+ </body>
 </html>

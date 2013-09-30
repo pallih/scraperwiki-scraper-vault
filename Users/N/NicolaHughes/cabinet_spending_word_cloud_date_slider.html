@@ -38,4 +38,44 @@ $("#slider").dateRangeSlider(
    });
 });
 
+</script><h1><font color=#0000CC>Word Cloud of Cabinet Office Spending</font></h1>
+<p><font color=#0000FF>The original scraper with the entire dataset can be found <a href="https://scraperwikiviews.com/run/word_cloud_for_cabinet_office_spending/">here</a>. Hover over the names of the suppliers to see how much they received for the selected date range</font></p>
+
+<h2 id="heading"><font color=#0066FF>Date Slider: move the bar and adjust the beginning and end dates</font></h2>
+
+<div id="sliderBox">
+  <div id="slider"/>
+</div>
+
+
+<div id="content">Please wait while we load your Word Cloud</div>
+
+
+<link rel="stylesheet" href="https://media.scraperwiki.com/css/jquery-ui-1.8.12.css">  
+<link rel="stylesheet" href="https://media.scraperwiki.com/css/jqrangeslider.css">  
+<script type="text/javascript" src="https://media.scraperwiki.com/js/jquery-1.5.2.js"></script>
+<script type="text/javascript" src="https://media.scraperwiki.com/js/jquery-ui-1.8.12.custom.min.js"></script>
+<script type="text/javascript" src="https://media.scraperwiki.com/js/jquery.mousewheel.js"></script>
+<script type="text/javascript" src="https://media.scraperwiki.com/js/jQRangeSlider.js"></script>
+<script type="text/javascript" src="https://media.scraperwiki.com/js/jQDateRangeSlider.js"></script>
+<script type="text/javascript">
+
+$("#slider").dateRangeSlider(
+    {
+        defaultValues:{min:new Date(2011,2,1), max:new Date(2011,2,31)},
+        bounds:{min:new Date(2010,3,1), max:new Date(2011,2,31)},
+    }
+  ).bind("valuesChanged", function(event, ui){ 
+   var start = $.datepicker.formatDate("yy-mm-dd", ui.values.min);
+   var end = $.datepicker.formatDate("yy-mm-dd", ui.values.max);
+   
+   $.ajax({
+     url: "https://views.scraperwiki.com/run/word_cloud_for_cabinet_office_spending/",
+     data: "start=" + start + "&end=" + end,
+     success: function(data, textStatus, jqXHR){
+       $("#content").html(data);
+     }
+   });
+});
+
 </script>

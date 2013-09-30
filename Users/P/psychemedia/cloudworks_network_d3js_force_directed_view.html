@@ -123,4 +123,129 @@ False=0
 
     </script>
   </body>
+</html><!-- via http://bl.ocks.org/4062045 -->
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <!--<link type="text/css" rel="stylesheet" href="http://mbostock.github.com/d3/talk/20111018/style.css"/>-->
+    <script type="text/javascript" src="https://raw.github.com/mbostock/d3/master/d3.js"></script>
+    <!--<script type="text/javascript" src="http://mbostock.github.com/d3/talk/20111018/d3/d3.layout.js"></script>-->
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script type="text/javascript">
+//---
+//http://jquery-howto.blogspot.com/2009/09/get-url-parameters-values-with-jquery.html
+$.extend({
+  getUrlVars: function(){
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+      hash = hashes[i].split('=');
+      vars.push(hash[0]);
+      vars[hash[0]] = hash[1];
+    }
+    return vars;
+  },
+  getUrlVar: function(name){
+    return $.getUrlVars()[name];
+  }
+});
+//---
+</script>
+    <style type="text/css">
+
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+
+    </style>
+  </head>
+  <body>
+    <div id='head'>Please be patient - may take some time to load. WHen it does, if you hover over a node, a label should pop up.</div>
+    <hr/>
+    <div id="body">
+     
+    </div>
+    <script type="text/javascript">
+
+var width = 960,
+    height = 800;
+
+var color = d3.scale.category20();
+
+var force = d3.layout.force()
+    .charge(-120)
+    .linkDistance(30)
+    .size([width, height]);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+if (!($.getUrlVar('cloudscapeID')) )
+    q='?'
+  else
+    q="?cloudscapeID="+escape($.getUrlVar('cloudscapeID'))
+
+if (!($.getUrlVar('filterNdegree')) )
+    fd=''
+  else
+    fd="&filterNdegree="+escape($.getUrlVar('filterNdegree'))
+
+if (!($.getUrlVar('userID')) )
+    uid=''
+  else
+    uid="&userID="+escape($.getUrlVar('userID'))
+
+if (!($.getUrlVar('viewtype')) )
+    vt=''
+  else
+    vt="&viewtype="+escape($.getUrlVar('viewtype'))
+
+d3.json("https://views.scraperwiki.com/run/cloudworks_network/"+q+vt+uid+fd, function(error, graph) {
+True=1
+False=0
+//graph=%(jdata)s
+  force
+      .nodes(graph.nodes)
+      .links(graph.links)
+      .start();
+
+  var link = svg.selectAll("line.link")
+      .data(graph.links)
+    .enter().append("line")
+      .attr("class", "link")
+      .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+  var node = svg.selectAll("circle.node")
+      .data(graph.nodes)
+    .enter().append("circle")
+      .attr("class", "node")
+      .attr("r", 5)
+      .style("fill", function(d) { return color(d.group); })
+      .call(force.drag);
+
+  node.append("title")
+      .text(function(d) { return d.name; });
+
+  force.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("cx", function(d) { return d.x; })
+        .attr("cy", function(d) { return d.y; });
+  });
+});
+
+    </script>
+  </body>
 </html>

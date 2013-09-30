@@ -829,4 +829,835 @@
             </tr>
         </table>
     </body>
+</html><!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <style type="text/css">
+
+        /* RESETS */
+
+        html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video { margin: 0; padding: 0; border: 0; font-size: 100%; font: inherit; vertical-align: baseline; }
+        article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 14px; line-height: 18px; }
+        ol, ul { list-style: none; }
+        blockquote, q { quotes: none; }
+        blockquote:before, blockquote:after, q:before, q:after { content: ''; content: none; }
+        table { border-collapse: collapse; border-spacing: 0; }
+        td { vertical-align: top; }
+        label { -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+        
+        /* STRUCTURE */
+
+        * html, html, body, #dirtyLittleSecret {
+            height: 100%;
+            width: 100%;
+        }
+
+        #toolbar {
+            position: relative;
+            height: 40px;
+            background: #eee;
+            border-bottom: 1px solid #b9b9b9;
+        }
+
+        #actions {
+            width: 300px;
+            background-color: #edf1f7;
+            border-right: 1px solid #b9bfcc;
+            color: #161616;
+        }
+        
+        #pdf {
+            position: relative;
+            background-color: #ddd;
+            margin-left: 300px;
+            -webkit-box-shadow: inset 0px 2px 5px rgba(0, 0, 0, 0.4);
+            -moz-box-shadow: inset 0px 2px 5px rgba(0, 0, 0, 0.4);
+            box-shadow: inset 0px 2px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        .clear {
+            float: none;
+            clear: both;
+        }
+
+        /* HEADER */
+
+        h1 {
+            line-height: 40px;
+            font-weight: bold;
+            font-size: 21px;
+            padding-left: 12px;
+            color: #333;
+            text-shadow: 0 1px 0 #fff;
+        }
+
+        #scraperwikiTag {
+            display: block;
+            width: 200px;
+            height: 40px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: transparent url('https://media.scraperwiki.com/images/powered.png') 50% 50% no-repeat;
+            text-indent: -9000px;
+        }
+
+        #scraperwikiTag:hover {
+            background-color: #f3f3f3;
+            border-left: 1px solid #d9d9d9;
+        }
+
+        #scraperwikiTag:active {
+            background-position: 50% 55%;
+        }
+
+        #noPDF, #loadingPDF {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            margin-left: -150px;
+            margin-top: -9px;
+            color: #bbb;
+            text-shadow: 0 1px 0 #f3f3f3;
+            font-size: 18px;
+            line-height: 18px;
+            text-align: center;
+            font-weight: bold;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* ACTIONS */
+
+        .actionset {
+            padding: 10px;
+            border-top: 1px solid #f7f9fc;
+            border-bottom: 1px solid #dfe4eb;
+        }
+
+        #actions h2 {
+            position: relative;
+            padding-left: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #6d7e8d;
+            text-shadow: 0 1px 0 #fff;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .spinner {
+            font-size: 12px;
+            position: absolute;
+            display: block;
+            top: 0;
+            -moz-transform: rotate(90deg);
+            -webkit-transform: rotate(90deg);
+            -o-transform: rotate(90deg);
+            -ms-transform: rotate(90deg);
+            transform: rotate(90deg);
+            left: 0;
+            text-shadow: 1px 0 0 #fff;
+        }
+
+        .hidden .spinner {
+            -moz-transform: rotate(0deg);
+            -webkit-transform: rotate(0deg);
+            -o-transform: rotate(0deg);
+            -ms-transform: rotate(0deg);
+            transform: rotate(0deg);
+            left: 2px;
+            text-shadow: 0 1px 0 #fff;
+        }
+
+        #get label {
+            display: none;
+        }
+
+        #get p {
+            margin: 5px 0
+        }
+
+        #get .first, #amend .recid, #amend .tag {
+            margin-top: 10px;
+        }
+        
+        #scrapername, #apikey {
+            width: 270px;
+            padding: 2px 3px;
+        }
+
+        #sqlcode, #ant_val {
+            width: 268px;
+            max-width: 268px;
+            height: 180px;
+            padding: 3px 5px;
+        }
+
+        #attach, #username {
+            padding: 2px 3px;
+            width: 125px;
+            float: left;
+        }
+
+        #attach {
+            margin-right: 10px;
+        }
+
+        #get .penultimate, #amend .penultimate {
+            border-bottom: 1px solid #dfe4eb;
+            padding-bottom: 10px;
+            margin-bottom: 0;
+        }
+
+        #get .last, #amend .last {
+            padding-top: 10px;
+            margin-top: 0;
+            text-align: center;
+            border-top: 1px solid #f7f9fc;
+        }
+
+        #get .last a, #amend .last a {
+            display: inline-block;
+            width: 133px;
+            padding: 8px 0;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 13px;
+            background-color: #D9DEE7;
+            color: #6D7E8D;
+            border: 1px solid #a3b3d0;
+            text-shadow: 0px 1px 0px #fff;
+            -moz-box-shadow: inset 0px 1px 0px 0px #fff;
+            -webkit-box-shadow: inset 0px 1px 0px 0px #fff;
+            box-shadow: inset 0px 1px 0px 0px #fff;
+            -moz-border-radius: 4px;
+            -webkit-border-radius: 4px;
+            border-radius: 4px;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        #amend .last a {
+            width: auto;
+            padding: 5px 10px;
+            margin-right: 5px;
+        }
+
+        #get .last a:hover, #amend .last a:hover {
+            background-color: #dfe3eb;
+        }
+
+        #get .last a:active, #amend .last a:active {
+            position:relative;
+            top:1px;
+        }
+
+        #get #outtable, #amend #savebox {
+            font-weight: bold;
+            margin-left: 5px;
+            background-color: #D5D99D;
+            color: #7e833e;
+            border-color: #b0b83f;
+        }
+
+        #get #outtable:hover, #amend #savebox:hover {
+            background-color: #dbe096;
+        }
+
+        #amend #savebox {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        #view h2 strong {
+            float: right;
+            display: inline-block;
+            font-size: 10px;
+            color: white;
+            background: #6D7E8D;
+            text-shadow: none;
+            padding: 2px 5px 3px 5px;
+            line-height: 10px;
+            -webkit-border-radius: 20px;
+            margin-top: 1px;
+            font-family: Verdana, sans-serif;
+        }
+
+        #annotlist {
+            width: 278px;
+            height: 200px;
+            border: 1px solid #999;
+            background: white;
+            margin: 10px 0;
+            overflow: auto;
+            resize: vertical;
+            font-size: 13px;
+        }
+
+        #annotlist li {
+            padding: 4px 5px 2px;
+            cursor: pointer;
+        }
+
+        #annotlist li:nth-child(even) {
+            background: #f3f6fc;
+        }
+
+        #annotlist li:hover {
+            background: #FAFCFF;
+        }
+
+        #annotlist li:nth-child(even):hover {
+            background: #F0F2FA;
+        }
+
+        #annotlist li.empty, #annotlist li.error, #annotlist li.loading {
+            text-align: center;
+            color: #bbb;
+            padding: 0 5px;
+            margin-top: 90px;
+            cursor: auto;
+            background: #fff;
+        }
+
+        #annotlist li.error {
+            color: #c33;
+        }
+
+        #annotlist li.loading {
+            color: #5878aa;
+        }
+
+        #annotlist li.loading:before {
+            content: " ";
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+            margin-right: 8px;
+            background: transparent url('https://media.scraperwiki.com/images/load2.gif') 0 0 no-repeat;
+            vertical-align: -2px;
+        }
+
+        #annotlist li.selected, #annotlist li.selected:hover {
+            background: #a0abc5;
+            color: #fff;
+            text-shadow: 0 1px 0 #65809C;
+        }
+
+        p.showPDFPageText {
+            text-align: center;
+            color: #555;
+            text-shadow: 0 1px 0 #fff;
+            font-size: 13px;
+        }
+
+        p.showPDFPageText label {
+            margin-left: 3px;
+        }
+
+        #amend p {
+            padding-bottom: 5px;
+        }
+
+        p.recid, p.pdfurl, p.page {
+            float: left;
+        }
+
+        p.tag {
+            float: right;
+        }
+        #ant_tag {
+            width:125px; 
+        }
+
+        p.sel {
+            clear: both;
+        }
+
+        #ant_recid, #ant_tag, #ant_pdfurl, #ant_page, #ant_sel, #ant_username, #ant_modified {
+            padding: 2px 3px;
+        }
+
+        #ant_page {
+            margin-left: 5px;
+        }
+
+        #amend label, #amend h4 {
+            color: #555;
+            text-shadow: 0 1px 0 #fff;
+            font-size: 13px;
+            display: inline-block;
+        }
+
+        #amend .last {
+            padding-bottom: 10px;
+            margin-bottom: 0;
+            border-bottom: 1px solid #dfe4eb;
+        }
+
+        #amend h4 {
+            display: block;
+            padding-top: 10px;
+            margin-top: 0;
+            border-top: 1px solid #f7f9fc;
+        }
+
+        p.recid label, p.tag label {
+            margin-right: 5px;
+        }
+
+        p.pdfurl label {
+            width: 40px;
+        }
+        
+        p.sel label {
+            width: 60px;
+        }
+
+        #ant_recid {
+            width: 50px;
+        }
+
+        #ant_page {
+            width: 40px;
+        }
+
+        #ant_pdfurl {
+            width: 173px;
+        }
+
+        #ant_sel {
+            width: 208px;
+        }
+
+        #ant_username, #ant_modified {
+            width: 125px;
+        }
+
+        #ant_username {
+            margin-right: 4px;
+        }
+
+        div#pdfpagetext { 
+            position:absolute; 
+            z-index:500; 
+            top:0; 
+            left:0; 
+            display: none;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        p#retmessage {
+            float: right; 
+        }
+        div.ptext { 
+            position: absolute; 
+            white-space: pre; 
+            background-color: #efe;
+            padding: 2px 4px;
+        }
+
+        div.ptext:hover { 
+            background-color: #faa; 
+            cursor: pointer; 
+        }
+
+        </style>
+        <link type="text/css" rel="stylesheet" href="https://media.scraperwiki.com/css/jquery.Jcrop.css" />
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript" src="https://media.scraperwiki.com/js/jquery.autoheight.js"></script>    
+        <script type="text/javascript" src="https://media.scraperwiki.com//js/jquery.Jcrop.js"></script>
+        <script type="text/javascript" src="https://media.scraperwiki.com/js/json-min.js"></script>    
+        <script type="text/javascript">
+
+        var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+
+        //var pdffilterurl = "https://views.scraperwiki.com/run/pdf_filter/"; 
+        //var pdffilterapikey = "3da19943-294c-4106-b19b-12d7a7b23e63"; 
+        var pdffilterurl = "https://views.scraperwiki.com/run/pdf_filter_1/";
+        var pdffilterapikey = "383b32e4-3203-44bd-bc92-ecaed3be56a9";
+
+        var cropperapi = null; 
+        var edict = { };
+        
+        var prevpdfurl = ""; 
+        var prevnpage = ""; 
+        var currpagewidth = 800; 
+        var currpagenumber = 0;
+        
+        var recidrefs = { };  // 'r'+recid -> row
+        var liselected = null; 
+
+        var regexpbox = new RegExp("(\\d+):([\\d\\.]+),([\\d\\.]+)_([\\d\\.]+),([\\d\\.]+)(?: (.*))?");
+        function UDecP(s){
+            return parseFloat(s.indexOf(".") == -1 ? "0."+s : s); 
+        }
+        function parseBox(sbox){
+            var mbox = regexpbox.exec(sbox); 
+            if (mbox == null)
+                return null; 
+            return { npage:parseInt(mbox[1]), x0:UDecP(mbox[2]), y0:UDecP(mbox[3]), x1:UDecP(mbox[4]), y1:UDecP(mbox[5]), val:mbox[6] }; 
+        }
+        function takingAWhile(object, html){
+            object.html(html);
+        }
+
+        function getURLparams(){
+            var urlParams = {};
+            d = function (s) { return decodeURIComponent(s.replace(/\+/g, " ")); }; 
+            var q = window.location.search.substring(1);
+            var re = /([^&=]+)=?([^&]*)/g; // don't try to inline this value
+            while (e = re.exec(q))
+               urlParams[d(e[1])] = d(e[2]);
+            return urlParams; 
+        }
+
+        function DecP(v){
+            var s = (v*1.0/currpagewidth).toFixed(3); 
+            return ((s.substr(0, 2) == "0.") ? s.substr(2) : s); 
+        }
+
+        function cropimageloaded(){ 
+            var realWidth = this.width; 
+            var realHeight = this.height; 
+            var trueSize = [ currpagewidth, currpagewidth*realHeight/realWidth ]; 
+            var divWidth = $('#pdf').width(); // - 20;
+            $(this).width(divWidth); 
+            var divHeight = divWidth*realHeight/realWidth;
+            $(this).height(divHeight); 
+            $('#messages').empty();
+            $('#page').html($(this));
+            clearTimeout(loadingPDFTimeout);
+            function setCrop(c) { $('#ant_sel').val(currpagenumber+":"+DecP(c.x)+","+DecP(c.y)+"_" +DecP(c.x2)+","+DecP(c.y2)); };
+            cropperapi = $.Jcrop('#page img', 
+                                 { onSelect: setCrop, onChange: setCrop, keySupport: false, bgOpacity:0.85, trueSize:trueSize } ); 
+            var mbox = parseBox($('#ant_sel').val()); 
+            if ((mbox != null) && !((mbox["x0"]==0)&&(mbox["y0"]==0)&&(mbox["x1"]==0)&&(mbox["y1"]==0)))
+                cropperapi.setSelect([ mbox["x0"]*currpagewidth, mbox["y0"]*currpagewidth, mbox["x1"]*currpagewidth, mbox["y1"]*currpagewidth ]);
+        }
+
+
+        function setcropimage(){
+            currpagewidth = $("#pdf #page").width();
+            var mbox = parseBox($('#ant_sel').val()); 
+            if (!mbox){
+                $('#loadingPDF').html('Bad ant_sel'); 
+                return; 
+            }
+            if (cropperapi && (prevpdfurl == $('#ant_pdfurl').val()) && (currpagenumber == mbox["npage"])){
+                if (!((mbox["x0"]==0)&&(mbox["y0"]==0)&&(mbox["x1"]==0)&&(mbox["y1"]==0)))
+                    cropperapi.animateTo([ mbox["x0"]*currpagewidth, mbox["y0"]*currpagewidth, mbox["x1"]*currpagewidth, mbox["y1"]*currpagewidth ]);
+                else
+                    cropperapi.release(); 
+                return; 
+            }
+            if (cropperapi)  cropperapi.destroy();
+            cropperapi = null;
+
+            currpagenumber = mbox["npage"]; 
+            var data = { pdfurl:$('#ant_pdfurl').val(), "sel":currpagenumber+":" };
+            $('#page').empty();
+            $('#pdfpagetext').empty();
+            data['apikey'] = pdffilterapikey;
+            $.ajax({
+                url:pdffilterurl, 
+                data:data, 
+                dataType:'jsonp',
+                timeout: 20000,
+                success:function(tdata){
+                    var rows = tdata.split("\n"); 
+                    var img = new Image();
+                    var pageimgurl = "https://scraperwiki.com/cropper/pngprev/u/page_"+currpagenumber+"/?url="+encodeURIComponent($('#ant_pdfurl').val()); 
+                    $(img).load(cropimageloaded).attr("src", pageimgurl); 
+                    for (var i = 0; i < rows.length; i++){
+                        var box = parseBox(rows[i]); 
+                        //var box = tdata["boxes"][i];
+                        //var fnt = tdata["fonts"][box["font"]]; 
+                        var lstyle = ['left:', (box["x0"]*currpagewidth).toFixed(0), 'px; top:', (box["y0"]*currpagewidth).toFixed(0), 'px; ']; 
+                        lstyle.push('width:', ((box["x1"]-box["x0"])*currpagewidth).toFixed(0), 'px; height:', ((box["y1"]-box["y0"])*currpagewidth).toFixed(0), 'px');
+                        //lstyle.push('; font-size:', fnt["size"], 'px; font-family:', fnt["family"]);
+                        var tel = '<div class="ptext" style="'+lstyle.join("")+'">'+box["val"]+'</div>'
+                        $('#pdfpagetext').append($(tel));
+                    }
+                    $('#amend.hidden h2').trigger('click');
+                    $('#get h2').not('.hidden h2').trigger('click');
+                },
+                error: function(){
+                     $('#loadingPDF').attr('title', 'We tried for 20 seconds but there was no response. Try looking in your browser\'s Network console for 404 or 500 errors').html('Could not load PDF');
+                }
+            }); 
+        }
+
+
+        function annotel(){
+            // recid, pdfurl, page, sel, tag, val
+            var row = recidrefs[$(this).attr("id")]; 
+            //console.log(row); 
+
+            // select recid, pdfurl, sel, val, 
+
+            $("#ant_recid").val(row["recid"]); 
+            $("#ant_pdfurl").val(row["pdfurl"]); 
+            //$("#ant_page").val(row[2]); 
+            $("#ant_sel").val(row["sel"]); 
+            $("#ant_tag").val(row["tag"]); 
+            $("#ant_val").val(row["val"]); 
+            $("#ant_username").val(row["username"]); 
+            $("#ant_modified").val(row["modified"]); 
+        
+            $("#annotlist li").removeClass("selected"); 
+            liselected = $(this); 
+            liselected.addClass("selected"); 
+            liselected.addClass("visited");
+
+            $('#messages').html('<span id="loadingPDF">Loading PDF&hellip;</span>');
+            loadingPDFTimeout = setTimeout("takingAWhile($('#loadingPDF'), 'Seems to be taking a while&hellip;')", 3000);
+        
+            setcropimage(); 
+        }
+
+        // save to scrapername as the corrections to avoid needing a different api key for both (loading and saving)
+        function saveboxbutton(){
+            $("#retmessage").text("saving button"); 
+            var submiturl = "https://views.scraperwiki.com/run/"+$("#scrapername").val()+"/"; 
+            //if ($("#apikey").val())
+            //    submiturl += '?apikey='+$("#apikey").val();   // can this work even though we're using POST?
+            liselected.addClass("saving"); 
+            var rrecid = 'r'+$("input#ant_recid").val(); 
+            var row = recidrefs[rrecid];   // backup the values so they show up again
+            row["recid"] = parseInt($("#ant_recid").val()); 
+            row["pdfurl"] = $("#ant_pdfurl").val(); 
+            row["sel"] = $("#ant_sel").val(); 
+            row["tag"] = $("#ant_tag").val(); 
+            row["val"] = $("#ant_val").val(); 
+            row["username"] = $("#username").val(); 
+            if (row["username"] == "")
+                { alert("please fill in username"); return }
+            var cdata = { recid:row["recid"], pdfurl:row["pdfurl"], sel:row["sel"], tag:row["tag"], username:row["username"] }; 
+            cdata["apikey"] = $("#apikey").val(); 
+            cdata["buttonaction"] = $(this).val(); 
+            cdata["submitcount"] = 0; 
+
+            // we have to suubmit the payload in pieces so it doesn't overload the GET
+            var maxcharlength = 200;
+            var submitpayload = function()
+            {
+                $("#retmessage").text('Submitting: '+cdata["submitcount"]+' of '+(row["val"].length/maxcharlength)); 
+                cdata["val"] = row["val"].substr(cdata["submitcount"]*maxcharlength, maxcharlength); 
+                $.ajax({type:"GET", url:submiturl, data:cdata, dataType:"jsonp", success:function(tdata)
+                {
+                    cdata["submitcount"] += 1; 
+                    if (cdata["submitcount"]*maxcharlength >= row["val"].length)
+                    {
+                        liselected.removeClass("saving"); 
+                        liselected.addClass("saved"); 
+                        $("#retmessage").text($.toJSON(tdata)); 
+                    }
+                    else
+                        submitpayload(); 
+                }, 
+                error:function(jqXHR, textStatus, errorThrown)
+                {
+                    $("#retmessage").text("sending error");      
+                }}); 
+            }
+            submitpayload(); 
+        }
+
+        function getboxtextbutton(){
+            $("#retmessage").text("getting text"); 
+            $("#ant_val").css("background-color", "#ddd"); 
+            var mbox = parseBox($('#ant_sel').val()); 
+            if ((mbox != null) && (mbox["npage"] != currpagenumber))
+                setcropimage(); 
+            var data = { pdfurl:$("input#ant_pdfurl").val(), sel:$("input#ant_sel").val() };
+            data["process"] = "table_"+$("#ant_tag").val(); 
+            data["apikey"] = pdffilterapikey; 
+            $.ajax({url:pdffilterurl, data:data, dataType:"jsonp", success:function(tdata)
+            {
+                $("textarea#ant_val").val(tdata);  
+                $("#retmessage").text("done"); 
+                $("#ant_val").css("background-color", "#fff"); 
+            }}); 
+        }
+
+        $(function(){
+            $('#scraperwikiTag').attr('href', $('#scraperwikipane a').attr('href'));
+            $('#actions h2').bind('click', function(){
+                if($(this).next().is(':hidden')){ $(this).next().slideDown(); } else { $(this).next().slideUp(); }
+                $(this).parent().toggleClass('hidden');
+            }).css('cursor','pointer').filter('.hidden h2').next().hide();
+            $('#get form input, #amend form input').each(function(){
+                if($(this).attr('placeholder') != ''){
+                    $(this).attr('title', $(this).attr('placeholder'));
+                } else {
+                    $(this).attr('title', $(this).prev().text());
+                }            
+            });
+
+            var params = getURLparams(); 
+            if (params["name"])    $("#scrapername").val(params["name"]); 
+            if (params["apikey"])  $("#apikey").val(params["apikey"]); 
+            if (params["sqlcode"]) $("#sqlcode").val(params["sqlcode"]); 
+            if (params["attach"])  $("#attach").val(params["attach"]);
+
+            // select recid, pdfurl, sel, val, desc
+            $('#outtable').bind('click', function(){
+                $('#view.hidden h2').trigger('click');
+                $('#annotlist').html('<li class="loading">Loading selections&hellip;</li>');
+                loadingSelectionsTimeout = setTimeout("takingAWhile($('#annotlist .loading'), 'Seems to be taking a while&hellip;')", 5000);
+                var qdata = {name:$('#scrapername').val(), query:$('#sqlcode').val(), format:"jsondict"}; 
+                if ($('#attach').val() != "")  qdata["attach"] = $('#attach').val(); 
+                if ($('#apikey').val() != "")  qdata["apikey"] = $('#apikey').val(); 
+                $.ajax({
+                    url: apiurl, 
+                    data: qdata, 
+                    dataType: "jsonp",
+                    timeout : 10000,
+                    success: function(tdata){
+                        clearTimeout(loadingSelectionsTimeout);
+                        if (tdata["error"] != undefined)  { 
+                            $('#annotlist').html('<li class="error">' + tdata["error"] + '</li>'); return 
+                        }
+                        $('#annotlist').empty();
+                        $('#view h2 strong').remove();
+                        $('#view h2').append('<strong>' + tdata.length + '</strong>'); 
+                        for (var i = 0; i < tdata.length; i++){
+                            var row = tdata[i]; 
+                            var rrecid = 'r'+row["recid"]; 
+                            recidrefs[rrecid] = row; 
+                            var lis = [ '<li id="', rrecid, '"' ]; 
+                            //if (row[6])
+                            //    lis.push(' class="prevsaved"'); 
+                            lis.push('>', '<span class="tag">', row["desc"], '</span>'); 
+                            lis.push('</li>'); 
+                            $("#annotlist").append(lis.join("")); 
+                        }
+                        $("#annotlist li").click(annotel); 
+                    },
+                    error: function(){
+                        $('#annotlist').html('<li class="error" title="We tried for 10 seconds but there was no response. Try looking in your browser\'s Network console for 404 or 500 errors">Could not load selections</li>');
+                    }
+                });
+            });
+            
+            $('#outlink').bind('click', function(){
+                var qs = [ "name="+encodeURIComponent($("#scrapername").val()), "sqlcode="+encodeURIComponent($("#sqlcode").val()) ]; 
+                if ($("#attach").val() != "")
+                    qs.push("attach="+encodeURIComponent($("#attach").val())); 
+                if ($("#apikey").val() != "")
+                    qs.push("apikey="+encodeURIComponent($("#apikey").val())); 
+                var baseurl = window.location.href.replace(/[?].*/, "")
+                window.history.pushState("nothing", "PDF Annotation link", baseurl+"?"+qs.join("&"));
+            });
+
+            $('#showPDFPageText').bind('change', function(){
+                if(this.checked){
+                    $('#pdfpagetext').show();
+                } else {
+                    $('#pdfpagetext').hide();
+                }
+            });
+
+            $("#savebox").click(saveboxbutton); 
+            $("#getboxtext").click(getboxtextbutton); 
+            $(".prevnextpage").click(function(){
+                var mbox = parseBox($('#ant_sel').val()); 
+                $('#ant_sel').val((mbox["npage"]+($(this).text() == "-P" ? -1 : 1))+":0,0_0,0"); 
+                setcropimage(); 
+            }); 
+
+            if (typeof(params["autofetch"]) != 'undefined') 
+                $('#outtable').trigger('click');
+        });
+
+        </script>
+    </head>
+    <body>
+        <!-- Ignore me --><span style="display:none"><div id="scraperwikipane"></div></span>
+        <table id="dirtyLittleSecret">
+            <tr><td colspan="2" id="toolbar">
+                <h1>General PDF Annotator</h1>
+                <a id="scraperwikiTag" target="_blank">Powered by ScraperWiki</a>
+            </td></tr>
+            <tr id="content">
+                <td id="actions">
+                    <div class="actionset" id="get">
+                        <h2><span class="spinner">&#x25B6;</span> Get selections</h2>
+                        <form>
+                            <p class="first"><label for="scrapername">Scraper name</label> <input id="scrapername" type="text" value="north_sea_oil_wells" placeholder="Scraper name"></p>
+                            <p><label for="sqlcode">SQL</label> <textarea rows="9" cols="30" id="sqlcode" placeholder="SQL">select * from wellpages limit 90</textarea></p>
+                            <p><label for="apikey">API key</label> <input id="apikey" type="text" value="" width="100%" placeholder="API key"></p>
+                            <p class="penultimate">
+                                <label for="attach">Attach</label> <input id="attach" type="text" value="" placeholder="Attach">
+                                <label for="username">Username</label> <input id="username" type="text" value="anonymous" placeholder="Username">
+                                <br class="clear" />
+                            </p>
+                            <p class="last">
+                                <a id="outlink">Share this Query</a>
+                                <a id="outtable">Get Selections</a>
+                            </p>
+                        </form>
+                    </div>
+                    <div class="actionset hidden" id="view">
+                        <h2><span class="spinner">&#x25B6;</span> View a selection</h2>
+                        <form>
+                            <ul id="annotlist">
+                                <li class="empty">No selections retreived</li>
+                            </ul>
+                            <p class="showPDFPageText"><input type="checkbox" val="true" name="showPDFPageText" id="showPDFPageText" /> <label for="showPDFPageText">Overlay selected text onto PDF</label></p>
+                        </form>
+                    </div>
+                    <div class="actionset hidden" id="amend">
+                        <h2><span class="spinner">&#x25B6;</span> Amend a selection</h2>
+                        <form id="annotate">
+                            <p class="recid"><label>recid:</label><input type="text" id="ant_recid" placeholder="ID"/></p>
+                            <p class="tag"><label>tag:</label><input type="text" id="ant_tag" placeholder="Tag" /></p>
+                            <p class="pdfurl"><label>pdfurl:</label><input type="text" id="ant_pdfurl" placeholder="PDF URL"/></p>
+                            <p class="sel"><label>selection:</label><input type="text" id="ant_sel" placeholder="Selection coordinates" /></p>
+                            <p class="penultimate">
+                                <input type="text" id="ant_username" placeholder="Username" />
+                                <input type="text" id="ant_modified" placeholder="Date modified" />
+                            </p>
+                            <p class="last">
+                                <a class="prevnextpage" title="Go to previous page">-P</a>
+                                <a class="prevnextpage" title="Go to next page">+P</a>
+                                <a id="getboxtext" title="Get the selected text in this region">Get Table</a>
+                                <a id="savebox" title="Save the selected text in this region">Save Text</a>
+                            </p>
+                            <p id="retmessage"></p>
+                            <h4>Selected text:</h4>
+                            <textarea id="ant_val"></textarea>
+                        </form>
+                    </div>
+                </td>
+                <td id="pdf">
+                    <div id="messages">
+                        <span id="noPDF">No PDF selected</span>
+                    </div>
+                    <div id="page">
+
+                    </div>
+                    <div id="pdfpagetext">
+
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </body>
 </html>

@@ -365,4 +365,371 @@ $(function(){
         <input class="search" type="text" />
     </div>
 </body>
+</html><!doctype html>
+<html>
+<head>
+<title>Plugin Datahub UI Spike</title>
+<link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/themes/start/jquery-ui.css" type="text/css" rel="Stylesheet" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,400,300,600,700&subset=latin,latin-ext" type="text/css" rel="Stylesheet" />
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,
+big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,
+dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,canvas,
+details,embed,figure,figcaption,footer,header,hgroup,menu,nav,output,ruby,section,summary,time,mark,
+audio,video{border:0;font-size:100%;font:inherit;vertical-align:baseline;margin:0;padding:0}
+article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}
+body{line-height:1}ol,ul{list-style:none}table{border-collapse:collapse;border-spacing:0}
+blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:none}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    font-family: "Open Sans", sans-serif; 
+    background: #eee;
+}
+
+.chooser, #current_project {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 342px;
+    bottom: 0;
+    left: 0;
+    padding: 115px 15px 15px 40px;
+    overflow: auto;
+}
+
+nav {
+    position: fixed;
+    z-index: 10;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 342px;
+    background: rgba(0,0,0,0.15);
+}
+
+.chooser {
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+}
+
+#current_project {
+    display: block;
+}
+
+h2 {
+    position: absolute;
+    top: 35px;
+    left: 40px;
+    font-size: 42px;
+    line-height: 42px;
+    color: #ccc;
+    text-shadow: 0 1px 0 #fff;
+}
+
+.chooser h2 {
+    color: #fff;
+    text-shadow: 0 1px 0 #000;
+}
+
+nav ul {
+    margin: 100px 25px 25px 25px;;
+}
+
+nav li a {
+    display: block;
+    padding: 13px 15px;
+    font-size: 20px;
+    cursor: pointer;
+    text-decoration: none;
+    color: #555;
+    text-shadow: 0 1px 0 #eee;
+}
+
+nav li a:hover {
+    XXXbackground: #d3d3d3;
+    color: Dodgerblue;
+}
+
+nav li a.selected {
+    font-weight: 600;
+    cursor: default;
+}
+
+nav li a.selected:hover {
+    color: #555;
+}
+
+.slide, .slide_placeholder, .new_slide {
+    position: relative;
+    width: 238px;
+    height: 178px;
+    margin: 0 30px 30px 0;
+    float: left;
+}
+
+.slide {
+    background: #fff;
+    border: 1px solid #ccc;
+    -webkit-box-shadow: 0px 1px 1px 0px rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 1px 1px 0px rgba(0, 0, 0, 0.2);
+    cursor: move;
+}
+
+.slide_placeholder {
+    border: 3px dashed #ddd;
+    margin-left: -4px;
+    margin-top: -4px;
+    webkit-border-radius: 10px;
+    moz-border-radius: 10px;
+    border-radius: 10px;
+}
+
+.new_slide {
+    font-size: 42px;
+    line-height: 178px;
+    text-align: center;
+    color: #ddd;
+    text-shadow: 0 1px 0 #fff;
+    font-weight: 600;
+}
+
+.slide.selected {
+    border-color: Dodgerblue;
+}
+
+.new_slide:hover {
+    color: Dodgerblue;
+}
+
+.slide input {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    left: 40px;
+    height: 20px;
+    font-size: 14px;
+    line-height: 14px;
+    padding: 3px 4px;
+    margin: 0;
+    outline: none;
+    border: 1px solid #ccc;
+    background: #f6f6f6;
+    font-family: Consolas, 'Ubuntu Mono', monospace;
+}
+
+.slide input:focus {
+    border-color: Dodgerblue;
+}
+
+.slide label {
+    display: block;
+    position: absolute;
+    top: 11px;
+    left: 0;
+    width: 40px;
+    text-transform: uppercase;
+    text-align: center;
+    font-weight: bold;
+    color: #AAA;
+    line-height: 22px;
+    font-size: 21px;
+    cursor: pointer;
+}
+
+.slide label:hover, .slide.selected label {
+   color: Dodgerblue;
+}
+
+.slide .preview {
+    position: absolute;
+    top: 47px;
+    left: 10px;
+    bottom: 10px;
+    right: 10px;
+    font-size: 10px;
+    line-height: 14px;
+    overflow: hidden;
+}
+
+.slide .preview table {
+    min-width: 100%;
+}
+
+.slide .preview td, .slide .preview th {
+    padding: 3px;
+    border: 1px solid #ddd
+}
+
+.slide .preview th {
+    background: #f3f3f3;
+}
+
+input.search {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    width: 200px;
+    padding: 5px 20px;
+    background: transparent;
+    border: 2px solid #CCC;
+    webkit-border-radius: 40px;
+    moz-border-radius: 40px;
+    border-radius: 40px;
+    font-size: 21px;
+    line-height: 21px;
+    color: white;
+}
+
+input.search:focus {
+    outline: none;
+    border-color: #fff;
+    background-color: rgba(255,255,255,0.1);
+}
+
+</style>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript">
+function hide_choosers(){
+    $('.chooser:visible').fadeOut(100);
+    $('nav li a.selected').removeClass('selected');
+    $('nav li a[href="#current_project"]').addClass('selected');
+}
+function body_keydown(e){
+    if(e.keyCode===27){
+        hide_choosers();
+    }
+}
+
+$(function(){
+    $('#scraperwikipane').hide();
+    $('nav a').on('click', function(){
+        id = $(this).attr('href');
+        console.log(id);
+        if(id == '#current_project'){
+            hide_choosers();
+            $(document).off('keydown');
+        } else {
+            $('.chooser:visible').not($(id)).fadeOut(100);
+            $(id+':hidden').fadeIn(100, function(){
+                $(id+' input.search').focus();
+            });
+            $('nav li a.selected').removeClass('selected');
+            $('nav li a[href="' + id + '"]').addClass('selected');
+            $(document).on('keydown', body_keydown);
+        }
+    }).eq(0).addClass('selected');
+    $('#slides').sortable({
+        items: '.slide',
+        placeholder: "slide_placeholder"
+    }).disableSelection();
+    $('.new_slide').on('click', function(){
+        last_slide = $('.slide').eq(-1);
+        last_slide.clone(true,true).insertAfter(last_slide);
+    }).css('cursor','pointer');
+    $('.slide').on('click', function(e){
+        e.stopPropagation();
+        $('.slide.selected').removeClass('selected');
+        $(this).addClass('selected');
+        $('#current_project').on('click', function(){
+            $('.slide.selected').removeClass('selected');
+        });
+    });
+    $('.slide .preview td').each(function(i){
+        $(this).html($.trim($(this).html().substring(0,10)).replace(/ /g, '&nbsp;')+"&hellip;");
+    });
+
+    map = new google.maps.Map($('.slide .preview.map')[0], {
+        zoom: 11, 
+        center: new google.maps.LatLng(53.403, -2.983333), 
+        mapTypeId: google.maps.MapTypeId.TERRAIN,
+        disableDefaultUI: true
+    });
+
+    var latlng = new google.maps.LatLng(53.40387, -2.99386)
+    new google.maps.Marker({
+        position: latlng,
+        map: map
+    });
+    var latlng = new google.maps.LatLng(53.40540, -2.96981)
+    new google.maps.Marker({
+        position: latlng,
+        map: map
+    });
+
+});
+</script>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="#current_project">My new project</a></li>
+            <li><a href="#my_projects">My projects</a></li>
+            <li><a href="#starting_points">Starting points</a></li>
+            <li><a href="#actions">Actions</a></li>
+            <li><a href="#help">Help</a></li>
+        </ul>
+    </nav>
+    <form id="current_project">
+        <h2>My new project</h2>
+        <div id="slides">
+            <div class="slide">
+                <label for="slide_a_input">a</label>
+                <input type="text" id="slide_a_input" value="TWEETS('@zarino')" />
+                <div class="preview">
+                    <table>
+                        <tr><th>id</th><th>tweet</th><th>date</th></tr>
+                        <tr><td>227857911869755400</td><td>This 'talent' competition has sucked from me every last drop of enjoyment I once held for Jesus Christ Superstar. Make it stop. Please.</td><td>Tue, 24 Jul 2012 20:08:54 +0000</td></tr>
+                        <tr><td>227488982857052160</td><td>@thomaslevine Was this the MVC Excel spreadsheet you were talking about? http://t.co/e3GrFqhW Just surfaced on Hacker News. Frightening.</td><td>Mon, 23 Jul 2012 19:42:54 +0000</td></tr>
+                        <tr><td>227401900377649150</td><td>@timdavies @frabcus Old connectors were either too slow (vs USB) or too limiting (via Wifi). CSV is annoyingly still fine for most data.</td><td>Mon, 23 Jul 2012 13:56:52 +0000</td></tr>
+                        <tr><td>227312274384240640</td><td>Love today's xkcd: http://t.co/BdvdqD81</td><td>Mon, 23 Jul 2012 08:00:44 +0000</td></tr>
+                        <tr><td>227311918854070270</td><td>RT @tom_watson: Remix culture always triumphs: RT @tompsk Getting around the Olympic brand police at the expense of the pedants. http://t.co/chdjyvH2</td><td>Mon, 23 Jul 2012 07:59:19 +0000</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="slide">
+                <label for="slide_b_input">b</label>
+                <input type="text" id="slide_b_input" value="GEOCODE(A)" />
+                <div class="preview">
+                    
+                </div>
+            </div>
+            <div class="slide">
+                <label for="slide_c_input">c</label>
+                <input type="text" id="slide_c_input" value="MAP(B)" />
+                <div class="preview map">
+                    
+                </div>
+            </div>
+            <div class="slide">
+                <label for="slide_d_input">d</label>
+                <input type="text" id="slide_d_input" />
+                <div class="preview">
+                    
+                </div>
+            </div>
+            <div class="new_slide">+</div>
+        </div>
+    </form>
+    <div id="starting_points" class="chooser">
+        <h2>Starting points</h2>
+        <input class="search" type="text" />
+    </div>
+    <div id="my_projects" class="chooser">
+        <h2>My projects</h2>
+        <input class="search" type="text" />
+    </div>
+    <div id="actions" class="chooser">
+        <h2>Actions</h2>
+        <input class="search" type="text" />
+    </div>
+    <div id="help" class="chooser">
+        <h2>Help</h2>
+        <input class="search" type="text" />
+    </div>
+</body>
 </html>

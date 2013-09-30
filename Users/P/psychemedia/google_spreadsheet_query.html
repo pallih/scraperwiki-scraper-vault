@@ -190,3 +190,195 @@ Google spreadsheet key (e.g. <em>rvWgEEGK9xuUQBR1EFcxHWA</em> ) or spreadsheet U
 
 </body>
 </html>
+<html><head><title>Google Spreadsheet Explorer</title>
+
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
+<script type="text/javascript">
+  google.load('visualization', '1', {'packages':['table', 'scatterchart', 'linechart','piechart', 'barchart','columnchart']});
+
+
+function removeChildrenFromNode(node) {
+    if(node.hasChildNodes()) {
+        while(node.childNodes.length >= 1 ) {
+            node.removeChild(node.firstChild);       
+        } 
+    }
+}
+
+
+var key='0AirrQecc6H_vdEZOZ21sNHpibnhmaEYxbW96dkNxZGc';
+  
+function preview() {
+        if (document.getElementById('gsKey').value!='') key=document.getElementById('gsKey').value;
+        if (/key=([^&]*)/.test(key)) key=/key=([^&]*)/.exec(key)[1];
+        
+        var sheet=document.getElementById('gsSheet').value;
+        if (sheet!='') key+='&gid='+sheet;
+        
+        var url='http://spreadsheets.google.com/tq?tq=select%20*where%20A=false&key='+key;
+      var query = new google.visualization.Query(url);
+
+      query.send(handleQueryResponse);
+    }
+
+function handleQueryResponse(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+      var data = response.getDataTable();
+      visualization = new google.visualization.Table(document.getElementById('headings'));
+      visualization.draw(data, null);
+        columnList(data);
+  }
+
+
+  function drawViz() {
+        var gq='SELECT '+document.getElementById('gql').value;
+
+        document.getElementById('gqpreview').innerHTML=gq;
+
+        gq=encodeURIComponent(gq);
+        
+        var url='http://spreadsheets.google.com/tq?tq='+gq+'&key='+key;
+        
+        var purl='http://spreadsheets.google.com/tq?tqx=out:html&key='+key+'&tq='+gq;
+        var l=document.getElementById('htmlout');
+        l.innerHTML="<a href='"+purl+"'>HTML preview URL</a>";
+        purl='http://spreadsheets.google.com/tq?tqx=out:csv&key='+key+'&tq='+gq;
+        l=document.getElementById('csvout');
+        l.innerHTML="<a href='"+purl+"'>CSV URL</a>";
+         
+      var query = new google.visualization.Query(url);
+
+      query.send(handleQueryResponse2);
+    }
+
+  function createCell(str){
+    var el=document.createElement('td');
+    el.innerHTML=str;
+      return el;
+  }
+
+ function columnList(data){
+  
+      var t=document.getElementById('colLookup');
+      removeChildrenFromNode(t);
+      var labels=document.createElement('tr');
+      var headings=document.createElement('tr');
+      
+      for (var i=0;i<data.getNumberOfColumns();i++){
+        var cell=createCell(data.getColumnId(i));
+        labels.appendChild(cell);
+        cell=createCell(data.getColumnLabel(i));
+        headings.appendChild(cell);
+      }
+      
+      t.appendChild(labels);
+      t.appendChild(headings);
+  }
+  
+
+   function handleQueryResponse2(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+      var data = response.getDataTable();
+      
+      
+      removeChildrenFromNode(document.getElementById('preview'));
+      
+      var typ;
+      var sel=document.getElementsByName('opType');
+      for (var i = 0; i < sel.length; i++)
+        if (sel[ i ].checked) typ=sel[i].value;
+      switch (typ){
+          case 'table': tablechart(data);break;
+          case 'linechart': linechart(data);break;
+          case 'scatterchart': scatterchart(data);break;
+          case 'piechart': piechart(data);break;
+          case 'barchart': barchart(data);break;
+          case 'columnchart': columnchart(data);break;
+          default:;
+      }
+      
+   }
+  
+  function tablechart(data){
+     new google.visualization.Table(document.getElementById('preview')).draw(data, null);
+  }
+  
+  function scatterchart(data){
+      new google.visualization.ScatterChart(document.getElementById('preview')).draw(data, {width: 800, height: 400}); 
+  }
+  
+  function linechart(data){
+      new google.visualization.LineChart(document.getElementById('preview')).draw(data, {width: 800, height: 400}); 
+  }
+  
+  function piechart(data){
+      new google.visualization.PieChart(document.getElementById('preview')).draw(data, {width: 800, height: 400}); 
+  }
+  
+  function barchart(data){
+      new google.visualization.BarChart(document.getElementById('preview')).draw(data, {width: 800, height: 400}); 
+  }
+  
+  function columnchart(data){
+      new google.visualization.ColumnChart(document.getElementById('preview')).draw(data, {width: 800, height: 400}); 
+  }
+  
+</script>
+ 
+</head>
+<body>
+<h1>Google Spreadsheet Explorer</h1>
+<h2>Preview</h2>
+<p>STEP 1: Enter a Google spredsheet key (and optional sheet ID) and hit preview to preview the column headings</p>
+<form name="config">
+Google spreadsheet key (e.g. <em>rvWgEEGK9xuUQBR1EFcxHWA</em> ) or spreadsheet URL <input type="text" size=30 id='gsKey'  /> Sheet number* (optional): <input type="text" size=3 id='gsSheet'  /> <input type="button" value="Preview table headings" onclick="preview()" /><br/>
+<p>* The number of the first sheet in a spreadsheet (which is used by default) is 0. To select the second sheet, add: 1; for the third sheet, add 2, and so on.</p>
+<p>If you are prompted to sign in, wait a few seconds and then try again.</p>
+<div id="statrep"></div>
+</form>
+<hr/>
+<div id="headings"></div>
+
+
+<hr/>
+<h2>Go fish...</h2>
+<p>STEP 2: Once you have previewed the column headings, you can write your query. [<a href="https://developers.google.com/chart/interactive/docs/querylanguage">Google Query Language reference docs</a>]. Use the column letters shown above in your query (eg <tt>SELECT A,B LIMIT 10</tt>).</p>
+
+
+<p>Try out some visualisation queries here...</p>
+<table id='colLookup' border='1'></table>
+
+<br/>
+
+<form name='qform'><p><tt>SELECT</tt> <span id='vql'></span> <input type="text" id="gql" size=200  /></p>
+<p>Display as:
+
+| Table <input type="radio" name="opType" value="table" checked />
+| Scatter chart <input type="radio" name="opType" value="scatterchart"/> 
+| Line chart <input type="radio" name="opType" value="linechart"/>
+| Pie chart <input type="radio" name="opType" value="piechart"/>
+| Bar chart <input type="radio" name="opType" value="barchart"/>
+| Column chart <input type="radio" name="opType" value="columnchart"/>
+|
+<input type="button" value='Go Fish' onclick="drawViz()"/>
+</p>
+</form>
+<div>So you are asking: <em id='gqpreview'></em></div>
+<div>Here is the URL for that query: <span id='htmlout'></span>, <span id='csvout'></span></div>
+
+
+<div id="preview"></div>
+<div id="linechart"></div>
+<div id="scatterchart"></div>
+<div id="piechart"></div>
+
+</body>
+</html>

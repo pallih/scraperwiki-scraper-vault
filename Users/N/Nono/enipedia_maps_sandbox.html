@@ -850,4 +850,856 @@ prop:Annual_Energyoutput_MWh needs to be made optional in the sparql query (this
     </div>
     </div>
     </body>
+</html><!DOCTYPE html>
+<!--
+TODO, ideas, etc:
+
+OpenStreetMap + ItoWorld power map is included now, and users are able to switch between this and Google Maps.  A bit more work is needed to improve the interface.
+The work by Nono and the latest ItoWorld maps have a clickable interface - would be good to include this as well.
+
+Need some sort of progress bar.  Disable download link while data is still downloading.
+
+The code now contains the beginnings of an advanced menu that allows people to display all the power plants within the bounds of the current map view.  The advanced menu needs to be made (somewhat) more presentable, and then it will be posted on Enipedia
+
+A link for downloading data to Excel is set up.  So far this has only been tested with Chrome.
+
+Cool features would be summations of power production by source, etc.
+
+prop:Annual_Energyoutput_MWh needs to be made optional in the sparql query (this comes from the original carma data), and we need to have a way to scale the marker if the generation capacity is specified (or have a default value if it is not).  Basically, if people create a page for the power plant, it needs to show up on the map even if there isn't much else known about it other than the coordinates.
+-->
+<html>
+    <head>
+        <title>Enipedia Maps Sandbox</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+        html, body, #map_canvas {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #tooltip{
+            position:absolute;
+            border:1px solid #333;
+            background:#f7f5d1;
+            padding:2px 5px;
+            color:#333;
+            display:none;
+        }
+        .fuelCheckBoxTD{
+            vertical-align:text-top;
+            text-align:center;
+            padding:0px;
+        }
+        .fuelLabelTD{
+            padding:0px;
+            border:0px;
+            font-size:8pt;
+        }
+        .fuelCount{
+            font-size:xx-small;
+            font-style:italic;
+        }
+        .ui-autocomplete {
+            max-height: 250px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 20px;
+        }
+        .ui-menu-item {
+            font-size:8pt;
+            font-weigh: normal;
+        }
+
+        </style>
+
+        <!--<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>-->
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3&sensor=false&libraries=places"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+        <script src="http://code.jquery.com/ui/1.8.23/jquery-ui.min.js" type="text/javascript"></script>
+        <script src="http://jquery-ui.googlecode.com/svn/tags/latest/external/jquery.bgiframe-2.1.2.js" type="text/javascript"></script>
+        <script src="http://jquery-ui.googlecode.com/svn/tags/latest/ui/minified/i18n/jquery-ui-i18n.min.js" type="text/javascript"></script>
+        <script src="http://jawj.github.com/OverlappingMarkerSpiderfier/bin/oms.min.js" type="text/javascript"></script>
+
+        <link rel="stylesheet" href="http://code.jquery.com/ui/1.8.23/themes/base/jquery-ui.css" type="text/css" />
+        
+        <script type="text/javascript">
+
+        var map;
+        var input;
+        var autocomplete;
+
+        var markersEnipedia = [];
+        var markersEUETS = [];
+        var oms;
+        var dataQueryString = "";
+
+
+        var infowindowEnipedia = new google.maps.InfoWindow();
+
+        var queryString = {};
+
+        var fuelCounts = {biomass: 0, biogas: 0, coal: 0, gas: 0, geothermal: 0, oil: 0, hydro: 0, nuclear: 0, solar: 0, wave: 0, waste: 0, wind: 0, unknown: 0}
+        var fuelGroupsDisplayed = {"Biomass": true, "Biogas": true, "Coal": true, "Gas": true, "Geothermal": true, "Oil": true, "Hydro": true, "Nuclear": true, "Solar": true, "Wave": true, "Waste": true, "Wind": true, "Unknown": true}
+        var fuelGroupsByMetaGroup = { nuclear: ["Nuclear"],
+                fossil: ["Coal", "Gas", "Oil"],
+                renewable: ["Biomass", "Biogas", "Geothermal", "Hydro", "Solar", "Wave", "Waste", "Wind"]}
+
+        var data = new Object();
+        var selectedOwner = "";        
+
+        function inrange(min,number,max){
+            if (!isNaN(number) && (number >= min) && (number <= max)) return true
+            else return false
+        }
+        
+        function valid_coords(number_lat,number_lng) {
+            if (inrange(-90,number_lat,90) && inrange(-180,number_lng,180)) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+    function updateITOMapLayersDisplayed(checkbox){
+        if (map.overlayMapTypes.getLength() > 0){
+            //clear previous overlay
+            map.overlayMapTypes.removeAt(0);
+        } 
+        if (checkbox.checked) {
+            switch(checkbox.id){
+            case "ITOMapDistribution_checkbox":
+                $('#ITOMapGeneration_checkbox').prop('checked', false);
+                map.overlayMapTypes.insertAt(0, new google.maps.ImageMapType(ITOMapDistribution));
+                break;
+            case "ITOMapGeneration_checkbox":
+                $('#ITOMapDistribution_checkbox').prop('checked', false);
+                map.overlayMapTypes.insertAt(0, new google.maps.ImageMapType(ITOMapGeneration));
+                break;
+            }
+        }
+    }
+
+        $(function(){
+            var params = location.search.split(/[?&]/);
+            for (i in params) {
+                param = params[i].split("=");
+                queryString[param[0]] = param[1];
+                // initialize fuel icons
+                if (param[0].indexOf("fuel") == 0 && fuelGroupsDisplayed.hasOwnProperty(param[0].substr(4)))
+                    fuelGroupsDisplayed[param[0].substr(4)] = (param[1] != 0);
+            }
+            
+
+            //initialize meta checkboxes
+            $('#show_nuclear').prop('checked', true);
+            $('#show_fossil').prop('checked', true);
+            $('#show_renewable').prop('checked', true);
+            $('#show_all').prop('checked', true);
+            $('#ITOMapDistribution_checkbox').prop('checked', true);
+
+            // initialize fuel icons
+            matchIconsToDisplayStates();
+
+            //initailize autocompletion for owners
+            $("#enipedia_owner").autocomplete({ 
+                source: function(request, response) {
+                    $.ajax({
+                        url: "http://enipedia.tudelft.nl/enipedia/api.php",
+                        dataType: "jsonp",
+                        data: {
+                            action: "sfautocomplete",
+                            category: "Energy Company",
+                            substr: request.term,
+                            limit: 20,
+                            format: "json"
+                        },
+                        success: function( data ) {
+                                    response( $.map( data.sfautocomplete, function(item) {
+                                        return {
+                                            label: item.title,
+                                            value: item.title
+                                        }
+                                    }));
+                        }
+                    });
+                },
+                minLength: 2,
+                select: function(event, ui) {
+                            if (ui.item) {
+                                window.selectedOwner = ui.item.label;
+                                if ($("#enipedia_country").prop("value") == "" || $("#enipedia_country").prop("value") == undefined)
+                                    load_ppl_enipedia("", ui.item.label, false, true);
+                                else
+                                    matchMarkersToSelection(window.markersEnipedia);
+                            }
+                        }
+            });
+            
+            // initialize google maps display
+            
+            var OSM = 'OSM';
+            var NASA_Black_Marble = 'NASA_Black_Marble';
+
+            var myOptions = {
+                zoom: 2,
+                center: new google.maps.LatLng(20, 0),
+                scaleControl: true,
+                mapTypeControlOptions: {
+                    mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID, google.maps.MapTypeId.TERRAIN, OSM, NASA_Black_Marble],
+                    //TODO dropdown is too narrow, can't handle "OpenStreetMap", not sure how to fix this
+                    style: google.maps.MapTypeControlStyle.DROPDOWN_MENU, 
+                    //style: google.maps.MapTypeControlStyle.DEFAULT, 
+                    // The horizontal bar looks cool, but gets in the way of the menu.  Maybe a custom control could be made
+                    //style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR, 
+                    position: google.maps.ControlPosition.TOP_LEFT
+                }, 
+                mapTypeId: google.maps.MapTypeId.HYBRID
+            };
+
+            map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+
+            map.mapTypes.set("OSM", new google.maps.ImageMapType({
+                getTileUrl: function(coord, zoom) {
+                    //wrap tiles
+                    var numTiles = 1 << zoom;
+                    var x = ((coord.x % numTiles) + numTiles) % numTiles;
+                    return "http://tile.openstreetmap.org/" + zoom + "/" + x + "/" + coord.y + ".png";
+                },
+                tileSize: new google.maps.Size(256, 256),
+                name: "OpenStreetMap",
+                maxZoom: 18
+            }));
+
+            map.mapTypes.set("NASA_Black_Marble", new google.maps.ImageMapType({
+                getTileUrl: function(coord, zoom) {
+                    //wrap tiles
+                    var numTiles = 1 << zoom;
+                    var x = ((coord.x % numTiles) + numTiles) % numTiles;
+                    return "https://earthbuilder.googleapis.com/10446176163891957399-13737975182519107424-4/2/maptile/maps?v=2&authToken&x=" + x + "&y="+ coord.y +"&z=" + zoom + "&s";
+                },
+                tileSize: new google.maps.Size(256, 256),
+                name: "NASA Black Marble",
+                maxZoom: 18
+            }));
+
+            ITOMapDistribution = {
+                    getTileUrl: function(coord, zoom) {
+                        //wrap tiles
+                        var numTiles = 1 << zoom;
+                        var x = ((coord.x % numTiles) + numTiles) % numTiles;
+                        return "http://t" + Math.floor(Math.random()*4) + ".beta.itoworld.com/4/770fc0c2b467b4cb16c330d996e2ddd2/" 
+                                + zoom + "/" + x + "/" + coord.y + ".png";
+                    },
+                    tileSize: new google.maps.Size(256, 256),
+                    isPng: true,
+                    opacity: 1,
+                    alt: "ITOWorld Electricity Distribution",
+                    name: "ITOWorldElectricityDistribution"
+            }
+
+            ITOMapGeneration = {
+                    getTileUrl: function(coord, zoom) {
+                        //wrap tiles
+                        var numTiles = 1 << zoom;
+                        var x = ((coord.x % numTiles) + numTiles) % numTiles;
+                        return "http://t" + Math.floor(Math.random()*4) + ".beta.itoworld.com/106/ca6f00c8cb88a79ff7c9be4b2343e9f4/" 
+                                + zoom + "/" + x + "/" + coord.y + ".png";
+                    },
+                    tileSize: new google.maps.Size(256, 256),
+                    isPng: true,
+                    opacity: 1,
+                    alt: "ITOWorld Electricity Generation",
+                    name: "ITOWorldElectricityGeneration"
+            }
+
+            //Default ITO Map layer
+            map.overlayMapTypes.insertAt(0, new google.maps.ImageMapType(ITOMapDistribution));
+           
+
+        //Allow users to search for places
+        input = document.getElementById('searchTextField');
+        autocomplete = new google.maps.places.Autocomplete(input);
+        autocomplete.bindTo('bounds', map);
+
+        var controlDiv = createControls();
+        map.controls[google.maps.ControlPosition.TOP].push(controlDiv);
+        
+        oms = new OverlappingMarkerSpiderfier(map, {nearbyDistance: 32});
+        oms.addListener("click", open_info_enipedia);
+        oms.addListener("spiderfy", function(markers) { infowindowEnipedia.close() });
+        oms.legColors.usual[google.maps.MapTypeId.HYBRID] = oms.legColors.usual[google.maps.MapTypeId.SATELLITE] = "#0ff";
+        oms.legColors.highlighted[google.maps.MapTypeId.HYBRID] = oms.legColors.highlighted[google.maps.MapTypeId.SATELLITE] = "#f0f";
+
+        // get coordinates
+        //http://stackoverflow.com/questions/7905733/google-maps-api-3-get-coordinates-from-right-click
+        google.maps.event.addListener(map, "center_changed", function(event) {
+            var lat = map.getCenter().lat();
+            var lng = map.getCenter().lng();
+            // round to a few decimal points 
+            // this is basically cosmetic as it keeps the interface from 
+            // jumping around due to varying numbers of digits being displayed
+            lat = parseFloat(Math.round(lat * 100000) / 100000).toFixed(5).toString();
+            lng = parseFloat(Math.round(lng * 100000) / 100000).toFixed(5).toString();
+            // update the links to external maps so you'll get dropped down in the same place
+            $('#bing_map_link').prop('href', 'http://www.bing.com/maps/?v=2&cp='+lat+'~'+lng+'&lvl='+ (map.getZoom() +1 )+'&dir=0&sty=h&form=LMLTCC');
+            $('#ITOMapDistribution_link').prop('href', "http://www.itoworld.com/map/4?lon=" + lng + "&lat=" + lat + "&zoom=" + map.getZoom());
+            $('#ITOMapGeneration_link').prop('href', "http://www.itoworld.com/map/106?lon=" + lng + "&lat=" + lat + "&zoom=" + map.getZoom());
+            $('#current_coordinates_display').text(lat + ", " + lng);
+        });
+
+        //Autocomplete listener
+        google.maps.event.addListener(autocomplete, 'place_changed', function() {
+          var place = autocomplete.getPlace();
+
+          //test if the user is entering in coordinates - autocomplete doesn't seem to be able to handle this
+          var userText = place.name;
+          userText = userText.replace(',', ' ');
+          userText = userText.replace(/ +(?= )/g,'');
+          var lat = userText.split(" ")[0];
+          var lon = userText.split(" ")[1];
+
+          //see if the user is trying to enter in coordinates
+          if (valid_coords(lat,lon)){
+            map.setCenter(new google.maps.LatLng(lat, lon));
+            map.setZoom(10);  
+            load_ppl_enipedia("", "", true, true); //load all power plants in view
+          } else if (place.geometry.viewport) { //otherwise load data based on autocompleted location
+            map.fitBounds(place.geometry.viewport);
+            map.setZoom(10);
+            load_ppl_enipedia("", "", true, true); //load all power plants in view
+          } else { //does this code actually get called?
+            map.setCenter(place.geometry.location);
+            map.setZoom(10);  
+            load_ppl_enipedia("", "", true, true); //load all power plants in view
+          }
+
+          var address = '';
+          if (place.address_components) {
+            address = [
+              (place.address_components[0] && place.address_components[0].short_name || ''),
+              (place.address_components[1] && place.address_components[1].short_name || ''),
+              (place.address_components[2] && place.address_components[2].short_name || '')
+            ].join(' ');
+          }
+        });
+                
+            function createControls() {
+            
+                var controlDiv = document.createElement('div');
+                controlDiv.id = "map_controls";
+                controlDiv.style.backgroundColor = "#DDDDDD";
+                controlDiv.style.fontFamily = 'Arial,sans-serif';
+                controlDiv.style.fontSize = '10pt';
+
+                controlDiv.appendChild(document.getElementById('everything'));
+
+                $.ajax({
+                    url: 'http://enipedia.tudelft.nl/sparql',
+                    data: {
+                    query: "BASE <http://enipedia.tudelft.nl/wiki/>\n" + 
+                        "PREFIX prop: <http://enipedia.tudelft.nl/wiki/Property:>\n" + 
+                        "PREFIX cat: <http://enipedia.tudelft.nl/wiki/Category:>\n" + 
+                        "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" + 
+                        "PREFIX fn: <http://www.w3.org/2005/xpath-functions#>\n" + 
+                        "select distinct(substr(str(?ctry),33) as ?country) where {\n" + 
+                        "  ?ppl rdf:type cat:Powerplant .\n" + 
+                        "  ?ppl prop:Country ?ctry .\n" + 
+                        "} order by ?country",
+                        output: "json" 
+                    },
+                    dataType: 'jsonp',
+                    success: function(data) { 
+                                var cboEnipediaCountries = document.getElementById('enipedia_countries');
+                                var opt = document.createElement('option');
+                                opt.appendChild(document.createTextNode(""));
+                                cboEnipediaCountries.appendChild(opt);
+                                
+                                var list = data.results.bindings;
+                                for (i = 0; i < list.length; i++) {
+                                    var opt = document.createElement('option');
+                                    if (list[i].country.value == queryString["enipedia_country"])
+                                        opt.setAttribute("selected", "true");
+                                    opt.setAttribute("value", list[i].country.value);
+                                    opt.appendChild(document.createTextNode(list[i].country.value));
+                                    cboEnipediaCountries.appendChild(opt);
+                                } }
+                });
+                
+                if (queryString["enipedia_country"] || queryString["enipedia_owner"])
+                    load_ppl_enipedia(queryString["enipedia_country"], queryString["enipedia_owner"], false, true)
+
+                return controlDiv;
+            }
+
+        });
+
+
+        function load_ppl_enipedia(country, owner, useBounds, zoom) {
+            var lat1, lat2, lon1, lon2;
+            clearMarkers(markersEnipedia);
+            var fitBounds = true;
+
+            if (country == undefined)
+                country = "";
+            if (owner == undefined)
+                owner = "";
+            selectedOwner = owner;
+    
+            //useBounds has precedence over country and owner - TODO think about how to do subselections intelligently without confusing users
+            if (useBounds == true){
+                fitBounds = false; //when place markers, don't re-adjust boundaries, otherwise the map jumps to a lower zoom.
+                country = "";
+                owner = "";
+                lat1 = map.getBounds().getNorthEast().lat()
+                lon1 = map.getBounds().getNorthEast().lng()
+                lat2 = map.getBounds().getSouthWest().lat()
+                lon2 = map.getBounds().getSouthWest().lng()
+            }
+
+            //This is the query that also shows up in the link to download data to spreadsheet
+            dataQueryString = "BASE <http://enipedia.tudelft.nl/wiki/>\n" + 
+                            "PREFIX a: <http://enipedia.tudelft.nl/wiki/>\n" + 
+                            "PREFIX prop: <http://enipedia.tudelft.nl/wiki/Property:>\n" + 
+                            "PREFIX cat: <http://enipedia.tudelft.nl/wiki/Category:>\n" + 
+                            "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" + 
+                            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" + 
+                            "select (substr(str(?ppl), 33) as ?wiki) ?name (substr(str(?own), 33) as ?ownerenc) ?owner \n" + 
+                            "?zip (substr(str(?town), 33) as ?city) (substr(str(?stat), 33) as ?state) ?Output_MWh ?point \n" + 
+                            "(substr(str(?fuel_type), 33) as ?fuel) \n" + 
+                            "(round(?co2 / 1000000) as ?CO2_emissions) (round(?intensity) as ?CO2_intensity) ?capacity_MW ?capacity_thermal_MW ?status where {\n" + 
+                            "GRAPH <http://enipedia.tudelft.nl/wiki/> {\n"+
+                            "  ?ppl rdf:type cat:Powerplant .\n" + 
+                            ((country != "" || (owner == "" && useBounds == false)) ? "  ?ppl prop:Country a:" + country + " .\n" : "") + 
+                            "  ?ppl rdfs:label ?name .\n" + 
+                            "  OPTIONAL{ ?ppl prop:Ownercompany ?own } .\n" + 
+                            "  OPTIONAL{ ?ppl prop:Status ?status } .\n" + 
+                            "  OPTIONAL{ ?ppl prop:City ?town } .\n" + 
+                            "  ?ppl prop:Point ?point .\n" + 
+                            "  ?ppl prop:Latitude ?lat .\n" +
+                            "  ?ppl prop:Longitude ?lon .\n" +  
+                            ((useBounds == true) ? "FILTER(?lat < " + lat1 + " && ?lat > " + lat2 + ") .\n" : "") +
+                            ((useBounds == true) ? "FILTER(?lon < " + lon1 + " && ?lon > " + lon2 + ") .\n" : "") +
+                            "  OPTIONAL{?ppl prop:Annual_Energyoutput_MWh ?Output_MWh } .\n" + 
+                            "  OPTIONAL{?ppl prop:Annual_Carbonemissions_kg ?co2 } .\n" + 
+                            "  OPTIONAL{?ppl prop:Intensity_kg_CO2_per_MWh_elec ?intensity } .\n" + 
+                            "  OPTIONAL{?ppl prop:Generation_capacity_electrical_MW ?capacity_MW} .\n" + 
+                            "  OPTIONAL{?ppl prop:Generation_capacity_thermal_MW ?capacity_thermal_MW} .\n" + 
+                            "  OPTIONAL{?ppl prop:Primary_fuel_type ?fuel_type} .\n" + 
+                            "  OPTIONAL{?ppl prop:State ?stat} .\n" + 
+                            "  OPTIONAL{?ppl prop:Zipcode ?zip} .\n" + 
+                            "  OPTIONAL{?own rdfs:label ?owner} .\n" + 
+                            (owner != "" ? "  FILTER( REGEX(str(?owner), \".*" + owner.replace("+","\\\\+") + ".*\",\"i\") ) .\n" : "") +
+                            "}.\n" +
+                            "} order by ?ppl"
+
+            $('#data_download_link').text("(download data)");
+            $('#data_download_link').prop('href', 'http://enipedia.tudelft.nl/sparql?default-graph-uri=&query=' + encodeURIComponent(dataQueryString) + '&format=application%2Fvnd.ms-excel&timeout=0&debug=on');
+
+            var downloadFileName = "Enipedia_Data" //default name if can't figure out how the user is filtering.  
+            if (owner != ""){
+                downloadFileName += '_' + owner.replace(' ', '_');
+            } else if (country != "") {
+                downloadFileName += '_' + country
+            } else if (useBounds == true) {
+                if (lat1 > 0) {
+                    downloadFileName += '_' + Math.abs(lat1).toFixed(3).toString() + 'N';
+                } else {
+                    downloadFileName += '_' + Math.abs(lat1).toFixed(3).toString() + 'S';
+                }
+                if (lon1 > 0) {
+                    downloadFileName += '_' + Math.abs(lon1).toFixed(3).toString() + 'E';
+                } else {
+                    downloadFileName += '_' + Math.abs(lon1).toFixed(3).toString() + 'W';
+                }
+                if (lat2 > 0) {
+                    downloadFileName += '_' + Math.abs(lat2).toFixed(3).toString() + 'N';
+                } else {
+                    downloadFileName += '_' + Math.abs(lat2).toFixed(3).toString() + 'S';
+                }
+                if (lon2 > 0) {
+                    downloadFileName += '_' + Math.abs(lon2).toFixed(3).toString() + 'E';
+                } else {
+                    downloadFileName += '_' + Math.abs(lon2).toFixed(3).toString() + 'W';
+                }
+            }
+            downloadFileName = downloadFileName + '.xslx'
+
+            //This at least works with the latest version of chrome, should test with older version of IE, etc.
+            $('#data_download_link').prop('download', downloadFileName);
+
+            $.ajax({
+                    url: 'http://enipedia.tudelft.nl/sparql',
+                    data: {
+                        query: dataQueryString,
+                    output: "json" 
+                },
+                dataType: 'jsonp',
+                success: function(data){ drop_markers_enipedia(data, zoom, fitBounds); }
+            });
+        }
+
+        function clearMarkers(markersArray) {
+            if (markersArray) {
+                for (var i in markersArray) {
+                    markersArray[i].setMap(null);
+                    oms.removeMarker(markersArray[i]); 
+                }
+                markersArray.length = 0;
+            }
+        }
+
+
+        function show_meta(meta_group, checked){
+
+            var fuelGroups = fuelGroupsByMetaGroup[meta_group];
+            for (var i in fuelGroups) { 
+                fuelGroupsDisplayed[fuelGroups[i]] = checked;
+            }
+            matchIconsToDisplayStates();
+            
+            //meta checkboxes
+            $('#show_all').prop('checked', false);
+            $('#show_none').prop('checked', false);
+
+            matchMarkersToSelection(window.markersEnipedia);
+        }
+
+        function show_all(checked) {
+            //specific fuel types
+            for (var fuel in fuelGroupsDisplayed)
+                fuelGroupsDisplayed[fuel] = checked;
+
+            //meta checkboxes        
+            $('#show_nuclear').prop('checked', checked);
+            $('#show_fossil').prop('checked', checked);
+            $('#show_renewable').prop('checked', checked);
+
+            matchIconsToDisplayStates();
+            matchMarkersToSelection(window.markersEnipedia);
+        }
+
+        
+        function matchIconsToDisplayStates() {
+            for (var fuel in fuelGroupsDisplayed)
+                setIconBasedOnDisplayState(fuel, $('#'+fuel.toLowerCase()+'_img')[0]);
+        }
+
+        function setIconBasedOnDisplayState(fuelGroup, clickedImg) {
+            if (fuelGroupsDisplayed[fuelGroup]) {
+                clickedImg.setAttribute('src', clickedImg.getAttribute('selected_img'));
+            } else {
+                clickedImg.setAttribute('src', clickedImg.getAttribute('deselected_img'));
+            }
+        }
+
+        function toggle(fuelGroup, clickedImg) {
+            fuelGroupsDisplayed[fuelGroup] = !fuelGroupsDisplayed[fuelGroup];
+            setIconBasedOnDisplayState(fuelGroup, clickedImg);
+            matchMarkersToSelection(window.markersEnipedia);
+        }
+
+        
+        function matchMarkersToSelection(markersArray) {
+            if (markersArray) {
+                var re = new RegExp(selectedOwner, "i");
+                for (i in markersArray) {
+                    if ( fuelGroupsDisplayed[markersArray[i].fuelGroup] && 
+                        ( selectedOwner == "" || markersArray[i].data.owner && re.test(markersArray[i].data.owner.value) ) )
+                        markersArray[i].setMap(map);
+                    else
+                        markersArray[i].setMap(null);
+                }
+            }
+        }
+
+        function drop_markers_enipedia(data, zoom, fitBounds){
+
+            //reset count for number of power plants, since we're probably looking at a different country
+            for (var cnt in fuelCounts)
+                fuelCounts[cnt] = 0;        
+
+            window.data = data;
+            var bounds = new google.maps.LatLngBounds();
+            var list = data.results.bindings;
+            
+            for(i = 0; i < list.length; i++){
+
+                //figure out which type of fuel this is
+                
+                var fuelIcon = "";
+                var fuel = list[i].fuel ? list[i].fuel.value : "";
+                var fuelGroup = "";
+                if (fuel.indexOf("Biofuel") >=0 || fuel.indexOf("Biomass") >=0 || fuel.indexOf("Peat") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/f/f0/Biomass.png";
+                    fuelGroup = "Biomass";
+                } else if (fuel.indexOf("Biogas") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/5/5d/Biogas.png";
+                    fuelGroup = "Biogas";
+                } else if (fuel.indexOf("Coal") >=0 || fuel.indexOf("Lignite") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/a/a7/Coal.png";
+                    fuelGroup = "Coal";
+                } else if (fuel.indexOf("Natural_Gas") >=0 || fuel.indexOf("Coke_Oven_Gas") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/7/78/Gas.png";
+                    fuelGroup = "Gas";
+                } else if (fuel.indexOf("Geothermal") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/0/05/Geothermal.png";
+                    fuelGroup = "Geothermal";
+                } else if (fuel.indexOf("Oil") >=0 || fuel.indexOf("Diesel") >=0 || fuel.indexOf("Petroleum") >=0 || fuel.indexOf("Gasoil") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/0/06/Oil.png";
+                    fuelGroup = "Oil";
+                } else if (fuel.indexOf("Tidal") >=0 || fuel.indexOf("Hydro") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/0/08/Hydro.png";
+                    fuelGroup = "Hydro";
+                } else if (fuel.indexOf("Nuclear") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/4/42/Nuclear.png";
+                    fuelGroup = "Nuclear";
+                } else if (fuel.indexOf("Solar") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/2/25/Solar.png";
+                    fuelGroup = "Solar";
+                } else if (fuel.indexOf("Wave") >=0 || fuel.indexOf("Waste.png") >= 0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/e/e9/Wave.png";
+                    fuelGroup = "Wave";
+                } else if (fuel.indexOf("Refuse") >=0 || fuel.indexOf("Landfill") >=0 || fuel.indexOf("Waste") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/1/12/Waste.png";
+                    fuelGroup = "Waste";
+                } else if (fuel.indexOf("Wind") >=0) {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/b/bf/Wind.png";
+                    fuelGroup = "Wind";
+                } else {
+                    fuelIcon = "http://enipedia.tudelft.nl/enipedia/images/d/dd/Unknown.png";
+                    fuelGroup = "Unknown";
+                }
+                
+                fuelCounts[fuelGroup.toLowerCase()]++;
+
+                var coords = list[i].point.value.split(',');
+                //CD - RDF export has been patched for the new version of SMW since it didn't export coordinates by default
+                // This patch just includes the numeric lat/long values separated by a comma, and N/S/E/W are not included.
+                // This may change depending on what the SMW devs do.
+                //var latitude = coords[0].indexOf('N') > 0 ? coords[0].replace(' N','') : "-"+coords[0].replace(' S','');
+                //var longitude = coords[1].indexOf('E') > 0 ? coords[1].replace(' E','') : "-"+coords[1].replace(' W','');
+                var latitude = coords[0];
+                var longitude = coords[1];
+                var myLatLng = new google.maps.LatLng(latitude, longitude);
+                
+                // scale marker according to power output
+                // CD - the scaling calculations below are somewhat bogus, but the aim is to move away from the carma estimates
+                // where possible and use the data collected on power plant capacities.
+                // This could certainly be improved, but the challenge is figuring out how to deal with the missing data.
+                var output_MWh = list[i].Output_MWh ? list[i].Output_MWh.value : 0;
+
+                var capacity_MW = list[i].capacity_MW  ? list[i].capacity_MW.value : 0;
+                var capacity_thermal_MW = list[i].capacity_thermal_MW ? list[i].capacity_thermal_MW.value : 0;
+                var total_capacity = parseFloat(capacity_MW) + parseFloat(capacity_thermal_MW);
+
+                if (total_capacity > 0){
+                    output = total_capacity;
+                    //alert(list[i].name.value + output);
+                } else {
+                    //Totally bogus assumption of 100% availability
+                    //Carma probably calculates this for fuel type, but the fuel type is not always available.
+                    output = output_MWh/8760; 
+                }
+                
+                //var factor = 0.6 + (output == 0 ? 0 : (Math.log(output)/Math.LN10/4) * 0.5);
+                var factor = 0.5 + (output == 0 ? 0 : (Math.sqrt(output)/75));
+
+                var markerImage = {url: fuelIcon, size: {width:32*factor, height:37*factor}, scaledSize: {width:32*factor, height:37*factor} }
+                var markerOptions = {position: myLatLng, title: list[i].name.value, icon: markerImage};
+                
+                if (fuelGroupsDisplayed[fuelGroup])
+                    markerOptions.map = map;
+                var marker = new google.maps.Marker(markerOptions);
+                marker.data = list[i];
+                marker.fuelGroup = fuelGroup;
+                markersEnipedia.push(marker);
+                google.maps.event.addListener(marker, 'click', function() { open_info_enipedia(this)} );
+                
+                bounds.extend(myLatLng);
+               
+                oms.addMarker(marker); 
+                    
+            } //end for loop
+            
+            if (zoom)
+                /* fit the boundaries of the map only if we allow it.
+                If the user searches for a place name, the power plants will be loaded based on the coordinates of the viewing window.
+                If the bounds are fitted, then the view will jump to a lower zoom level, which is a bit distracting.
+                Fitting boundaries is currently only allowed if the user searches for data about a country or company.
+                */
+                if (fitBounds == true){
+                    map.fitBounds(bounds);
+                }
+            //show the counts in the control bar
+            for (var cnt in fuelCounts)
+                $('#'+cnt+'_count').text(fuelCounts[cnt].toString());        
+        }
+            
+            
+        function open_info_enipedia(marker) {
+            var content = "<div style='font-size: 9pt; font-family: Arial'><span style='font-size: 12pt'>" + marker.data.name.value + "</span><ul>";
+            for (var p in marker.data) {
+                if (p != "wiki" && p != "name" && p != "point" && marker.data[p].value != null && !(p == "ownerenc" && marker.data.owner))
+                    content += "<li>" + p.replace("_"," ") + ": " + marker.data[p].value.replace("_"," ").replace(".0e0","") + "</li>";
+            }
+            marker.data.wiki.value = marker.data.wiki.value.replace("'", "%27");
+            content += "</ul><a href='http://enipedia.tudelft.nl/wiki/" + marker.data.wiki.value + "' target='EnipView'>view</a> | ";
+            content += "<a href='http://enipedia.tudelft.nl/enipedia/index.php?title=" + marker.data.wiki.value + "&action=formedit' target='EnipEdit'>edit</a> in Enipedia</div>";
+            infowindowEnipedia.setContent(content);
+            infowindowEnipedia.open(map, marker);
+        }
+
+    function toggleAdvancedTable() {
+        // get the td with id=advanced_table
+        var row = document.getElementById("row_containing_advanced_table");
+        if (row.style.display == '') {
+            row.style.display = 'none';
+            document.getElementById("AdvancedTableToggleText").innerHTML = "(Click for Advanced Menu)";            
+        } else {
+            row.style.display = '';
+            document.getElementById("AdvancedTableToggleText").innerHTML = "(Click for Default Menu)";
+        }
+    }
+
+    function loadEnipediaMapsPageInNewTab() {
+        window.open('http://enipedia.tudelft.nl/wiki/Enipedia_Maps', '_blank');
+        window.focus();
+    }
+
+    function loadAllMarkersInView() {
+        var requiredMinimumZoomForDownload = 6;
+        if (map.zoom >= requiredMinimumZoomForDownload) {
+            //alert(map.getBounds().toString());
+            load_ppl_enipedia("", "", true, true);
+        } else {
+            alert("zoom in " + (requiredMinimumZoomForDownload - map.zoom) + " more times to be able to load markers");
+        }
+    }
+
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+
+    <!-- normal controls -->
+    <div id="main_table">
+        <table id='everything' border=0 cellpadding=0 cellspacing=0>
+            <tr id="row_containing_advanced_table" style="display: none; "> <!-- hide advanced menu here -->
+                <td></td>
+                <td colspan=2 align=center height=0>
+                    <table width=100%>
+                        <tr>
+                            <td>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            (<a href="http://www.bing.com/maps" id="bing_map_link" target="_window">View in Bing</a>) 
+                                        </td>
+                                        <td>
+                                            <div onmouseover="this.style.cursor='pointer'" onmouseout="this.style.cursor='default'" onclick="loadAllMarkersInView()">(Click to load all power plants on current map view)</div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td><a href="http://enipedia.tudelft.nl" id="data_download_link"></a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table id=iconTable border=0 cellpadding=0 cellspacing=0>
+                        <tr>            
+                            <td><label for="enipedia_countries">Country: </label></td>
+                            <td><select id="enipedia_countries" style="width: 200px" onchange="load_ppl_enipedia(this.value, document.getElementById('enipedia_owner').value, false, true)"/></td>
+                        </tr>
+                        <tr>            
+                            <td><label for="enipedia_owner">Owner: </label></td>
+                            <td><input id="enipedia_owner" style="width: 195px" onkeypress="if (event.keyCode == 13) load_ppl_enipedia(document.getElementById('enipedia_countries').value, this.value, false, true)" /></td>
+                        </tr>
+                        <tr>
+                            <td>Location:</td>
+                            <td><input id="searchTextField" type="text" style="width: 195px"></td>
+                        </tr>
+                    </table>
+                </td>
+                <td>    
+                    <table id=iconTable border=0 cellpadding=0 cellspacing=0>
+                <tr>
+                    <td colspan=7 align=center onclick="toggleAdvancedTable()" onmouseover="this.style.cursor='pointer'" onmouseout="this.style.cursor='default'"><font size=1><i><div id="AdvancedTableToggleText">(Click for Advanced Menu)</div></i></font></td>
+                    <td colspan=6 align=center onclick="loadEnipediaMapsPageInNewTab()" onmouseover="this.style.cursor='pointer'" onmouseout="this.style.cursor='default'"><font size=1><i><div>(Documentation / Give Feedback)</div></i></font></td>
+                </tr>
+                <tr>
+                    <td colspan=13><hr></td>
+                </tr>
+
+                        <tr>            
+                            <td><img id="biomass_img" onclick="toggle('Biomass', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/2/2a/Biomass_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/f/f0/Biomass.png" src="http://enipedia.tudelft.nl/enipedia/images/f/f0/Biomass.png" class="tooltip" title="Biomass"></td>
+                            <td><img id="biogas_img" onclick="toggle('Biogas', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/4/4a/Biogas_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/5/5d/Biogas.png" src="http://enipedia.tudelft.nl/enipedia/images/5/5d/Biogas.png" class="tooltip" title="Biogas"></td>
+                            <td><img id="coal_img" onclick="toggle('Coal', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/3/3e/Coal_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/a/a7/Coal.png" src="http://enipedia.tudelft.nl/enipedia/images/a/a7/Coal.png" class="tooltip" title="Coal"></td>
+                            <td><img id="gas_img" onclick="toggle('Gas', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/b/bd/Gas_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/7/78/Gas.png" src="http://enipedia.tudelft.nl/enipedia/images/7/78/Gas.png" class="tooltip" title="Gas"></td>
+                            <td><img id="geothermal_img" onclick="toggle('Geothermal', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/c/c0/Geothermal_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/0/05/Geothermal.png" src="http://enipedia.tudelft.nl/enipedia/images/0/05/Geothermal.png" class="tooltip" title="Geothermal"></td>
+                            <td><img id="oil_img" onclick="toggle('Oil', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/d/d7/Oil_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/0/06/Oil.png" src="http://enipedia.tudelft.nl/enipedia/images/0/06/Oil.png" class="tooltip" title="Oil"></td>
+                            <td><img id="hydro_img" onclick="toggle('Hydro', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/f/fa/Hydro_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/0/08/Hydro.png" src="http://enipedia.tudelft.nl/enipedia/images/0/08/Hydro.png" class="tooltip" title="Hydro"></td>
+                            <td><img id="nuclear_img" onclick="toggle('Nuclear', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/4/4f/Nuclear_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/4/42/Nuclear.png" src="http://enipedia.tudelft.nl/enipedia/images/4/42/Nuclear.png" class="tooltip" title="Nuclear"></td>
+                            <td><img id="solar_img" onclick="toggle('Solar', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/7/78/Solar_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/2/25/Solar.png" src="http://enipedia.tudelft.nl/enipedia/images/2/25/Solar.png" class="tooltip" title="Solar"></td>
+                            <td><img id="waste_img" onclick="toggle('Waste', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/f/fa/Waste_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/1/12/Waste.png" src="http://enipedia.tudelft.nl/enipedia/images/1/12/Waste.png" class="tooltip" title="Waste"></td>
+                            <td><img id="wave_img" onclick="toggle('Wave', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/d/de/Wave_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/e/e9/Wave.png" src="http://enipedia.tudelft.nl/enipedia/images/e/e9/Wave.png" class="tooltip" title="Wave"></td>
+                            <td><img id="wind_img" onclick="toggle('Wind', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/3/3f/Wind_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/b/bf/Wind.png" src="http://enipedia.tudelft.nl/enipedia/images/b/bf/Wind.png" class="tooltip" title="Wind"></td>
+                            <td><img id="unknown_img" onclick="toggle('Unknown', this)" deselected_img="http://enipedia.tudelft.nl/enipedia/images/b/b4/Unknown_deselected.png" selected_img="http://enipedia.tudelft.nl/enipedia/images/d/dd/Unknown.png" src="http://enipedia.tudelft.nl/enipedia/images/d/dd/Unknown.png" class="tooltip" title="Unknown"></td>
+                        </tr>
+                        <tr>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='biomass_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='biogas_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='coal_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='gas_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='geothermal_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='oil_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='hydro_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='nuclear_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='solar_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='waste_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='wave_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='wind_count'></div></td>
+                            <td class="fuelCheckBoxTD"><div class='fuelCount' id='unknown_count'></div></td>
+                        </tr>
+                    </table>
+                </td>
+
+                <td>
+                    <table>
+                        <tr>
+                            <td class="fuelCheckBoxTD"><input onchange="show_meta('fossil',this.checked)" id="show_fossil" type="checkbox" checked="false" title="Fossil"></td>
+                            <td class="fuelLabelTD"><label for="show_fossil">Fossil</label></td>
+                        </tr>
+                        <tr>
+                            <td class="fuelCheckBoxTD"><input onchange="show_meta('nuclear',this.checked)" id="show_nuclear" type="checkbox" checked="false" title="Nuclear"></td>
+                            <td class="fuelLabelTD"><label for="show_nuclear">Nuclear</label></td>
+                            <td class="fuelCheckBoxTD"><input onchange="show_all(this.checked)" id="show_all" type="checkbox" checked="false" title="All"></td>
+                            <td class="fuelLabelTD"><label for="show_all">All</label></td>
+                        </tr>
+                        <tr>
+                            <td class="fuelCheckBoxTD"><input onchange="show_meta('renewable',this.checked)" id="show_renewable" type="checkbox" checked="false" title="Renewable"></td>
+                            <td class="fuelLabelTD"><label for="show_renewable">Renewable</label></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        <tr>
+        <td align=right>Layers:</td>
+        <td><font size=1>
+            <input type="checkbox" id="ITOMapDistribution_checkbox" onchange="updateITOMapLayersDisplayed(this)">ITOWorld power distribution (<a href="http://www.itoworld.com/map/4" id="ITOMapDistribution_link" target="_window">Source</a>)
+            <input type="checkbox" id="ITOMapGeneration_checkbox" onchange="updateITOMapLayersDisplayed(this)">ITOWorld power generation (<a href="http://www.itoworld.com/map/106" id="ITOMapGeneration_link" target="_window">Source</a>)
+             </font>
+        </td>
+        <td><font size=1>Current Coords: <div id='current_coordinates_display'></div></font></td>
+        </tr>
+        </table>
+    </div>
+    </div>
+    </body>
 </html>

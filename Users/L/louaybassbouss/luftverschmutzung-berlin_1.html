@@ -51,3 +51,56 @@ Motion Chart visualization for Ozone:<br>
 </center>
 </body>
 </html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>Google Visualization API Sample</title>
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+  <script type="text/javascript">
+    google.load('visualization', '1', {packages: ['motionchart']});
+
+    
+    function drawVisualization() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Station');
+        data.addColumn('date', 'Date');
+        data.addColumn('string', 'Indicator');
+        data.addColumn('number', 'Value');
+
+        var state = '{"yAxisOption":"3","iconType":"VBAR","time":"2007-01-27","dimensions":{"iconDimensions":["dim0"]},"iconKeySettings":[],"uniColorForNonSelected":false,"yZoomedDataMax":230,"orderedByX":true,"xZoomedDataMin":0,"showTrails":false,"yZoomedDataMin":0,"yZoomedIn":false,"yLambda":1,"nonSelectedAlpha":0.4,"orderedByY":false,"xLambda":1,"colorOption":"_UNIQUE_COLOR","xAxisOption":"_ALPHABETICAL","playDuration":15000,"xZoomedDataMax":15,"sizeOption":"_UNISIZE","xZoomedIn":false,"duration":{"multiplier":1,"timeUnit":"D"}}';
+        var motionchart = new google.visualization.MotionChart(document.getElementById('visualization'));
+        jQuery.getJSON(
+            "https://api.scraperwiki.com/api/1.0/datastore/sqlite",
+            {
+                format: 'jsondict',
+                name: 'luftverschmutzung-berlin',
+                query: 'select * from \'observations\' where date like \'%-15\' and name = \'Ozon\' and indicator = \'Max. 1Std. wert\'  order by date desc'
+            },
+            function(res){
+                console.log(res.length +"entries retrieved");
+                for (i in res) {
+                    var item = res[i];
+                    if(!item.value){
+                       item.value = 0.0;
+                    }
+                    data.addRow([item.station,new Date(item.date),item.name+"/"+item.indicator+" "+item.unit ,item.value]);
+                }
+                motionchart.draw(data, {'width': 800, 'height': 400, 'state': state});
+            }
+        );
+    }
+    google.setOnLoadCallback(drawVisualization);
+  </script>
+</head>
+<body style="font-family: Arial;color: white; border: 0 none; background-image:url('http://images.reni1950.multiply.com/image/1:customizedthemes/photos/19110/1200x1200/6/backgroundstars.jpg?et=%2Cf5bLvh121D1U8uMZxMlnA&nmid=269585867)%3B')">
+<center>
+<h3>Air pollution in several districts of Berlin</h3>
+daily values for several indicators (e.g. Ozone, ...) since January 2007<br>
+<br>
+<br>
+Motion Chart visualization for Ozone:<br>
+<div id="visualization" style="width: 800px; height: 400px;">Please wait...</div>
+</center>
+</body>
+</html>

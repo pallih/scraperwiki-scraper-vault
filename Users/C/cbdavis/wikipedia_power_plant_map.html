@@ -75,3 +75,80 @@
         <div id="map_canvas"></div>
     </body>
 <html>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>UK Universities and Colleges</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<script type="text/javascript">           
+    var map;
+    $(function(){
+
+        var infowindow = new google.maps.InfoWindow();
+
+        var myOptions = {
+            zoom: 5,
+            center: new google.maps.LatLng(50, 5), //slight European bias for map origin
+            mapTypeId: google.maps.MapTypeId.HYBRID
+        };
+        map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+        $.ajax({
+            url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=wikipedia_power_plants&query=select%20*%20from%20%60swdata%60',
+            dataType: 'json',
+            success: function(data){ drop_markers(data); }
+        });
+        //add in labels for markers
+        function drop_markers(data){
+            bounds = new google.maps.LatLngBounds();
+            for(i = 0; i < data.length; i++){
+                myLatLng = new google.maps.LatLng(data[i].latitude, data[i].longitude);
+                markerOptions = {position: myLatLng, map: map, title: data[i].name};
+                marker = new google.maps.Marker(markerOptions);
+                marker.data = data[i];
+                marker.name = data[i].plant.replace(/_/g, ' ').replace("http://dbpedia.org/resource/", "");
+                marker.wikipediaPage = data[i].plant.replace("http://dbpedia.org/resource/", "http://en.wikipedia.org/wiki/");
+                google.maps.event.addListener(marker, 'click', function() { open_info_marker(this)} );
+                bounds.extend(myLatLng);
+                map.fitBounds(bounds);
+            }
+        }
+
+
+        function open_info_marker(marker) {
+            //TODO fix URL encoding
+            var content = "<div style='font-size: 9pt; font-family: Arial'><span style='font-size: 12pt'>" + marker.name + "</span><ul>";
+            for (p in marker.data) {
+                if (marker.data[p] != null) {  
+
+                    // Don't want to show these in the bullet list
+                    if (p != "plan" && p != "plant" && p != "geoLat" && p != "geoLong" && p != "latDMS" && p != "longitude" && p != "latitude" && p != "longDMS") {
+                        if (p == "wikipediaPage"){
+                            content += "<li><b>" + p + "</b> : <a href=" + marker.data[p] + " target='WikipediaView'>" + marker.data[p] + "</a></li>";
+                        } else {
+                            content += "<li><b>" + p + "</b> : " + marker.data[p] + "</li>";
+                        }
+                    }
+                }
+            }
+
+            infowindow.content = content;
+            infowindow.open(map, marker);
+        }
+
+    });
+</script>
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>

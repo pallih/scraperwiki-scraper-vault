@@ -63,3 +63,79 @@
         <div id="chart_canvas"></div>
     </body>
 <html>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Cisco Support Forums - avholloway's Point History</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            .chart { height: 500px; }
+        </style>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            // Load the Visualization API and the piechart package.
+            google.load('visualization', '1.0', {'packages':['corechart']});
+                      
+            // Set a callback to run when the Google Visualization API is loaded.
+            google.setOnLoadCallback(init);
+
+            function init() {
+                // Define which charts we want to display and in what order (in days)
+                var charts = [7, 14, 30, 90, 180, 365];
+
+                // Build the individual chart DIVs
+                var $canvas_area = $('#canvas-area');
+                for (var i = 0, j = charts.length; i < j; i++) {
+                    $('<div />').attr('id', 'chart' + charts[i] + 'day').addClass('chart').text('Loading ' + charts[i] + ' Day Chart...').appendTo($canvas_area);
+                }
+
+                // Use AJAX to pull data for each chart
+                for (var i = 0, j = charts.length; i < j; i++) {
+                    get_data(charts[i]);
+                }
+            }
+            
+            function draw_chart(days, json) {
+                var data = new google.visualization.DataTable();
+
+                // Declare columns
+                data.addColumn('date', 'Date');
+                data.addColumn('number', 'Points');
+                
+                // Add data
+                for (var i = 0, j = json['data'].length; i < j; i++) {
+                    var d = new Date(json['data'][i][0] * 1000),
+                        p = json['data'][i][1];
+
+                    d.setHours(0);
+                    d.setMinutes(0);
+                    d.setSeconds(0);
+
+                    data.addRow([d, p]);
+                }
+
+                var options = {
+                  title: "Anthony's CSC Points - " + days + " Day",
+                    is3D: true
+                };
+
+                var chart = new google.visualization.LineChart(document.getElementById('chart' + days + 'day'));
+                chart.draw(data, options);
+
+            }
+
+            function get_data(limit) {
+                $.ajax({
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsonlist&name=cisco_support_community_-_points_tracker&query=select%20timestamp%2C%20points%20from%20%60swdata%60%20order%20by%20timestamp%20desc%20limit%20' + limit,
+                    dataType: 'json',
+                    success: function(json){ draw_chart(limit, json); }
+                });
+            }
+        </script>
+    </head>
+    <body>
+        <div id="canvas-area"></div>
+    </body>
+<html>

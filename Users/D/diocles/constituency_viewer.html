@@ -260,4 +260,266 @@ Click on the map or search for a constituency: <select id="constituencies">
 Uses Ordnance Survey data © Crown copyright and database right 2010.
 </p>
 </body>
+</html><html>
+<head>
+<title>UK Parliamentary Constituencies</title>
+
+<link rel="stylesheet" href="http://media.scraperwiki.com/css/jquery-ui-1.8.12.css">
+<style type="text/css">
+/* OpenLayers uses high z-index values */
+.ui-menu { z-index: 2000 !important; }
+
+.ui-button { margin-left: -1px; }
+.ui-button-icon-only .ui-button-text { padding: 0.35em; } 
+.ui-autocomplete-input { margin: 0; padding: 0.48em 0 0.47em 0.45em; }
+</style>
+
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-1.5.2.min.js"></script>
+<script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-ui-1.8.12.custom.min.js"></script>
+<script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script> 
+<script type="text/javascript" src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+
+<script type="text/javascript">
+// Start position for the map (hardcoded here for simplicity)
+var lat=52.67258
+var lon=-1.29892
+var zoom=6
+  
+var map; //complex object of type OpenLayers.Map
+
+// Mostly copy/pasted from http://jqueryui.com/demos/autocomplete/#combobox
+(function( $ ) {
+    $.widget( "ui.combobox", {
+        _create: function() {
+            var self = this,
+                select = this.element.hide(),
+                selected = select.children( ":selected" ),
+                value = selected.val() ? selected.text() : "";
+            var input = this.input = $( "<input>" )
+                .insertAfter( select )
+                .val( value )
+                .autocomplete({
+                    delay: 0,
+                    minLength: 0,
+                    source: function( request, response ) {
+                        var matcher = new RegExp( $.ui.autocomplete.escapeRegex(request.term), "i" );
+                        response( select.children( "option" ).map(function() {
+                            var text = $( this ).text();
+                            if ( this.value && ( !request.term || matcher.test(text) ) )
+                                return {
+                                    label: text.replace(
+                                        new RegExp(
+                                            "(?![^&;]+;)(?!<[^<>]*)(" +
+                                            $.ui.autocomplete.escapeRegex(request.term) +
+                                            ")(?![^<>]*>)(?![^&;]+;)", "gi"
+                                        ), "<strong>$1</strong>" ),
+                                    value: text,
+                                    option: this
+                                };
+                        }) );
+                    },
+                    select: function( event, ui ) {
+                        ui.item.option.selected = true;
+                        self._trigger( "selected", event, {
+                            item: ui.item.option
+                        });
+                        select.trigger("change");
+                    },
+                    change: function( event, ui ) {
+                        if ( !ui.item ) {
+                            var matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( $(this).val() ) + "$", "i" ),
+                                valid = false;
+                            select.children( "option" ).each(function() {
+                                if ( $( this ).text().match( matcher ) ) {
+                                    this.selected = valid = true;
+                                    return false;
+                                }
+                            });
+                            if ( !valid ) {
+                                // remove invalid value, as it didn't match anything
+                                $( this ).val( "" );
+                                select.val( "" );
+                                input.data( "autocomplete" ).term = "";
+                                return false;
+                            }
+                        }
+                    }
+                })
+                .addClass( "ui-widget ui-widget-content ui-corner-left" );
+
+            input.data( "autocomplete" )._renderItem = function( ul, item ) {
+                return $( "<li></li>" )
+                    .data( "item.autocomplete", item )
+                    .append( "<a>" + item.label + "</a>" )
+                    .appendTo( ul );
+            };
+
+            this.button = $( "<button type='button'>&nbsp;</button>" )
+                .attr( "tabIndex", -1 )
+                .attr( "title", "Show All Items" )
+                .insertAfter( input )
+                .button({
+                    icons: {
+                        primary: "ui-icon-triangle-1-s"
+                    },
+                    text: false
+                })
+                .removeClass( "ui-corner-all" )
+                .addClass( "ui-corner-right ui-button-icon" )
+                .click(function() {
+                    // close if already visible
+                    if ( input.autocomplete( "widget" ).is( ":visible" ) ) {
+                        input.autocomplete( "close" );
+                        return;
+                    }
+
+                    // work around a bug (likely same cause as #5265)
+                    $( this ).blur();
+
+                    // pass empty string as value to search for, displaying all results
+                    input.autocomplete( "search", "" );
+                    input.focus();
+                });
+        },
+
+        destroy: function() {
+            this.input.remove();
+            this.button.remove();
+            this.element.show();
+            $.Widget.prototype.destroy.call( this );
+        }
+    });
+})( jQuery );
+
+$(function() {
+    // Northern Ireland doesn't have any map data...
+    $.getJSON("http://api.scraperwiki.com/api/1.0/datastore/sqlite?callback=?",
+    {"format": "jsondict",
+    "name": "uk_parliamentary_constituencies",
+    "query": "select id, name from swdata where country_name is not 'Northern Ireland' order by name",
+    },
+    function(data, textStatus, jqXHR){
+        $.each(data, function(index, value) {
+            $('#constituencies').
+              append($("<option></option>").
+              attr("value",value["id"]).
+              text(value["name"]));
+        });
+
+        $('#constituencies').combobox();
+
+        map = new OpenLayers.Map('map', {
+            layers: [
+                new OpenLayers.Layer.OSM.Mapnik("Mapnik"),
+            ],
+            controls: [
+              new OpenLayers.Control.Navigation(),
+              new OpenLayers.Control.PanZoomBar(),
+              new OpenLayers.Control.Attribution()],
+            maxResolution: 'auto',
+        });
+
+        var lonLat = new OpenLayers.LonLat(lon, lat)
+            .transform(
+              new OpenLayers.Projection("EPSG:4326"),
+              map.getProjectionObject()
+        );
+
+        map.setCenter(lonLat, zoom);
+
+        var vector_layer = new OpenLayers.Layer.Vector("GeoJSON");
+        var geojson_format = new OpenLayers.Format.GeoJSON();        
+        map.addLayer(vector_layer);
+
+        function change_constituency(id) {        
+            $.getJSON("http://mapit.mysociety.org/area/" + id + ".geojson",
+                "callback=?",
+            function(data, textStatus, jqXHR) {
+              var geometry = geojson_format.parseGeometry(data);
+              geometry.transform(
+                  new OpenLayers.Projection("EPSG:4326"),
+                  map.getProjectionObject()
+              );
+        
+              var feature = new OpenLayers.Feature.Vector(geometry);
+
+              vector_layer.removeAllFeatures();
+              vector_layer.addFeatures([feature]);
+
+              map.zoomToExtent(geometry.getBounds());
+            });
+        }
+
+        $('#constituencies').change(function() {
+            var id = $('#constituencies').val();
+            change_constituency(id);
+        });
+
+
+        OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {                
+            defaultHandlerOptions: {
+                'single': true,
+                'double': false,
+                'pixelTolerance': 0,
+                'stopSingle': false,
+                'stopDouble': false
+            },
+        
+            initialize: function(options) {
+                this.handlerOptions = OpenLayers.Util.extend(
+                    {}, this.defaultHandlerOptions
+                );
+                OpenLayers.Control.prototype.initialize.apply(
+                    this, arguments
+                ); 
+                this.handler = new OpenLayers.Handler.Click(
+                    this, {
+                        'click': this.trigger
+                    }, this.handlerOptions
+                );
+            }, 
+        
+            trigger: function(e) {
+                var lonlat = map.getLonLatFromViewPortPx(e.xy);
+        
+                lonlat.transform(
+                   map.getProjectionObject(),
+                   new OpenLayers.Projection("EPSG:4326")
+                );
+        
+                $.getJSON("http://mapit.mysociety.org/point/4326/" + lonlat.lon + "," + lonlat.lat,
+                        "callback=?",
+                    function(data, textStatus, jqXHR) {
+                        // FIXME break out of this loop once WMC found.
+                        $.each(data, function(key, value){
+                            if (value["type"] == "WMC") {
+                                // FIXME would prefer some sort of trigger here.
+                                $('input').val(value["name"]);
+                                change_constituency(value["id"]);
+                            }
+                        });
+                    }
+                );
+            }        
+        });
+
+        var click = new OpenLayers.Control.Click();
+        map.addControl(click);
+        click.activate();
+    });
+});
+</script>
+</head>
+<body>
+<h1>UK Parliamentary Constituencies</h1>
+<div>
+Click on the map or search for a constituency: <select id="constituencies">
+<option value="" selected="selected">Select a constituency</option>
+</select>
+</div>
+<div id="map" style="width: 1000px; height: 500px; border: 1px solid black;"></div>
+<p>
+Uses Ordnance Survey data © Crown copyright and database right 2010.
+</p>
+</body>
 </html>

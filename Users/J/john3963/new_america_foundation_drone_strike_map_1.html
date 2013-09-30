@@ -117,4 +117,123 @@ $(function()
 
 </script>
 </body>
+</html><html dir="ltr" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>General Map Thing</title>Discussion (0)
+    <style type="text/css" media="screen">p{padding:1px;}</style>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script type="text/javascript" src="http://media.scraperwiki.com/js/json-min.js"></script>
+</head>
+
+<body>
+
+
+<h1>Drone strikes: <input type="button" class="cyear" value="Go" style="font-size:120%; background:green; color:white; -moz-border-radius: 15px; -webkit-border-radius: 15px; -khtml-border-radius: 15px; border-radius: 15px; "></h1>
+<h2>Date: <span id="strikedate"></span>, Strike count: <span id="strikecount"></span>
+Lower kill estimate: <span id="lowerest"></span>, Higher kill estimate: <span id="higherest"></span></h2>
+
+<p>Find the code for the visualization 
+<a href="http://scraperwiki.com/views/new_america_foundation_drone_strike_map/edit/">here</a> and 
+the code for the scraper <a href="http://scraperwiki.com/scrapers/new_americ_foundation_drone_strikes/#">here</a>.</p>
+
+<p>The source data can be found on the 
+<a href="http://counterterrorism.newamerica.net/drones/2008">New America Foundation website</a>
+and I have used the RSS feed that is used on their google map because it's got the latlng coordinates.</p>
+
+<p><b>This visualization needs some love from someone with the necessary talent</b>  
+The pointers fade to blue and then disappear to avoid clutter.  
+The number is the minimum kill estimate.
+Perhaps the speed of appearance should be proportional to the date.</p>
+
+
+<div id="map" style="width:100%;height:600px"></div>
+
+
+<script type="text/javascript" charset="utf-8">
+
+var map;
+function makemap()
+{
+    var mapOptions = { "zoom": 7, "center": new google.maps.LatLng(32.691399, 69.846954),
+                       "mapTypeId": google.maps.MapTypeId.TERRAIN };
+    map = new google.maps.Map(document.getElementById("map"), mapOptions);
+}
+ 
+var nwdata = [ ];
+var markers = [ ];
+var icon1 = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=O|0f0|000';
+var icon2 = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=O|00f|000';
+var cumulowerest = 0; 
+var cumuhigherest = 0;
+function putpin(lat, lng, killest)
+{
+    var pos = new google.maps.LatLng(lat, lng);
+    var icon = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld='+killest+'|0f0|000';
+    var marker = new google.maps.Marker({position:pos, map:map, icon:icon, animation: google.maps.Animation.DROP});
+    markers.push(marker);
+    if (markers.length>=20)
+        markers[markers.length-20].setIcon(icon2);
+    if (markers.length>=30)
+        markers[markers.length-30].setMap(null);
+}
+
+var inwd = 0; 
+function slowupdate()
+{
+    if (inwd >= nwdata.length)
+        return;
+    var nwd = nwdata[inwd];
+    inwd += 1
+    putpin(nwd[0], nwd[1], nwd[3]);
+    $("#strikedate").text(nwd[2]);
+    $("#strikecount").text(markers.length); 
+    cumulowerest += nwd[3]; 
+    cumuhigherest += nwd[4];
+    $("#lowerest").text(cumulowerest); 
+    $("#higherest").text(cumuhigherest);
+    setTimeout(slowupdate, 200);
+}
+
+function clearmap()
+{
+    inwd = 0;
+    cumulowerest = 0;
+    cumuhigherest = 0;
+    for (var i = 0; i < markers.length; i++)
+        markers[i].setMap(null);
+    markers = [ ]; 
+}
+
+
+$(function()
+{
+    makemap();
+    $(".cyear").click(function()
+    {
+        $(this).css("background", "#aaa");
+        $("#strikedate").text("loading");
+        var sqlselect = "select latlng_lat, latlng_lng, date, lowerest, higherest from swdata order by date limit 500";
+        var name = "new_americ_foundation_drone_strikes";
+        var aurl = "http://api.scraperwiki.com/api/1.0/datastore/sqlite"; 
+        if (nwdata.length == 0)
+        {
+            $.ajax({url:aurl, dataType: "jsonp", data:{name:name, query:sqlselect, format:"jsonlist"}, success:function(data)
+            { 
+                nwdata = data.data;
+                $("#message").text("loaded "+nwdata.length+" records");
+                slowupdate();
+            }})
+        }
+        else
+        {
+            clearmap();
+            slowupdate();
+        }
+    });
+});
+
+</script>
+</body>
 </html>

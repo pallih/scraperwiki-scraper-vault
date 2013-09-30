@@ -410,3 +410,415 @@ To do..
 
 </body>
 </html>
+<html>
+<head>
+<title>Properties Sales Dataminer Visualiser.</title>
+
+<!-- Load the required javascript to plot the graphs -->
+  <script src="https://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+  <script src="https://media.scraperwiki.com/js/json-min.js"></script>
+  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<!-- bunch of stuff for formating the documentation -->
+<link rel="stylesheet" href="https://media.scraperwiki.com/CACHE/css/f6efb05f279e.css" type="text/css" />     
+<script type="text/javascript" src="https://media.scraperwiki.com/js/ZeroClipboard.js?"></script>   
+
+<!-- Load the visualization packages -->
+<script type="text/javascript">
+google.load('visualization', '1', {'packages':['corechart', 'annotatedtimeline']});
+</script>
+
+ <script type="text/javascript">
+
+
+///////////////////////////////////////////////
+//
+// Example Plots
+//
+///////////////////////////////////////////////
+
+
+function plotColumns(database, name, id) {
+
+    //The query
+    var advertisers= "select advertiser, occurrences from `swdata` where occurrences>1 order by occurrences desc";
+ 
+    var dbname= database;
+    //Column definition
+    var columns = [
+               {type: 'string', label: 'Type', index: 0},
+               {type: 'number', label: '#ads', index: 1}
+                ];
+
+    //Graph options
+     var options = {'title':name,
+                      'width':800,
+                      'height':600};
+
+    googlePlot(dbname, advertisers, id, columns,
+             options, function(element) {return new google.visualization.ColumnChart(element)});
+
+}
+function plotStackedColumns(db1, db2, db3, name, id) {
+
+    //The query
+    var advertisers= "select advertiser, occurrences from `swdata` where occurrences>30 order by occurrences desc";
+ 
+   // var dbname= "jobrapidocombr_dataminer";
+    //Column definition
+    var columns = [
+               {type: 'string', label: 'Type', index: 0},
+               {type: 'number', label: '#ads', index: 1}
+                ];
+
+    //Graph options
+     var options = {'title':name,
+                      'width':800,
+                      'height':600};
+
+    googlePlot(db1,advertisers, id, columns,
+             options, function(element) {return new google.visualization.ColumnChart(element)});
+
+}
+//make a bar chart (horizontal bars)
+function plotBars() {  
+ 
+    //the Query
+    var avgusertotalq = "select  camera_type,  avg(daily_users)  as du from camera_stats,  cameras  where  camera_stats.camera_url=cameras.url and daily_users is  not null  group by  camera_type order by du asc";
+ 
+     var dbname= "flickr_camera_finder";
+
+    //Columns definition
+    var columns = [{type: 'string', label: 'Type', index: 0, cleanFunction: function(data) { //we provide a cleanFunction to preprocess the 
+                                                            if(data==null) return 'Unknown'; // data coming from the crawler
+                                                            return data.replace(/&amp;/, '&');
+                                                          }},
+                   {type: 'number', label: 'Daily Users', index: 1}];
+     var options = {'title':'Average Daily Users',
+                      'width':800,
+                      'height':600};
+    googlePlot(dbname, avgusertotalq, "#barchart", columns,
+             options, function(element) {return new google.visualization.BarChart(element)});
+}
+
+//Plot a pie chart
+function plotPie() {
+
+    var dbname= "flickr_camera_finder";
+    //the SQLite query
+    var brandquery = "select  sum(photo_count), brands.name from brands, cameras, camera_stats  where brands.url=cameras.brand_url and  cameras.url=camera_stats.camera_url and  date=(select distinct date from  camera_stats order by date desc limit 1) group by brands.url"
+
+    //definitions of the columns, first the Camera Maker (2nd column from the query), then the number of photos (first column from the query)
+    var columns2 = [{type: 'string', label: 'Camera Maker', index: 1},
+               {type: 'number', label: 'Photos', index: 0}];
+
+    //specific options for the chart
+    var options2 = {'title':'Brand Share',
+                     'width':600,
+                     'height':600,
+                      'pieSliceText':'label',
+                     'sliceVisibilityThreshold':2/100};
+
+     googlePlot(dbname, brandquery, "#piechart", columns2,
+              options2, function(element) {return new google.visualization.PieChart(element)});
+    makeLinks(dbname, brandquery, "#pielinks");
+
+
+}
+
+//This is an example for plotting a timeline
+function plotTimeline() {
+    //get some data with dates
+    var query="select  sum(photo_count), date from camera_stats where camera_url is not null  group by date";
+    var dbname= "flickr_camera_finder";
+    //define the required data columns for the timeline
+    var columns = [{type: 'date', label: 'Date', index: 1, cleanFunction:parseDate}, //first field is the date, comes from the second field of the query. Specify the cleanFunction to transfor DB dates to javascript date objects.
+                    {type: 'number', label: 'Photos', index: 0}, //second field is the number to display
+                    undefined, undefined];      //ignore the two next fields (required by the TimeLine API
+    var options = {'title':'Total Number of Photos',
+                      'width':600,
+                      'height':600,}
+    googlePlot(dbname, query, "#timeline", columns,
+               options, function(element) {return new google.visualization.AnnotatedTimeLine(element)});
+}
+
+
+//This is an example for plotting a sparkl line
+function plotSparkl() {
+    var query="select  avg(daily_users) from camera_stats where camera_url is not null  group by date";
+    var dbname= "flickr_camera_finder";
+    sparklPlot(dbname, query, "#sparkl1", {'cleanFunction': function(data) {return Math.ceil(data)}});
+    sparklPlot(dbname, query, "#sparkl2", { 'line_weight': 3,
+                                           'width': 300,
+                                           'height':30, 
+                                           'last_point':false, 
+                                           'cleanFunction': function(data) {return Math.ceil(data)}
+                                          });
+    sparklPlot(dbname, query, "#sparkl3", {                                           
+                                           'color': '78ffa2',
+                                           'fill': 'ebffea',
+                                           'point_color': '000099',
+                                           'cleanFunction': function(data) {return Math.ceil(data)}
+                                          });
+}
+
+///////////////////////////////////////////////
+//
+// Helper Functions
+//
+///////////////////////////////////////////////
+
+
+//a utility function to parse DB dates to javascript Date objects.
+function parseDate(sdate) {
+            var year = parseInt(sdate.substring(0, 4));
+            var smonth = sdate.substring(5, 7);
+            var month = parseInt(smonth.substring(0, 1) == '0' ? smonth.substring(1) : smonth)-1;   // octal parseInt notation!!!
+            var sday = sdate.substring(8, 10);
+            var day = parseInt(sday.substring(0, 1) == '0' ? sday.substring(1) : sday);
+            return new Date(year, month, day);
+}
+
+
+function makeLinks(dbname, query, divSelector) {
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    apiurl += "?name="+dbname;
+    apiurl += "&query="+encodeURIComponent(query);
+    $(divSelector).html("<a href=\""+apiurl+"&format=htmltable\">HTML</a>, <a href=\""+apiurl+"&format=csv\">CSV</a>");
+}
+
+/**
+Google Plot helper method that will fetch the data with json and draw a graph of the specified type.
+*/
+function googlePlot(dbname, query, divSelector, columns, options, graphConstructor) {
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    var adata = {name:dbname, query:query, format:"jsonlist"};
+    $(divSelector).html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        for(var coli  in columns) {
+            if(columns[coli] != undefined) {
+                data.addColumn(columns[coli].type, columns[coli].label);
+                if(columns[coli].cleanFunction == undefined) {
+                    columns[coli].cleanFunction = function(data) {return data};
+                }
+            } else {
+                data.addColumn('string', 'text'+coli);
+            }
+        }
+        var rows = [ ];
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var cols = [];
+            for(var coli  in columns) {
+                if(columns[coli] != undefined) {
+                    cols[coli] = columns[coli].cleanFunction(tdata.data[i][columns[coli].index]);
+                } else {
+                    cols.push(undefined);
+                }
+            }
+            rows.push(cols);
+        }
+        data.addRows(rows);
+
+        var chart = graphConstructor($(divSelector)[0]);
+        chart.draw(data, options);
+
+    }});
+}
+function sparklPlot(dbname, query, divSelector, options) {
+    var defaultOptions = {
+         'width': 100,
+         'height': 20,
+         'color': '78A2FF',
+         'background': undefined,
+         'fill': 'EBEAFF',
+         'last_point': true,
+        'point_color': 990000,
+        'line_weight': 1,
+        'cleanFunction': function(data) {return data}        
+    }
+
+    if(options == undefined) options = {};
+    for(var i in defaultOptions) {
+        if(options[i] == undefined) options[i] = defaultOptions[i];
+    }
+
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    var adata = {name:dbname, query:query, format:"jsonlist"};
+    $(divSelector).html("<em><small>loading...</small></em>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var min = undefined;
+        var max = undefined;
+        var values = "";
+        var bg=false;
+        for (var i = 0; i < tdata.data.length; i++) {
+            var val = options['cleanFunction'](tdata.data[i][0]);
+            if(isNaN(val) || val == null || val == undefined) val =0;
+            if(min == undefined || min>val)
+                min = val;
+            if(max == undefined)
+                max = val;
+            if(max<val)
+                max = val;
+            values += ','+val;
+        }
+        if(max != undefined) {
+            values=values.substring(1);
+            var imgtxt = "http://chart.apis.google.com/chart?"
+                    + "cht=ls"
+                    + "&chds="+(min-(min*90/100))+','+max
+                    + "&chs="+options['width']+"x"+options['height']
+                    + "&chd=t:"+values
+                    + "&chco="+options['color']
+                    + "&chls="+options["line_weight"]+",1,0"
+                    + ((options['last_point'])?"&chm=o,"+options["point_color"]+",0,"+(options['height']+5)+",4":"")
+                    + ((options['last_point'])?"":"&chm=o,")+((options['fill']!=undefined)?"|B,"+options['fill']+",0,0,0":"")
+                    + ((options['last_point'])?("&chxt=r&chxl=0:|"+addCommas(val)+ "&chxp=0,"+(val*100/max)):"")
+                     
+                    +((options['background']!=undefined)?"&chf=bg,s,"+options['background']:"");
+        $(divSelector).html("<img src=\""+imgtxt+"\" alt=\""+max+"\"/>");
+    }
+}});
+}
+
+function addCommas(str) {
+    var amount = new String(str);
+    amount = amount.split("").reverse();
+
+    var output = "";
+    for ( var i = 0; i <= amount.length-1; i++ ){
+        output = amount[i] + output;
+        if ((i+1) % 3 == 0 && (amount.length-1) !== i)output = ' ' + output;
+    }
+    return output;
+}
+
+
+///////////////////////////////////////////////
+//
+// Start Everything
+//
+///////////////////////////////////////////////
+
+//Start the drawing of the plots when the page loads.
+$(window).ready(function()
+{
+plotColumns('mitulacouk_properties','Mitula UK Property','#columnchartMitulaUK');
+plotColumns('trovitcouk_premium_properties','Trovit UK Property','#columnchartTrovitUK');
+
+});
+
+
+</script>
+
+
+<!-- some styling for the page, you can change this to what you want -->
+<style>
+
+body {
+color:#3E3E40;
+font-family:Arial,Helvetica,sans-serif;
+font-size:14pt;
+padding: 0 5em;
+width: 50em;
+text-align: justify;
+}
+
+h1 {
+font-size:300%;
+margin:0 0 0.5em;
+padding-bottom:2px;
+font-variant: small-caps;
+text-align: center;
+font-weight: bold;
+}
+
+
+h2 {
+border-bottom:1px solid black;
+font-size: 150%;
+font-weight: bold;
+margin-top: 4em;
+width: 12em;
+ }
+
+h3 {
+font-size: 110%;
+margin-top: 4em;
+font-weight: bold;
+ }
+
+div.documentationpage code {
+  font-size: 80%;
+}
+
+tt {
+  font-size: 90%;
+}
+
+dt {
+font-weight: bold;
+}
+
+</style>
+
+</head>
+
+<body>
+<div class="documentationpage">
+
+<h1>Properties premium ads scraper data</h1>
+
+<h2>Brazil graphs</h2>
+
+<p>Histograms</p>
+To do..
+
+<h2>DE graphs</h2>
+
+<p>Histograms</p>
+To do..
+
+
+<h2>UK graphs</h2>
+
+<p>Histograms</p>
+<div id="columnchartMitulaUK"><!--JAVASCRIPT WILL PUT THE COLUMN CHART HERE--></div>
+<div id="columnchartTrovitUK"><!--JAVASCRIPT WILL PUT THE COLUMN CHART HERE--></div>
+</div>
+
+    <script type="text/javascript" defer="defer">              
+//This scripts cromes from ScraperWiki and is there to format nicely and add the code copying features.
+// Add copy button bumf to every <code> element  
+  $("code").wrap('<div class="code_outer" style="position:relative"/>').after('<a href="#" class="copy_to_clipboard" title="Click to copy this snippet to your clipboard">Copy</a>');      
+// Make the copy button work   
+  ZeroClipboard.setMoviePath( 'https://media.scraperwiki.com/js/ZeroClipboard.swf' );   
+  $(".copy_to_clipboard").each(function(i) {             
+     var el = $(this);  
+       var parent = el.parent();   
+      var code = el.siblings('code');         
+ // add eleven spaces to end of first line, so Copy button never obscures text      
+   // (this was easiest way to do it without altering the overflow scrolling behaviour) 
+        var t = code.text().replace(/\n/, "           \n")      
+   code.text(t);                      clip = new ZeroClipboard.Client();   
+      clip.setText(code.text().replace(/\s+\n/, "\n"));    
+     clip.setHandCursor( true );   
+           clip.addEventListener( 'complete', function(client, text) {        
+     //  alert("Copied text to clipboard: " + text );     
+        el.text('Copied').addClass('copied');       
+      el.focus();
+ // so flash doesn't have keyboard focus afterwards       
+  });                
+  clip.addEventListener( 'onMouseOver', function(client, text) { 
+            if(el.is('.copied')){     
+            el.text('Copy').removeClass('copied');  
+           }         });                
+  clip.glue(el[0], parent[0]);           
+   });
+ </script>
+
+</body>
+</html>

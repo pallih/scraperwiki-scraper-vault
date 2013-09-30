@@ -165,3 +165,170 @@ text-align: justify;
 
 </body>
 </html>
+<html>
+<head>
+<title>ScraperWiki javascript plotting with Google, a Copy/Paste Example.</title>
+
+<!-- Load the required javascript to plot the graphs -->
+  <script src="http://media.scraperwiki.com/js/jquery-1.3.2.js"></script>
+  <script src="http://media.scraperwiki.com/js/json-min.js"></script>
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+
+<!-- Load the visualization packages -->
+<script type="text/javascript">
+google.load('visualization', '1', {'packages':['corechart', 'annotatedtimeline']});
+</script>
+
+ <script type="text/javascript">
+
+
+///////////////////////////////////////////////
+//
+// Example Plots
+//
+///////////////////////////////////////////////
+
+//make a bar chart (horizontal bars)
+function plotBars() {  
+ 
+    //the Query
+    var temperatureSQL = "select date_time, temperature, tweet from `swdata` where temperature > 10 and temperature < 30 order by date_time asc";
+ 
+     var dbname= "brockwell_lido_temperature";
+
+    //Columns definition
+    var columns = [{type: 'string', label: 'Day', index: 0, cleanFunction: function(data) { //we provide a cleanFunction to preprocess the 
+                                                            var date =  parseDate(data);
+                                                            return date.toDateString();
+                                                          }},
+                   {type: 'number', label: 'Temperature', index: 1}];
+     var options = {'title':'Brockwell Lido Temperature Based on Twitter Reports',
+                      'width':800,
+                      'height':600};
+    googlePlot(dbname, temperatureSQL, "#columnchart", columns,
+             options, function(element) {return new google.visualization.ColumnChart(element)});
+}
+
+//This is an example for plotting a timeline
+function plotTimeline() {
+    //get some data with dates
+    var query="select date_time, temperature, tweet from `swdata` where temperature > 10 and temperature < 30 order by date_time asc";
+    var dbname= "brockwell_lido_temperature";
+    //define the required data columns for the timeline
+    var columns = [{type: 'date', label: 'Date', index: 0, cleanFunction:parseDate}, //first field is the date, comes from the second field of the query. Specify the cleanFunction to transfor DB dates to javascript date objects.
+                    {type: 'number', label: 'Temperature', index: 1}, //second field is the number to display
+                    undefined, undefined];      
+    var options = {'title':'Brockwell Lido Temperature',
+                      'width':600,
+                      'height':600,}
+    googlePlot(dbname, query, "#timeline", columns,
+               options, function(element) {return new google.visualization.AnnotatedTimeLine(element)});
+}
+
+///////////////////////////////////////////////
+//
+// Helper Functions
+//
+///////////////////////////////////////////////
+
+
+//a utility function to parse DB dates to javascript Date objects.
+function parseDate(sdate) {
+            var year = parseInt(sdate.substring(0, 4));
+            var smonth = sdate.substring(5, 7);
+            var month = parseInt(smonth.substring(0, 1) == '0' ? smonth.substring(1) : smonth)-1;   // octal parseInt notation!!!
+            var sday = sdate.substring(8, 10);
+            var day = parseInt(sday.substring(0, 1) == '0' ? sday.substring(1) : sday);
+            return new Date(year, month, day);
+}
+
+
+function makeLinks(dbname, query, divSelector) {
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    apiurl += "?name="+dbname;
+    apiurl += "&query="+encodeURIComponent(query);
+    $(divSelector).html("<a href=\""+apiurl+"&format=htmltable\">HTML</a>, <a href=\""+apiurl+"&format=csv\">CSV</a>");
+}
+
+/**
+Google Plot helper method that will fetch the data with json and draw a graph of the specified type.
+*/
+function googlePlot(dbname, query, divSelector, columns, options, graphConstructor) {
+    var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+    var adata = {name:dbname, query:query, format:"jsonlist"};
+    $(divSelector).html("<h4>LOADING...</h4>");
+    $.ajax({url:apiurl, dataType:"jsonp", data:adata, success:function(tdata)
+    {
+        var data = new google.visualization.DataTable();
+        for(var coli  in columns) {
+            if(columns[coli] != undefined) {
+                data.addColumn(columns[coli].type, columns[coli].label);
+                if(columns[coli].cleanFunction == undefined) {
+                    columns[coli].cleanFunction = function(data) {return data};
+                }
+            } else {
+                data.addColumn('string', 'text'+coli);
+            }
+        }
+        var rows = [ ];
+        for (var i = 0; i < tdata.data.length; i++)
+        {
+            var cols = [];
+            for(var coli  in columns) {
+                if(columns[coli] != undefined) {
+                    cols[coli] = columns[coli].cleanFunction(tdata.data[i][columns[coli].index]);
+                } else {
+                    cols.push(undefined);
+                }
+            }
+            rows.push(cols);
+        }
+        data.addRows(rows);
+
+        var chart = graphConstructor($(divSelector)[0]);
+        chart.draw(data, options);
+
+    }});
+}
+
+///////////////////////////////////////////////
+//
+// Start Everything
+//
+///////////////////////////////////////////////
+
+//Start the drawing of the plots when the page loads.
+$(window).ready(function()
+{
+plotBars();
+plotTimeline();
+});
+
+
+</script>
+
+
+<!-- some styling for the page, you can change this to what you want -->
+<style>
+
+body {
+color:#3E3E40;
+font-family:Arial,Helvetica,sans-serif;
+font-size:14pt;
+padding: 0 5em;
+width: 50em;
+text-align: justify;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="columnchart"><!--JAVASCRIPT WILL PUT THE COLUMN CHART HERE--></div>
+
+<div id="timeline" style="width:940px; height:300px;"><!--JAVASCRIPT WILL PUT THE TIMELINE HERE. NOTE THE EXPLICIT SIZE--></div>
+
+</body>
+</html>

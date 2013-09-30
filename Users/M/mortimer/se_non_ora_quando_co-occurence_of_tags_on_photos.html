@@ -203,3 +203,208 @@ var idx_cnt = 0;
 
 
 </body></html>
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8">
+<title>Se Non Ora Quando?!</title>
+    <link type="text/css" rel="stylesheet" href="colorbrewer.css"/>
+
+<link rel="stylesheet" type="text/css" href="http://cdn.ucb.org.br/Scripts/tipsy/stylesheets/tipsy.css" />
+<style>
+
+
+.background {
+  fill: #eee;
+}
+
+line {
+  stroke: #fff;
+}
+
+</style>
+<header>
+  Author: Pierre Andrews
+  Source: Flickr via <a href="https://scraperwiki.com/scrapers/se_non_ora_quando_flickr/">ScraperWiki</a>
+</header>
+
+<h1>Se non Ora Quando? Flickr tag co-occurrence on photos</h1>
+
+<aside style="margin-top:80px;">
+<p>Order: <select id="order">
+  <option value="normal">Normal</option>
+  <option value="name">by Name</option>
+  <option value="count">by Frequency</option>
+</select>
+
+<!--
+<textarea rows="20" id="csv"></textarea>
+<a id="makecsv">make csv</a>
+-->
+
+<footer>
+    author: Pierre Andrews
+</footer>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script type="text/javascript"  src="https://raw.github.com/mbostock/d3/master/d3.v2.min.js"></script>
+<script>
+
+  jQuery(function(){
+var margin = {top: 80, right: 0, bottom: 10, left: 200},
+    width = 1440,
+    height = 1440;
+
+
+var svg = d3.select("body").append("svg")
+  .attr('class','Blues')
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.json("https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=se_non_ora_quando_flickr&query=select%20*%20from%20%60tag_tag%60%20where%20count%20%3E%20100", function(tag_tag) {
+var tag_index = {};
+ var tags = [];
+ var count = [];
+var idx_cnt = 0;
+   var max = 0;
+
+    //build the collocation matrix from the lookup tables
+    var matrix = [];
+    var allTags = [];
+
+    tag_tag.forEach(function(tagpair) {
+         
+    var tag1 = (tagpair.tag1=="maniefstazione")?"manifestazione":((tagpair.tag1=="se" || tagpair.tag1=="non" || tagpair.tag1=="ora" || tagpair.tag2=="quando" )?"senonoraquando":tagpair.tag1);
+                 var tag2 = (tagpair.tag2=="maniefstazione")?"manifestazione":((tagpair.tag2=="se" || tagpair.tag2=="non" || tagpair.tag2=="ora" || tagpair.tag2=="quando" )?"senonoraquando":tagpair.tag2);
+
+
+        if(!tag_index[tag1])
+          tag_index[tag1] = idx_cnt++;
+
+        if(!tag_index[tag2])
+          tag_index[tag2] = idx_cnt++;
+
+        var i =tag_index[tag1];
+        var j = tag_index[tag2];
+        tags[i] = tag1;
+        tags[j] = tag2;
+
+        if(count[i] == undefined) count[i]=tagpair.count;
+        else count[i]+=tagpair.count;
+        if(count[j] == undefined) count[j]=tagpair.count;
+        else count[j]+=tagpair.count;
+
+        if(matrix[i] == undefined) matrix[i] = [];
+        if(matrix[j] == undefined) matrix[j] = [];
+        matrix[i][j] = {x: j, y: i, z: tagpair.count, tag1: tag1, tag2: tag2};
+        matrix[j][i] = {x: i, y: j, z: tagpair.count, tag1: tag1, tag2: tag2};
+        max = Math.max(max, tagpair.count);
+    });
+
+    var x = d3.scale.ordinal().rangeBands([0, width]),
+    z = d3.scale.linear().domain([0, max]).clamp(true),
+      quantize = d3.scale.quantile().domain([0, max]).range(d3.range(9));
+
+    console.log("done with matrix", matrix);
+    /*    jQuery('#makecsv').click(function() {
+        var csv = d3.csv.format(matrix);
+        jQuery('#csv').html(csv);
+      });*/
+
+  var n = d3.keys(tag_index).length;
+    var orders = {
+    name: d3.range(n).sort(function(a, b) { return d3.ascending(tags[a], tags[b]); }),
+    count: d3.range(n).sort(function(a, b) { return count[b] - count[a]; }),
+    normal: d3.keys(tag_index)
+    };
+    
+    x.domain(d3.keys(tag_index));
+
+    svg.append("rect")
+      .attr("class", "background")
+      .attr("width", width)
+      .attr("height", height);
+
+  var row = svg.selectAll(".row")
+      .data(matrix)
+    .enter().append("g")
+      .attr("class", "row")
+    .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
+      .each(row);
+
+  row.append("line")
+      .attr("x2", width);
+
+  row.append("text")
+      .attr("x", -6)
+      .attr("y", x.rangeBand() / 2)
+      .attr("dy", ".32em")
+      .attr("text-anchor", "end")
+    .text(function(d, i) { return tags[i]; });
+
+  var column = svg.selectAll(".column")
+      .data(matrix)
+    .enter().append("g")
+      .attr("class", "column")
+      .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+
+  column.append("line")
+      .attr("x1", -width);
+
+  column.append("text")
+      .attr("x", 6)
+      .attr("y", x.rangeBand() / 2)
+      .attr("dy", ".32em")
+      .attr("text-anchor", "start")
+      .text(function(d, i) { return tags[i] });
+
+  function row(row) {
+    if(row != undefined) {
+    var cell = d3.select(this).selectAll(".cell")
+      .data(row.filter(function(d) { return d.z }))
+      .enter().append("g")
+      .attr("transform", function(d) {  return "translate("+x(d.x)+",0)"; })
+      .append("rect")
+      .attr("class", "cell")
+      .attr("width", x.rangeBand())
+      .attr("height", x.rangeBand())
+      .style("fill-opacity", function(d) { return z(d.z); })
+      //.attr("class", function(d) { return "q" + quantize(d.z) + "-9"; })
+    //  .on("mouseover",function(){
+     //     d3.select(this).transition().attr("transform","scale(5) translate(-"+(x.rangeBand()/2)+",-"+(x.rangeBand()/2)+")")
+     //       })
+     // .on("mouseout",function(){ d3.select(this).transition().attr("transform","scale(1)") })
+      .append("svg:title")
+      .text(function(d) { return d.tag1 + "/" + d.tag2 + ": " + (d.z*100/max) + "%"; });
+    }
+
+    d3.select("#order").on("change", function() {
+        order(this.value);
+      });
+
+  function order(value) {
+    x.domain(orders[value]);
+
+    var t = svg.transition().duration(2500);
+
+    t.selectAll(".row")
+        .delay(function(d, i) { return x(i) * 4; })
+        .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
+      .selectAll(".cell")
+        .delay(function(d) { return x(d.x) * 4; })
+        .attr("x", function(d) { return x(d.x); });
+
+    t.selectAll(".column")
+        .delay(function(d, i) { return x(i) * 4; })
+        .attr("transform", function(d, i) { return "translate(" + x(i) + ") rotate(-90)"; });
+  }
+  }
+
+});
+});
+
+</script>
+
+
+</body></html>

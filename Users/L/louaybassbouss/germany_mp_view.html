@@ -28,4 +28,34 @@
             
         </div>
     </body>
+</html><html> 
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
+        <script src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+        <script>
+            jQuery.getJSON("http://api.scraperwiki.com/api/1.0/datastore/sqlite?callback=?",{format:"jsondict", name:"abgeordnetenwatch",query: "select * from swdata"},function(data){
+                var mps = jQuery("#mps");
+                for(i in data){
+                    var mp = data[i];
+                    var mp_div = jQuery("<div/>");
+                    mp_div.append("Name: "+mp.name);
+                    mp_div.append("<br/>");
+                    mp_div.append("Partei: "+mp.party);
+                    mp_div.append("<br/>");
+                    mp_div.append("Wahlkreis: "+mp.district);
+                    mp_div.append("<br/>");
+                    mp_div.append("Fragen/Antworten: "+(mp.questions||"0")+"/"+(mp.answers||"0"));
+                    mp_div.append("<br/>");
+                    mp_div.append("<img src='"+mp.photo+"' />");
+                    mps.append(mp_div);
+                    mps.append("<hr/>");             
+                } 
+            });
+        </script>
+    </head>
+    <body>
+        <div id="mps">
+            
+        </div>
+    </body>
 </html>

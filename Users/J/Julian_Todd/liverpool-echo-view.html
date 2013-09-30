@@ -1326,3 +1326,833 @@ google.setOnLoadCallback(loaddata);
 </html>
 
 
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>Google Visualization API Sample</title>
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://dev.scraperwiki.com/scrapers/html/general-chart-libraries"></script> 
+  <script type="text/javascript">
+
+// special code for changing the chart
+var olength = 100; 
+var olimit = 20000; 
+var scrapername = 'liverpool-echo-location'; 
+var chartdata = { }; 
+var warddata = { }; 
+      
+      
+function recorddata(data)
+{
+    key = data['district'].substring(0, 3) + " " + data['articledate'].substring(0, 7); 
+    if (chartdata[key] == undefined)
+         chartdata[key] = [0, 0]; 
+    chartdata[key][0]++; 
+    
+    month = data['articledate'].substring(0, 7); 
+    shortname= data['shortname']; 
+    if (warddata[shortname] == undefined)
+        warddata[shortname] = {'police':[ ]}; 
+    if (warddata[shortname][month] == undefined)
+        warddata[shortname][month] = 0; 
+    warddata[shortname][month] += 1; 
+}      
+
+function recorddataEP(data)
+{
+    shortname= data['district']; 
+    if (warddata[shortname] == undefined)
+        warddata[shortname] = {'police':[ ]}; 
+    warddata[shortname]['police'].push([data['img'], data['contact'], data['plodlink']]); 
+}     
+
+// start of mostly boilerplate code that iterates through the API and builds the chart
+google.load('visualization', '1', {packages: ['BarChart']});
+monthcs = ['2010-01', '2010-02', '2010-03', '2010-04', '2010-05', '2010-06', '2010-07']; 
+      
+function sparklines()
+{      
+    districts = [ ]; 
+    for (k in warddata)
+        districts.push(k); 
+    districts.sort(); 
+
+    whole = ""; 
+    for (i = 0; i < districts.length; i++)
+    {
+        wardm = warddata[districts[i]]; 
+        lst = ""; 
+        totalarticles = 0; 
+        lastarticles = 0; 
+        for (j = 0; j < monthcs.length; j++)
+        {
+            lastarticles = parseInt(wardm[monthcs[j]] == undefined ? '0' : wardm[monthcs[j]]); 
+            lst = lst + (lst == "" ? "" :",") + lastarticles; 
+            totalarticles += lastarticles; 
+        }
+        var img = document.createElement('img');
+        //lst = "50.3,26.5,15.9,31.7,42.3,21.2,26.5,42.3,47.6,95.2,18.5,76.5,21.2,37.0,52.9,58.2,47.6,68.8,26.5,3221,42.3"; 
+        src = "http://chart.apis.google.com/chart?cht=lc&chs=200x50&chd=t:"+lst+"&chco=336699&chls=1,1,0"; 
+        img.setAttribute('src', src); 
+        polimg = '<div style="position:absolute;font-size:500%;color:red;padding:3px;">X</div>'; 
+        for (k = 0; k < wardm['police'].length; k++)
+            polimg = polimg + ' <a href="'+wardm['police'][k][2]+'"><img src="'+ wardm['police'][k][0] + '" title="'+wardm['police'][k][1]+'"></a>'; 
+        lecholink = 'http://www.liverpoolecho.co.uk/liverpool-news/echo-districts/'+districts[i]+'-echo/'+districts[i]+'-news/'; 
+            
+            line = '<tr><td colspan="2"><b><a href="'+lecholink+'">'+districts[i]+'</a></b> Total articles:'+totalarticles+', Last month\'s: '+ lastarticles+ '</td></tr>'; 
+        line += '<tr><td width="50%">'; 
+        line += '<iframe src ="'+lecholink+'" width="100%" height="300"></iframe>'; 
+        line += '</td><td width="50%">'; 
+     
+        line += '<img src="'+src+'"> '; 
+        line += '<b>Bobbies on the beat</b>'; 
+        line += polimg; 
+        line += '</td></tr>'; 
+        whole += line; 
+            //            $('#chline').after('<iframe src ="'+lecholink+'" width="100%" height="300"></iframe>'); 
+            //        $('#chline').after('<p><img src="'+src+'"> ' + ' ' + polimg + '</p>'); 
+            //        $('#chline').after('<p> Total articles:'+totalarticles+', Last month\'s: '+ lastarticles + ' </p>'); 
+            //        $('#chline').after('<h2><a href="'+lecholink+'">'+districts[i]+'</h2>');  
+    
+    }
+    $('#chline').after('<table>' + whole + '</table>');  
+}
+      
+
+var offsetEL = 0; 
+function gotbackEL(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddata(r[i]); 
+
+    offsetEL += olength; 
+    if ((r.length == olength) && (offsetEL < olimit))
+        loaddataEL(); 
+    else
+    {
+        $("#message").html("Total records=" + (offsetEL - olength + r.length)); 
+        sparklines(); 
+        //        realcall(chartdata); // redraw each time
+    }
+}
+     
+function loaddataEL() 
+{
+    scrapername = 'liverpool-echo-location'; 
+    $("#message").html("Loading offset=" + offset); 
+    //alert(offset); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/getdata?&format=json&name="+scrapername+"&limit="+olength+"&callback=gotbackEL&offset=" + offsetEL; 
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}      
+                      
+
+var offsetEP = 0; 
+function gotbackEP(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddataEP(r[i]); 
+
+    offsetEP += olength; 
+    if ((r.length == olength) && (offsetEP < olimit))
+        loaddataEP(); 
+    else
+    {
+        $("#message").html("Total records=" + (offsetEP - olength + r.length)); 
+        //        realcall(chartdata); // redraw each time
+    }
+}
+
+function loaddataEP() 
+{
+    scrapername = 'liverpool-echo-police'; 
+    $("#messageep").html("Loading offset=" + offsetEP); 
+    //alert(offset); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/getdata?&format=json&name="+scrapername+"&limit="+olength+"&callback=gotbackEP&offset=" + offsetEP; 
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}      
+     
+function loaddata() { loaddataEP(); loaddataEL(); }
+      
+google.setOnLoadCallback(loaddata);
+
+</script>
+</head>
+<body style="font-family: Arial;border: 0 none;">
+<h2 id="message">xxx</h2><h2 id="messageEP">xxx</h2>
+<div id="chline">yyy</div>
+</body>
+</html>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>Google Visualization API Sample</title>
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://dev.scraperwiki.com/scrapers/html/general-chart-libraries"></script> 
+  <script type="text/javascript">
+
+// special code for changing the chart
+var olength = 100; 
+var olimit = 20000; 
+var scrapername = 'liverpool-echo-location'; 
+var chartdata = { }; 
+var warddata = { }; 
+      
+      
+function recorddata(data)
+{
+    key = data['district'].substring(0, 3) + " " + data['articledate'].substring(0, 7); 
+    if (chartdata[key] == undefined)
+         chartdata[key] = [0, 0]; 
+    chartdata[key][0]++; 
+    
+    month = data['articledate'].substring(0, 7); 
+    shortname= data['shortname']; 
+    if (warddata[shortname] == undefined)
+        warddata[shortname] = {'police':[ ]}; 
+    if (warddata[shortname][month] == undefined)
+        warddata[shortname][month] = 0; 
+    warddata[shortname][month] += 1; 
+}      
+
+function recorddataEP(data)
+{
+    shortname= data['district']; 
+    if (warddata[shortname] == undefined)
+        warddata[shortname] = {'police':[ ]}; 
+    warddata[shortname]['police'].push([data['img'], data['contact'], data['plodlink']]); 
+}     
+
+// start of mostly boilerplate code that iterates through the API and builds the chart
+google.load('visualization', '1', {packages: ['BarChart']});
+monthcs = ['2010-01', '2010-02', '2010-03', '2010-04', '2010-05', '2010-06', '2010-07']; 
+      
+function sparklines()
+{      
+    districts = [ ]; 
+    for (k in warddata)
+        districts.push(k); 
+    districts.sort(); 
+
+    whole = ""; 
+    for (i = 0; i < districts.length; i++)
+    {
+        wardm = warddata[districts[i]]; 
+        lst = ""; 
+        totalarticles = 0; 
+        lastarticles = 0; 
+        for (j = 0; j < monthcs.length; j++)
+        {
+            lastarticles = parseInt(wardm[monthcs[j]] == undefined ? '0' : wardm[monthcs[j]]); 
+            lst = lst + (lst == "" ? "" :",") + lastarticles; 
+            totalarticles += lastarticles; 
+        }
+        var img = document.createElement('img');
+        //lst = "50.3,26.5,15.9,31.7,42.3,21.2,26.5,42.3,47.6,95.2,18.5,76.5,21.2,37.0,52.9,58.2,47.6,68.8,26.5,3221,42.3"; 
+        src = "http://chart.apis.google.com/chart?cht=lc&chs=200x50&chd=t:"+lst+"&chco=336699&chls=1,1,0"; 
+        img.setAttribute('src', src); 
+        polimg = '<div style="position:absolute;font-size:500%;color:red;padding:3px;">X</div>'; 
+        for (k = 0; k < wardm['police'].length; k++)
+            polimg = polimg + ' <a href="'+wardm['police'][k][2]+'"><img src="'+ wardm['police'][k][0] + '" title="'+wardm['police'][k][1]+'"></a>'; 
+        lecholink = 'http://www.liverpoolecho.co.uk/liverpool-news/echo-districts/'+districts[i]+'-echo/'+districts[i]+'-news/'; 
+            
+            line = '<tr><td colspan="2"><b><a href="'+lecholink+'">'+districts[i]+'</a></b> Total articles:'+totalarticles+', Last month\'s: '+ lastarticles+ '</td></tr>'; 
+        line += '<tr><td width="50%">'; 
+        line += '<iframe src ="'+lecholink+'" width="100%" height="300"></iframe>'; 
+        line += '</td><td width="50%">'; 
+     
+        line += '<img src="'+src+'"> '; 
+        line += '<b>Bobbies on the beat</b>'; 
+        line += polimg; 
+        line += '</td></tr>'; 
+        whole += line; 
+            //            $('#chline').after('<iframe src ="'+lecholink+'" width="100%" height="300"></iframe>'); 
+            //        $('#chline').after('<p><img src="'+src+'"> ' + ' ' + polimg + '</p>'); 
+            //        $('#chline').after('<p> Total articles:'+totalarticles+', Last month\'s: '+ lastarticles + ' </p>'); 
+            //        $('#chline').after('<h2><a href="'+lecholink+'">'+districts[i]+'</h2>');  
+    
+    }
+    $('#chline').after('<table>' + whole + '</table>');  
+}
+      
+
+var offsetEL = 0; 
+function gotbackEL(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddata(r[i]); 
+
+    offsetEL += olength; 
+    if ((r.length == olength) && (offsetEL < olimit))
+        loaddataEL(); 
+    else
+    {
+        $("#message").html("Total records=" + (offsetEL - olength + r.length)); 
+        sparklines(); 
+        //        realcall(chartdata); // redraw each time
+    }
+}
+     
+function loaddataEL() 
+{
+    scrapername = 'liverpool-echo-location'; 
+    $("#message").html("Loading offset=" + offset); 
+    //alert(offset); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/getdata?&format=json&name="+scrapername+"&limit="+olength+"&callback=gotbackEL&offset=" + offsetEL; 
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}      
+                      
+
+var offsetEP = 0; 
+function gotbackEP(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddataEP(r[i]); 
+
+    offsetEP += olength; 
+    if ((r.length == olength) && (offsetEP < olimit))
+        loaddataEP(); 
+    else
+    {
+        $("#message").html("Total records=" + (offsetEP - olength + r.length)); 
+        //        realcall(chartdata); // redraw each time
+    }
+}
+
+function loaddataEP() 
+{
+    scrapername = 'liverpool-echo-police'; 
+    $("#messageep").html("Loading offset=" + offsetEP); 
+    //alert(offset); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/getdata?&format=json&name="+scrapername+"&limit="+olength+"&callback=gotbackEP&offset=" + offsetEP; 
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}      
+     
+function loaddata() { loaddataEP(); loaddataEL(); }
+      
+google.setOnLoadCallback(loaddata);
+
+</script>
+</head>
+<body style="font-family: Arial;border: 0 none;">
+<h2 id="message">xxx</h2><h2 id="messageEP">xxx</h2>
+<div id="chline">yyy</div>
+</body>
+</html>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>Google Visualization API Sample</title>
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://dev.scraperwiki.com/scrapers/html/general-chart-libraries"></script> 
+  <script type="text/javascript">
+
+// special code for changing the chart
+var olength = 100; 
+var olimit = 20000; 
+var scrapername = 'liverpool-echo-location'; 
+var chartdata = { }; 
+var warddata = { }; 
+      
+      
+function recorddata(data)
+{
+    key = data['district'].substring(0, 3) + " " + data['articledate'].substring(0, 7); 
+    if (chartdata[key] == undefined)
+         chartdata[key] = [0, 0]; 
+    chartdata[key][0]++; 
+    
+    month = data['articledate'].substring(0, 7); 
+    shortname= data['shortname']; 
+    if (warddata[shortname] == undefined)
+        warddata[shortname] = {'police':[ ]}; 
+    if (warddata[shortname][month] == undefined)
+        warddata[shortname][month] = 0; 
+    warddata[shortname][month] += 1; 
+}      
+
+function recorddataEP(data)
+{
+    shortname= data['district']; 
+    if (warddata[shortname] == undefined)
+        warddata[shortname] = {'police':[ ]}; 
+    warddata[shortname]['police'].push([data['img'], data['contact'], data['plodlink']]); 
+}     
+
+// start of mostly boilerplate code that iterates through the API and builds the chart
+google.load('visualization', '1', {packages: ['BarChart']});
+monthcs = ['2010-01', '2010-02', '2010-03', '2010-04', '2010-05', '2010-06', '2010-07']; 
+      
+function sparklines()
+{      
+    districts = [ ]; 
+    for (k in warddata)
+        districts.push(k); 
+    districts.sort(); 
+
+    whole = ""; 
+    for (i = 0; i < districts.length; i++)
+    {
+        wardm = warddata[districts[i]]; 
+        lst = ""; 
+        totalarticles = 0; 
+        lastarticles = 0; 
+        for (j = 0; j < monthcs.length; j++)
+        {
+            lastarticles = parseInt(wardm[monthcs[j]] == undefined ? '0' : wardm[monthcs[j]]); 
+            lst = lst + (lst == "" ? "" :",") + lastarticles; 
+            totalarticles += lastarticles; 
+        }
+        var img = document.createElement('img');
+        //lst = "50.3,26.5,15.9,31.7,42.3,21.2,26.5,42.3,47.6,95.2,18.5,76.5,21.2,37.0,52.9,58.2,47.6,68.8,26.5,3221,42.3"; 
+        src = "http://chart.apis.google.com/chart?cht=lc&chs=200x50&chd=t:"+lst+"&chco=336699&chls=1,1,0"; 
+        img.setAttribute('src', src); 
+        polimg = '<div style="position:absolute;font-size:500%;color:red;padding:3px;">X</div>'; 
+        for (k = 0; k < wardm['police'].length; k++)
+            polimg = polimg + ' <a href="'+wardm['police'][k][2]+'"><img src="'+ wardm['police'][k][0] + '" title="'+wardm['police'][k][1]+'"></a>'; 
+        lecholink = 'http://www.liverpoolecho.co.uk/liverpool-news/echo-districts/'+districts[i]+'-echo/'+districts[i]+'-news/'; 
+            
+            line = '<tr><td colspan="2"><b><a href="'+lecholink+'">'+districts[i]+'</a></b> Total articles:'+totalarticles+', Last month\'s: '+ lastarticles+ '</td></tr>'; 
+        line += '<tr><td width="50%">'; 
+        line += '<iframe src ="'+lecholink+'" width="100%" height="300"></iframe>'; 
+        line += '</td><td width="50%">'; 
+     
+        line += '<img src="'+src+'"> '; 
+        line += '<b>Bobbies on the beat</b>'; 
+        line += polimg; 
+        line += '</td></tr>'; 
+        whole += line; 
+            //            $('#chline').after('<iframe src ="'+lecholink+'" width="100%" height="300"></iframe>'); 
+            //        $('#chline').after('<p><img src="'+src+'"> ' + ' ' + polimg + '</p>'); 
+            //        $('#chline').after('<p> Total articles:'+totalarticles+', Last month\'s: '+ lastarticles + ' </p>'); 
+            //        $('#chline').after('<h2><a href="'+lecholink+'">'+districts[i]+'</h2>');  
+    
+    }
+    $('#chline').after('<table>' + whole + '</table>');  
+}
+      
+
+var offsetEL = 0; 
+function gotbackEL(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddata(r[i]); 
+
+    offsetEL += olength; 
+    if ((r.length == olength) && (offsetEL < olimit))
+        loaddataEL(); 
+    else
+    {
+        $("#message").html("Total records=" + (offsetEL - olength + r.length)); 
+        sparklines(); 
+        //        realcall(chartdata); // redraw each time
+    }
+}
+     
+function loaddataEL() 
+{
+    scrapername = 'liverpool-echo-location'; 
+    $("#message").html("Loading offset=" + offset); 
+    //alert(offset); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/getdata?&format=json&name="+scrapername+"&limit="+olength+"&callback=gotbackEL&offset=" + offsetEL; 
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}      
+                      
+
+var offsetEP = 0; 
+function gotbackEP(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddataEP(r[i]); 
+
+    offsetEP += olength; 
+    if ((r.length == olength) && (offsetEP < olimit))
+        loaddataEP(); 
+    else
+    {
+        $("#message").html("Total records=" + (offsetEP - olength + r.length)); 
+        //        realcall(chartdata); // redraw each time
+    }
+}
+
+function loaddataEP() 
+{
+    scrapername = 'liverpool-echo-police'; 
+    $("#messageep").html("Loading offset=" + offsetEP); 
+    //alert(offset); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/getdata?&format=json&name="+scrapername+"&limit="+olength+"&callback=gotbackEP&offset=" + offsetEP; 
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}      
+     
+function loaddata() { loaddataEP(); loaddataEL(); }
+      
+google.setOnLoadCallback(loaddata);
+
+</script>
+</head>
+<body style="font-family: Arial;border: 0 none;">
+<h2 id="message">xxx</h2><h2 id="messageEP">xxx</h2>
+<div id="chline">yyy</div>
+</body>
+</html>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>Google Visualization API Sample</title>
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://dev.scraperwiki.com/scrapers/html/general-chart-libraries"></script> 
+  <script type="text/javascript">
+
+// special code for changing the chart
+var olength = 100; 
+var olimit = 20000; 
+var scrapername = 'liverpool-echo-location'; 
+var chartdata = { }; 
+var warddata = { }; 
+      
+      
+function recorddata(data)
+{
+    key = data['district'].substring(0, 3) + " " + data['articledate'].substring(0, 7); 
+    if (chartdata[key] == undefined)
+         chartdata[key] = [0, 0]; 
+    chartdata[key][0]++; 
+    
+    month = data['articledate'].substring(0, 7); 
+    shortname= data['shortname']; 
+    if (warddata[shortname] == undefined)
+        warddata[shortname] = {'police':[ ]}; 
+    if (warddata[shortname][month] == undefined)
+        warddata[shortname][month] = 0; 
+    warddata[shortname][month] += 1; 
+}      
+
+function recorddataEP(data)
+{
+    shortname= data['district']; 
+    if (warddata[shortname] == undefined)
+        warddata[shortname] = {'police':[ ]}; 
+    warddata[shortname]['police'].push([data['img'], data['contact'], data['plodlink']]); 
+}     
+
+// start of mostly boilerplate code that iterates through the API and builds the chart
+google.load('visualization', '1', {packages: ['BarChart']});
+monthcs = ['2010-01', '2010-02', '2010-03', '2010-04', '2010-05', '2010-06', '2010-07']; 
+      
+function sparklines()
+{      
+    districts = [ ]; 
+    for (k in warddata)
+        districts.push(k); 
+    districts.sort(); 
+
+    whole = ""; 
+    for (i = 0; i < districts.length; i++)
+    {
+        wardm = warddata[districts[i]]; 
+        lst = ""; 
+        totalarticles = 0; 
+        lastarticles = 0; 
+        for (j = 0; j < monthcs.length; j++)
+        {
+            lastarticles = parseInt(wardm[monthcs[j]] == undefined ? '0' : wardm[monthcs[j]]); 
+            lst = lst + (lst == "" ? "" :",") + lastarticles; 
+            totalarticles += lastarticles; 
+        }
+        var img = document.createElement('img');
+        //lst = "50.3,26.5,15.9,31.7,42.3,21.2,26.5,42.3,47.6,95.2,18.5,76.5,21.2,37.0,52.9,58.2,47.6,68.8,26.5,3221,42.3"; 
+        src = "http://chart.apis.google.com/chart?cht=lc&chs=200x50&chd=t:"+lst+"&chco=336699&chls=1,1,0"; 
+        img.setAttribute('src', src); 
+        polimg = '<div style="position:absolute;font-size:500%;color:red;padding:3px;">X</div>'; 
+        for (k = 0; k < wardm['police'].length; k++)
+            polimg = polimg + ' <a href="'+wardm['police'][k][2]+'"><img src="'+ wardm['police'][k][0] + '" title="'+wardm['police'][k][1]+'"></a>'; 
+        lecholink = 'http://www.liverpoolecho.co.uk/liverpool-news/echo-districts/'+districts[i]+'-echo/'+districts[i]+'-news/'; 
+            
+            line = '<tr><td colspan="2"><b><a href="'+lecholink+'">'+districts[i]+'</a></b> Total articles:'+totalarticles+', Last month\'s: '+ lastarticles+ '</td></tr>'; 
+        line += '<tr><td width="50%">'; 
+        line += '<iframe src ="'+lecholink+'" width="100%" height="300"></iframe>'; 
+        line += '</td><td width="50%">'; 
+     
+        line += '<img src="'+src+'"> '; 
+        line += '<b>Bobbies on the beat</b>'; 
+        line += polimg; 
+        line += '</td></tr>'; 
+        whole += line; 
+            //            $('#chline').after('<iframe src ="'+lecholink+'" width="100%" height="300"></iframe>'); 
+            //        $('#chline').after('<p><img src="'+src+'"> ' + ' ' + polimg + '</p>'); 
+            //        $('#chline').after('<p> Total articles:'+totalarticles+', Last month\'s: '+ lastarticles + ' </p>'); 
+            //        $('#chline').after('<h2><a href="'+lecholink+'">'+districts[i]+'</h2>');  
+    
+    }
+    $('#chline').after('<table>' + whole + '</table>');  
+}
+      
+
+var offsetEL = 0; 
+function gotbackEL(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddata(r[i]); 
+
+    offsetEL += olength; 
+    if ((r.length == olength) && (offsetEL < olimit))
+        loaddataEL(); 
+    else
+    {
+        $("#message").html("Total records=" + (offsetEL - olength + r.length)); 
+        sparklines(); 
+        //        realcall(chartdata); // redraw each time
+    }
+}
+     
+function loaddataEL() 
+{
+    scrapername = 'liverpool-echo-location'; 
+    $("#message").html("Loading offset=" + offset); 
+    //alert(offset); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/getdata?&format=json&name="+scrapername+"&limit="+olength+"&callback=gotbackEL&offset=" + offsetEL; 
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}      
+                      
+
+var offsetEP = 0; 
+function gotbackEP(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddataEP(r[i]); 
+
+    offsetEP += olength; 
+    if ((r.length == olength) && (offsetEP < olimit))
+        loaddataEP(); 
+    else
+    {
+        $("#message").html("Total records=" + (offsetEP - olength + r.length)); 
+        //        realcall(chartdata); // redraw each time
+    }
+}
+
+function loaddataEP() 
+{
+    scrapername = 'liverpool-echo-police'; 
+    $("#messageep").html("Loading offset=" + offsetEP); 
+    //alert(offset); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/getdata?&format=json&name="+scrapername+"&limit="+olength+"&callback=gotbackEP&offset=" + offsetEP; 
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}      
+     
+function loaddata() { loaddataEP(); loaddataEL(); }
+      
+google.setOnLoadCallback(loaddata);
+
+</script>
+</head>
+<body style="font-family: Arial;border: 0 none;">
+<h2 id="message">xxx</h2><h2 id="messageEP">xxx</h2>
+<div id="chline">yyy</div>
+</body>
+</html>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>Google Visualization API Sample</title>
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://dev.scraperwiki.com/scrapers/html/general-chart-libraries"></script> 
+  <script type="text/javascript">
+
+// special code for changing the chart
+var olength = 100; 
+var olimit = 20000; 
+var scrapername = 'liverpool-echo-location'; 
+var chartdata = { }; 
+var warddata = { }; 
+      
+      
+function recorddata(data)
+{
+    key = data['district'].substring(0, 3) + " " + data['articledate'].substring(0, 7); 
+    if (chartdata[key] == undefined)
+         chartdata[key] = [0, 0]; 
+    chartdata[key][0]++; 
+    
+    month = data['articledate'].substring(0, 7); 
+    shortname= data['shortname']; 
+    if (warddata[shortname] == undefined)
+        warddata[shortname] = {'police':[ ]}; 
+    if (warddata[shortname][month] == undefined)
+        warddata[shortname][month] = 0; 
+    warddata[shortname][month] += 1; 
+}      
+
+function recorddataEP(data)
+{
+    shortname= data['district']; 
+    if (warddata[shortname] == undefined)
+        warddata[shortname] = {'police':[ ]}; 
+    warddata[shortname]['police'].push([data['img'], data['contact'], data['plodlink']]); 
+}     
+
+// start of mostly boilerplate code that iterates through the API and builds the chart
+google.load('visualization', '1', {packages: ['BarChart']});
+monthcs = ['2010-01', '2010-02', '2010-03', '2010-04', '2010-05', '2010-06', '2010-07']; 
+      
+function sparklines()
+{      
+    districts = [ ]; 
+    for (k in warddata)
+        districts.push(k); 
+    districts.sort(); 
+
+    whole = ""; 
+    for (i = 0; i < districts.length; i++)
+    {
+        wardm = warddata[districts[i]]; 
+        lst = ""; 
+        totalarticles = 0; 
+        lastarticles = 0; 
+        for (j = 0; j < monthcs.length; j++)
+        {
+            lastarticles = parseInt(wardm[monthcs[j]] == undefined ? '0' : wardm[monthcs[j]]); 
+            lst = lst + (lst == "" ? "" :",") + lastarticles; 
+            totalarticles += lastarticles; 
+        }
+        var img = document.createElement('img');
+        //lst = "50.3,26.5,15.9,31.7,42.3,21.2,26.5,42.3,47.6,95.2,18.5,76.5,21.2,37.0,52.9,58.2,47.6,68.8,26.5,3221,42.3"; 
+        src = "http://chart.apis.google.com/chart?cht=lc&chs=200x50&chd=t:"+lst+"&chco=336699&chls=1,1,0"; 
+        img.setAttribute('src', src); 
+        polimg = '<div style="position:absolute;font-size:500%;color:red;padding:3px;">X</div>'; 
+        for (k = 0; k < wardm['police'].length; k++)
+            polimg = polimg + ' <a href="'+wardm['police'][k][2]+'"><img src="'+ wardm['police'][k][0] + '" title="'+wardm['police'][k][1]+'"></a>'; 
+        lecholink = 'http://www.liverpoolecho.co.uk/liverpool-news/echo-districts/'+districts[i]+'-echo/'+districts[i]+'-news/'; 
+            
+            line = '<tr><td colspan="2"><b><a href="'+lecholink+'">'+districts[i]+'</a></b> Total articles:'+totalarticles+', Last month\'s: '+ lastarticles+ '</td></tr>'; 
+        line += '<tr><td width="50%">'; 
+        line += '<iframe src ="'+lecholink+'" width="100%" height="300"></iframe>'; 
+        line += '</td><td width="50%">'; 
+     
+        line += '<img src="'+src+'"> '; 
+        line += '<b>Bobbies on the beat</b>'; 
+        line += polimg; 
+        line += '</td></tr>'; 
+        whole += line; 
+            //            $('#chline').after('<iframe src ="'+lecholink+'" width="100%" height="300"></iframe>'); 
+            //        $('#chline').after('<p><img src="'+src+'"> ' + ' ' + polimg + '</p>'); 
+            //        $('#chline').after('<p> Total articles:'+totalarticles+', Last month\'s: '+ lastarticles + ' </p>'); 
+            //        $('#chline').after('<h2><a href="'+lecholink+'">'+districts[i]+'</h2>');  
+    
+    }
+    $('#chline').after('<table>' + whole + '</table>');  
+}
+      
+
+var offsetEL = 0; 
+function gotbackEL(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddata(r[i]); 
+
+    offsetEL += olength; 
+    if ((r.length == olength) && (offsetEL < olimit))
+        loaddataEL(); 
+    else
+    {
+        $("#message").html("Total records=" + (offsetEL - olength + r.length)); 
+        sparklines(); 
+        //        realcall(chartdata); // redraw each time
+    }
+}
+     
+function loaddataEL() 
+{
+    scrapername = 'liverpool-echo-location'; 
+    $("#message").html("Loading offset=" + offset); 
+    //alert(offset); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/getdata?&format=json&name="+scrapername+"&limit="+olength+"&callback=gotbackEL&offset=" + offsetEL; 
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}      
+                      
+
+var offsetEP = 0; 
+function gotbackEP(r) 
+{
+    for (i = 0; i < r.length; i++)
+        recorddataEP(r[i]); 
+
+    offsetEP += olength; 
+    if ((r.length == olength) && (offsetEP < olimit))
+        loaddataEP(); 
+    else
+    {
+        $("#message").html("Total records=" + (offsetEP - olength + r.length)); 
+        //        realcall(chartdata); // redraw each time
+    }
+}
+
+function loaddataEP() 
+{
+    scrapername = 'liverpool-echo-police'; 
+    $("#messageep").html("Loading offset=" + offsetEP); 
+    //alert(offset); 
+    var s = document.createElement('script');
+    url = "http://api.scraperwiki.com/api/1.0/datastore/getdata?&format=json&name="+scrapername+"&limit="+olength+"&callback=gotbackEP&offset=" + offsetEP; 
+    s.setAttribute('src', url);
+    s.setAttribute('type', 'text/javascript');
+    document.getElementsByTagName('head')[0].appendChild(s);
+}      
+     
+function loaddata() { loaddataEP(); loaddataEL(); }
+      
+google.setOnLoadCallback(loaddata);
+
+</script>
+</head>
+<body style="font-family: Arial;border: 0 none;">
+<h2 id="message">xxx</h2><h2 id="messageEP">xxx</h2>
+<div id="chline">yyy</div>
+</body>
+</html>
+
+

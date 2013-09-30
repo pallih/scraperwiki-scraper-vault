@@ -93,3 +93,98 @@
     </body>
 <html>
 
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Discursos CFK</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            $(function(){
+                retrieveDate();
+
+                $('#from').on('change',function(){
+                    retrieveDiscursos($(this).val());
+                });
+
+            });            
+
+            var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";  
+            
+            function retrieveDate(){     
+                var l = $('#loader');     
+                l.show();    
+                $.ajax({
+                    url: apiurl, 
+                    dataType: "jsonp", 
+                    data:{
+                        name: "discursos_cfk", 
+                        query: "select distinct(date) from discurso", 
+                        format: "jsondict"
+                    }, 
+                    success: function(data){
+                        var years = {},y = null, options = [];
+                            
+                        $(data).each(function(i,e){
+                            y = e.date.split('-')[0];
+                            if (years[y])
+                                years[y] += 1; 
+                            else
+                                years[y] = 1;
+                         
+                        });
+                        
+                        $.each( years, function(i, e){
+                            options.push('<option value="'+i+'">'+i+' ('+e+')</option>');
+                        });
+
+                        $('#from').append(options.join(''));
+                        l.hide();
+                    }
+                }); 
+            
+            }
+
+            function retrieveDiscursos(from){     
+                var l = $('#loader');     
+                l.show();      
+                $.ajax({
+                    url: apiurl, 
+                    dataType: "html", 
+                    data:{
+                        name: "discursos_cfk", 
+                        query: "select date,name,link,total from discurso where date LIKE '"+from+"%' limit 20", 
+                        format: "htmltable"
+                    }, 
+                    success: function(data){
+                        $('#inmigrantes').html(data);
+                        l.hide();        
+                    }
+                });
+            }
+
+        </script>
+    </head>
+    <body>
+        <div id="selector">
+            Año:
+            <select id="from">
+                <option>Elige un año</option>
+            </select>
+            <span id="loader" style="display:none;">cargando...</span>
+        </div>
+        <br/>
+        <br/>
+        <div id="inmigrantes">
+        </div>
+    </body>
+<html>
+

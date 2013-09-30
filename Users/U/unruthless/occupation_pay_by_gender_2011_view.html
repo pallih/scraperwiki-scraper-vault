@@ -32,3 +32,37 @@
     </body>
 <html>
 
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Occupation Pay By Gender</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+            var map;
+            $(function(){
+
+                var apiurl = "https://api.scraperwiki.com/api/1.0/datastore/sqlite";
+                var srcname = "occ_pay_by_gender"; 
+                var sqlselect = "select * from occ_pay_by_gender limit 10"; 
+                $.ajax({
+                    url: apiurl, 
+                    dataType: "jsonp", 
+                    data:{
+                        name: srcname, 
+                        query: sqlselect, 
+                        format: "jsonlist"
+                    }, 
+                    success: function(data){
+                        alert(data);
+                    }
+                }); 
+            });
+        </script>
+    </head>
+    <body>
+        <div id="content"></div>
+    </body>
+<html>
+

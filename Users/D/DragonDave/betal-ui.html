@@ -293,3 +293,298 @@ we can consider placing the data into the same table or distributed tables
 
 </body>
 </html>
+<html>
+<head>
+<script src="/media/js/jquery-1.5.2.js"></script>
+<script src="/media/js/json-min.js"></script>
+<script>
+
+var apiname = "betal-populate"; // contains raw
+var apiattach = "betal-override;betal-parser"; // override; output
+var apikey = 'b1757511-ba46-4f7b-9e7e-a88631b54113'; 
+    
+function refreshmastertable()
+{
+    //var mqselect = ["raw.link as link", "coalesce(override.type, raw.type) as ctype", 
+    //                "parsearg", "length(raw.html) as htmllength", 
+    //                "output.err as err", "length(coalesce(output.data,'')) as parsedlength"]; 
+    var mqselect = ["raw.link as link", "raw.type as ctype", 
+                    "parsearg", "length(raw.html) as htmllength", 
+                    "output.err as err", "length(coalesce(output.data,'')) as parsedlength"]; 
+    mquery = [ "select ", mqselect.join(", ") ]; 
+    mquery.push(" from raw"); 
+    mquery.push(" left join output on output.link=raw.link"); 
+    mquery.push(" left join override on override.link=raw.link"); 
+    mquery.push(" where 1=1"); 
+    var ltypes = $("select#types").val(); 
+    if (ltypes.length != 0) 
+        mquery.push(" AND ctype='", ltypes, "'");  
+    var lfilter = $("select#filter").val(); 
+    if (lfilter == "errors")
+        mquery.push(" AND err is not null"); 
+    else if (lfilter == "parsed")
+        mquery.push(" AND parsedlength != 0"); 
+    var llimit = $("select#limit").val(); 
+    mquery.push(" limit ", llimit); 
+
+    var betaldownload = "https://views.scraperwiki.com/run/betal-download/?apikey=e4474811-5285-4e97-a312-08165f6306c9"; 
+    $("a#download").attr("href", betaldownload+"&type="+ltypes);
+    $("a#download").text("download-csv type("+ltypes+")"); 
+
+    var qdata = { name:apiname, apikey:apikey, attach:apiattach, format:"jsondict", query:mquery.join("") }; 
+    $("table#mastertable").html("<tr><th>Loading...</th></tr>"); 
+    $.ajax({data:qdata, success: function(tdata)
+    {
+        $("table#mastertable").empty(); 
+        $("table#mastertable").append($('<tr><th>#</th><th>link</th><th>type</th><th>parsearg</th><th>bytes</th><th>parsed</th><th>errors</th></tr>')); 
+        for (var i = 0; i < tdata.length; i++)
+        {
+            var row = tdata[i]; 
+            var trl = [ '<tr><td>', (i+1), '</td>' ]; 
+            trl.push('<td class="link"><a href="', row['link'], '">', row['link'], '</a></td>'); 
+            trl.push('<td class="type">', row['ctype'], '</td>'); 
+            trl.push('<td class="parsearg">', row['parsearg'], '</td>'); 
+            trl.push('<td class="bytes">', row['htmllength'], '</td>'); 
+            trl.push('<td class="parsedlength">', row['parsedlength'], '</td>'); 
+            trl.push('<td class="parsererror">', row['err'], '</td>'); 
+            trl.push('</tr>'); 
+            $("table#mastertable").append($(trl.join(""))); 
+        }
+
+        $("table#mastertable td.link a").click(function() 
+        {
+            $("table#mastertable td.selected").removeClass("selected"); 
+            $("table#mastertable tr.rselected").removeClass("rselected"); 
+            $(this).parents("tr").addClass("rselected"); 
+            $(this).addClass("selected"); 
+            $("div#righthalf").html('<iframe src="'+$(this).text()+'"></iframe>'); 
+            return false; 
+        }); 
+
+        $("table#mastertable td.bytes").click(function() 
+        {
+            $("table#mastertable td.selected").removeClass("selected"); 
+            $("table#mastertable tr.rselected").removeClass("rselected"); 
+            $(this).parents("tr").addClass("rselected"); 
+            $(this).addClass("selected"); 
+            var link = $(this).parents("tr").find("td.link").text(); 
+            $("div#righthalf").html('<pre>loading... '+link+'</pre>'); 
+            var hquery = "select html from raw where link='"+link+"' limit 1"; 
+            $.ajax({data:{name:apiname, apikey:apikey, format:"jsonlist", query:hquery}, success: function(tdata)
+            {
+                $("div#righthalf pre").html(tdata.data[0][0].replace(/</g, "&lt;")); 
+                    // or do by contents
+                //$("div#righthalf").html('<iframe></iframe>'); 
+                //$('div#righthalf iframe').contents().find('html').html(tdata.data[0][0].replace(/<script/g, "&lt;script")); 
+            }}); 
+        }); 
+
+        $("table#mastertable td.parsedlength").click(function() 
+        {
+            $("table#mastertable td.selected").removeClass("selected"); 
+            $("table#mastertable tr.rselected").removeClass("rselected"); 
+            $(this).parents("tr").addClass("rselected"); 
+            $(this).addClass("selected"); 
+            var link = $(this).parents("tr").find("td.link").text(); 
+            $("div#righthalf").html('<b>loading... data for '+link+'</b>'); 
+            var hquery = "select data from output where link='"+link+"' limit 1"; 
+            $.ajax({data:{name:apiname, apikey:apikey, attach:apiattach, format:"jsonlist", query:hquery}, success: function(tdata)
+            {
+                console.log(tdata); 
+                if (tdata.data.length == 0)
+                {
+                    $("div#righthalf").html("--nothing--"); 
+                    return; 
+                }
+                console.log(tdata.data[0][0]); 
+                var jdata = $.evalJSON(tdata.data[0][0]); 
+                console.log(jdata); 
+                $("div#righthalf").empty(); 
+                for (var j = 0; j < jdata.length; j++)
+                {
+                    var lilist = [ '<table class="parsedtable">' ]; 
+                    for (var k in jdata[j])
+                    {
+                        var v = jdata[j][k]; 
+                        var tv = typeof(v); 
+                        lilist.push('<tr><th>', k, '</th><td>', tv, '</td>'); 
+                        lilist.push('<td class="value">')
+                        lilist.push('<div class="KEY_'+k+'">'); 
+                        if (k == 'attachment')
+                            lilist.push('<a href="', v, '" target="_blank">', v, '</a>'); 
+                        else if (tv == "string")
+                            lilist.push(v.replace(/</g, "&lt;")); 
+                        else if (tv == "object")
+                            lilist.push($.toJSON(v)); 
+                        else
+                            lilist.push(v); 
+                        lilist.push("</div>"); 
+                        lilist.push("</td></tr>"); 
+                    }
+                    lilist.push("</table>"); 
+                    $("div#righthalf").append(lilist.join("")); 
+                }
+            }}); 
+        }); 
+    }}); 
+}
+
+$(window).ready(function()
+{
+    $.ajaxSetup({type:"GET", dataType:"jsonp", url:'https://api.scraperwiki.com/api/1.0/datastore/sqlite', 
+                 error:function(jq, status) { alert(status); }});
+
+    //var ltquery = ["raw.type as type", "count(*) as N_pages", 
+    //               "sum(output.data is not null) as N_parsed", "sum(output.err is not null) as N_err"]; 
+    //var ftquery = " from raw left join override on override.link=raw.link left join output on output.link=raw.link"; 
+    
+    var ltquery = ["raw.type as type", "-1 as N_pages", "-1 as N_parsed", "-1 as N_err"];
+    var ftquery = " from raw";
+    var tquery = "select "+ltquery.join(", ")+ftquery+" group by type"; 
+
+    $.ajax({data:{name:apiname, apikey:apikey, format:"jsondict", query:tquery, attach:apiattach }, success: function(tdata)
+    {
+        for (var i = 0; i < tdata.length; i++)
+            $("select#types").append($('<option value="'+tdata[i]['type']+'">'+tdata[i]['type']+'</option>')); 
+
+        $('table#overviewtable').html("<tr><th>type</th><th># pages</th><th># parsed</th><th># errors</th></tr>"); 
+        var totals = { N_pages:0, N_parsed:0, N_err:0 }; 
+        for (var i = 0; i < tdata.length; i++)
+        {
+            var lrow = ['<tr><td class="type">', tdata[i]['type'], '</td><td>', tdata[i]['N_pages'], '</td>']; 
+            lrow.push('<td class="parsed">', tdata[i]['N_parsed'], '</td><td class="errors">', tdata[i]['N_err'], '</td></tr>'); 
+            totals["N_pages"] += tdata[i]['N_pages']; 
+            totals["N_parsed"] += tdata[i]['N_parsed']; 
+            totals["N_err"] += tdata[i]['N_err']; 
+            $('table#overviewtable').append($(lrow.join(""))); 
+        }
+        var tlrow = ['<tr class="total"><td class="type">total</td><td>', totals['N_pages'], '</td>']; 
+        tlrow.push('<td>', totals['N_parsed'], '</td><td>', totals['N_err'], '</td></tr>'); 
+        $('table#overviewtable').append($(tlrow.join(""))); 
+        $('table#overviewtable td').click(function() 
+        { 
+            var stype = $(this).parents("tr").find("td.type").text(); 
+            var scoltype = $(this).attr('class'); 
+            $("select#types").val(stype != 'total' ? stype : ''); 
+            $("select#filter").val(((scoltype == 'parsed') || (scoltype == 'errors')) ? scoltype : ''); 
+            $("input#go").click(); 
+        }); 
+    }}); 
+
+    $("input#go").click(refreshmastertable); 
+    $("select#limit").change(refreshmastertable); 
+    $("select#types").change(refreshmastertable); 
+    $("select#filter").change(refreshmastertable); 
+    $("input#go").click(); 
+}); 
+
+</script>
+<style>
+
+#lefthalf { width:49%; height:500px; float:left; }
+#lefthalfupper { overflow:auto; height:200px }
+#lefthalflower { overflow:auto; height:300px }
+#righthalf { border: thin blue solid; width:49%; margin-left:49%; height:500px; overflow:auto }
+#righthalf iframe { width:100%; height:100% }
+#righthalf pre { height:100%; }
+
+table#overviewtable { border-collapse: collapse; width: 100%; margin-bottom:10px;  }
+table#overviewtable td { border: thin black solid; background-color:#ddf } 
+table#overviewtable th { border: thin black solid; background-color:#bbf }
+table#overviewtable td { color: blue; cursor: pointer }
+table#overviewtable td:hover { text-decoration: underline }
+table#overviewtable tr.total td { background-color:#ccf } 
+
+table#mastertable { border-collapse: collapse }
+table#mastertable td { border: thin black solid; background-color:#def }
+table#mastertable th { border: thin black solid; background-color:#bdf }
+table#mastertable td.link { font-size:70%; color: blue; cursor: pointer }
+table#mastertable td.link:hover { text-decoration: underline }
+table#mastertable td.bytes { color: #00a; cursor: pointer }
+table#mastertable td.bytes:hover { text-decoration: underline }
+table#mastertable td.parsedlength { color: #00a; cursor: pointer }
+table#mastertable td.parsedlength:hover { text-decoration: underline }
+
+table#mastertable tr.rselected td { background-color: #ff7 }
+table#mastertable tr.rselected td.selected { border: 2px red solid }
+
+table.parsedtable td, table.parsedtable th { border: thin black solid }
+table.parsedtable td.value { white-space: pre-line; font-family: "courier new", courier, monospace; font-size: 10px}
+table.parsedtable { border-collapse: collapse; padding-bottom: 10px }
+
+a#download { background-color:#ccc; font-size: 60% }
+
+div.KEY_html { height: 40px; overflow-y: auto; overflow-x: hidden; direction:ltr; color:blue}
+div.KEY_attachment { color:blue }
+div.KEY_markdown { max-height: 200px; overflow-y: auto; overflow-x: hidden; direction:ltr; color:#008 }
+div.KEY_rawmarkdown { max-height: 100px; overflow-y: auto; overflow-x: hidden; direction:ltr; color:#008 }
+div.KEY_rawhtml { max-height: 40px; overflow-y: auto; overflow-x: hidden; direction:ltr; color:blue }
+
+
+</style>
+</head>
+
+<body>
+<h2>Betal-UI 
+  <label style="font-size:70%">limit</label>
+  <select id="limit"><option value="100">100</option><option value="10">10</option><option value="5000">5000</option></select>
+  <select id="types"><option value="">--all--</option></select>
+  <select id="filter"><option value="">.</option><option value="errors">errors</option><option value="parsed">parsed</option></select>
+  <input type="button" id="go" value="Go" />
+  <a id="download" href="">download-csv</a>
+</h2>
+
+<div id="lefthalf">
+  <div id="lefthalfupper">
+    <table id="overviewtable"></table>
+  </div>
+  <div id="lefthalflower">
+    <table id="mastertable"></table>
+  </div>
+</div>
+<div id="righthalf">
+</div>
+
+<p><b>Instructions:</b>
+Interact with the master table of all the source pages by links, 
+their downloaded html text, their types/categories 
+(which determins which <a href="https://scraperwiki.com/scrapers/betal-parser/edit/#">parser</a> 
+is invoked), and the parsed data as well as any errors thrown up.
+Click on the cell in the <b>link</b> column to preview 
+the original page, the <b>bytes</b> column to preview the raw html we have cached, 
+or the <b>parsed</b> column to preview the output values in the right hand panel.
+Use the drop-down selectors to filter the table according to type and errors.
+</p>
+
+<p>The primary table of links (into which everything else will be fed and is joined against) 
+is <a href="https://scraperwiki.com/scrapers/betal-populate/">betal-populate</a>.  
+The link is the key, although if a page is hidden through separate redirects etc, this link 
+could contain further instructions for how to follow these links onwards from a root link 
+after a separating character.  
+Plan is to hack and repeatedly rerun the 
+<a href="https://scraperwiki.com/scrapers/betal-parser/edit/#">betal-parser</a>
+and preview the coverage of results here.  
+This interface will be able to save some filter values into a variable so that 
+betal-parser doesn't apply its parsing over the whole set of pages when it is run.
+When the type/category is incorrect it will be rewritably by
+<a href="https://scraperwiki.com/views/betal-override/">betal-override</a>.  
+This database also contains the <b>parsearg</b> value that is also passed into the 
+respective parser and will give the capability for entirely 
+human encoding the data from a page in the last resort.
+Finally the master table interface may be able to collapse and group large 
+sets of unparsed and parsed pages so we can see how much is left to do.
+</p>
+
+<p><b>Data output format</b>: 
+Currently this goes into a json encoded column in <a href="https://scraperwiki.com/scrapers/betal-parser/">betal-parser</a>. 
+This means it can be previewed as a lookup table in this interface when you click on a 
+number in the parsed column.  
+Once the structures of the different data types become stable and possibly normallized, 
+we can consider placing the data into the same table or distributed tables 
+(one for each type) from which CSV download is straightforward.
+</p>
+
+<p>For DRAGON: Aim for parsing the speeches fully and being able to deliver a CSV of some sort for them.</p>
+
+</body>
+</html>

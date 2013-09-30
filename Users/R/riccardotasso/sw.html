@@ -177,3 +177,182 @@
         <div id="map_canvas"></div>
     </body>
 <html>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Italian Strikes</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta charset="UTF-8">
+        <style type="text/css">
+            html, body, #map_canvas {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        </style>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript">
+
+            function sparqlQuery(query, baseURL) {
+                var params={
+                    "default-graph": "", "should-sponge": "soft", "query": query,
+                    "debug": "on", "timeout": "", "format": "application/json",
+                    "save": "display", "fname": ""
+                };
+                
+                var querypart="";
+                for(var k in params) {
+                    querypart+=k+"="+encodeURIComponent(params[k])+"&";
+                }
+                var queryURL=baseURL + '?' + querypart;
+                if (window.XMLHttpRequest) {
+                  xmlhttp=new XMLHttpRequest();
+              }
+              else {
+                  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+              }
+              xmlhttp.open("GET",queryURL,true);
+              xmlhttp.send();
+              return JSON.parse(xmlhttp.responseText);
+            }
+
+            var map;
+            $(function(){
+                var myOptions = {
+                    zoom: 10,
+                    center: new google.maps.LatLng(0, 0),
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+                map = new google.maps.Map(document.getElementById('map_canvas'), myOptions);
+                $.ajax({
+                    url: 'https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=scioperi_it&query=SELECT%20*%20FROM%20%60swdata%60%20WHERE%20lat%20is%20not%20null%20ORDER%20BY%20id%20DESC%20limit%20100',
+                    dataType: 'json',
+                    success: function(data){ drop_markers(data); }
+                });
+
+                function drop_markers(data){
+                    var bounds = new google.maps.LatLngBounds();
+                    var markers = new Array();
+
+                    var myFn = function addInfoWindow(marker, message) {
+                                    var info = message;
+                        
+                                    var infoWindow = new google.maps.InfoWindow({
+                                        content: info
+                                    });
+                        
+                                    google.maps.event.addListener(marker, 'click', function () {
+                                        infoWindow.open(map, marker);
+                                    });
+                               }                    
+
+                    for(var i = 0; i < data.length; i++){
+                        
+                        var infowindow = new google.maps.InfoWindow({
+                            content: data[i].Azienda
+                        });
+
+                        myLatLng = new google.maps.LatLng(data[i].lat, data[i].long);
+                        markerOptions = {position: myLatLng, map: map, title: data[i]['Azienda']};
+                        marker = new google.maps.Marker(markerOptions);
+                        
+                        var currentDate = new Date();
+                        var day = currentDate.getDate();
+                        if(day < 10) day = "0" + day;
+                        var month = currentDate.getMonth() + 1;
+                        if(month < 10) month = "0" + month;
+                        var year = currentDate.getFullYear();
+                        currentDate = year + "-" + month + "-" + day;
+
+                        if('Data sciopero' in data[i] && data[i]['Data sciopero'] != null) {
+                            var scioperoDate = data[i]['Data sciopero'];
+                        
+                            if(scioperoDate == currentDate) {
+                                // red is default
+                            } else if(scioperoDate < currentDate) {
+                                marker.setIcon('http://maps.google.com/mapfiles/ms/icons/green-dot.png');
+                            } else if(scioperoDate > currentDate) {
+                                marker.setIcon('http://maps.google.com/mapfiles/ms/icons/yellow-dot.png');
+                            }
+                        } else if('Data sciopero al' in data[i] && 'Data sciopero dal' in data[i]) {
+                            var scioperoStartDate = data[i]['Data sciopero dal'];
+                            var scioperoEndDate = data[i]['Data sciopero al'];
+
+                            if(scioperoStartDate <= currentDate && currentDate <= scioperoEndDate) {
+                                // red is default
+                            } else if (currentDate < scioperoStartDate) {
+                                marker.setIcon('http://maps.google.com/mapfiles/ms/icons/yellow-dot.png');
+                            } else if (currentDate > scioperoEndDate) {
+                                marker.setIcon('http://maps.google.com/mapfiles/ms/icons/green-dot.png');
+                            }
+                            
+                        }
+
+                        var message = "<h3>Sciopero</h3>";
+                        for(k in data[i]) {
+
+                            if(
+                                data[i][k] == null ||
+                                k == 'long' ||
+                                k == 'lat'
+                                )
+                                continue;
+
+                            var val = data[i][k].toString();
+                            
+                            if(k == 'id') {
+                                k = 'Fonte';
+                                val = '<a target="_blank" href="http://www.commissionegaranziasciopero.it/dettaglioSciopero?id=' + val + '&tipo=tr">' + val + '</a>';
+                            }
+                            
+                            if(k == 'interventi_pdf') {
+                                var txt = null;
+                                if('Interventi' in data[i]) {
+                                    txt = data[i]['Interventi'];
+                                    data[i]['Interventi'] = null; // avoid repetition
+                                } else {
+                                    txt = "Documento";
+                                }
+ 
+
+                                k = 'Intervento';
+                                val = '<a target="_blank" href="' + val + '">' + txt + '</a>';
+                            }
+
+                            if( k == 'Intervento' &&
+                                'interventi_pdf' in data[i] &&
+                                data[i]['interventi_pdf'] != null
+                                ) {
+                                val = '<a target="_blank" href="' + data[i]['interventi_pdf'] + '">' + val + '</a>';
+                            }
+
+                            //if(k == "Azienda") {
+                            //    var query = 'SELECT ?hp WHERE { ?c a <http://dbpedia.org/ontology/Company> . ?c <http://xmlns.com/foaf/0.1/name> ?name . ?c <http://xmlns.com/foaf/0.1/homepage> ?hp . FILTER regex(?name, "' + data[i]["Azienda"] + '", "i") }';
+
+                            //    var data=sparqlQuery(query, "/sparql/");
+                            //    var xxx = 5;
+                            //}
+                            
+                            message += "<b>" + k + "</b>: " + val + "<br>";
+                        }
+                        google.maps.event.addListener(marker, 'click', myFn(marker, message));
+
+                        bounds.extend(myLatLng);
+                        map.fitBounds(bounds);
+                    }
+
+                    //for(var i = 0; i < markers.length; i++){
+                        
+                    //}
+
+                }
+
+            });
+        </script>
+
+    </head>
+    <body>
+        <div id="map_canvas"></div>
+    </body>
+<html>

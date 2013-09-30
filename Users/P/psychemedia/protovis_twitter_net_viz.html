@@ -230,3 +230,234 @@ $(document).ready(function() {
 <div><div id="netviz"></div><div id="tweets"></div></div>
 
 </body></html> 
+<html><head><title>Graphing Connections Between Recent Twitterers (Protovis Demo)</title> 
+<style type="text/css">
+
+#netviz {
+float:left;
+width:400px
+}
+#tweets {
+float:right;
+width:150px;
+}
+</style>
+<script type="text/javascript" src="../js/jquery-1.5.1.min.js"></script> 
+<script type="text/javascript" src="../protovis-3.2/protovis-r3.2.js"></script> 
+</head> 
+<body> 
+<div id="center"> 
+<div><h1 id="setup"></h1></div> 
+<div id="fig"> 
+ 
+<script type="text/javascript"> 
+var vis;
+var followers={};
+var q
+var typ
+ 
+var debug=false;
+//---
+//http://jquery-howto.blogspot.com/2009/09/get-url-parameters-values-with-jquery.html
+$.extend({
+  getUrlVars: function(){
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+      hash = hashes[i].split('=');
+      vars.push(hash[0]);
+      vars[hash[0]] = hash[1];
+    }
+    return vars;
+  },
+  getUrlVar: function(name){
+    return $.getUrlVars()[name];
+  }
+});
+//---
+ 
+//--
+// I got the trick for using Protovis with JQuery/AJAX calls from
+// James Crook http://stackoverflow.com/users/507474/james-crook
+// in answer to this question I posted on StackOverflow
+// http://stackoverflow.com/questions/5289899/using-protovis-with-dynamically-loaded-data-via-jquery
+function createLayout(){
+    var w = document.body.clientWidth,
+    h = document.body.clientHeight,
+    colors = pv.Colors.category19();
+    
+    w=w-200
+ 
+    vis = new pv.Panel().canvas("netviz")
+      .width(w)
+      .height(h)
+      .top(50)
+      .fillStyle("white")
+      .event("mousedown", pv.Behavior.pan())
+      .event("mousewheel", pv.Behavior.zoom());
+ 
+    var force = vis.add(pv.Layout.Force)
+      .nodes(followers.nodes)
+      .links(followers.links)
+      .springConstant(0.05)
+      .chargeConstant(-80)
+      .springLength(200);
+ 
+    force.link.add(pv.Line);
+    force.node.add(pv.Dot)
+      .size(function(d){ return 2*(d.linkDegree + 4) * Math.pow(this.scale, -1.5);})
+      .fillStyle(function(d){ return d.fix ? "brown" : colors(d.group);})
+      .strokeStyle(function(){ return this.fillStyle().darker();})
+      .lineWidth(1)
+      .title(function(d){return d.nodeName;})
+      .add(pv.Label).textAlign("center").text(function(n) {return n.nodeName})
+      .event("mousedown", pv.Behavior.drag())
+      .event("drag", force);
+      //comment out the next line to remove labels
+      //.anchor("center").add(pv.Label).textAlign("center").text(function(n) n.nodeName)
+  vis.render();
+}
+ 
+function getNet(){
+  url="http://search.twitter.com/search.json?"+typ+"="+q+"&rpp=100&callback=?"
+  //q= or tag=
+  
+  $.getJSON(url,function(json){
+    users=[]
+    uniqusers={}
+    for (var u in json['results']) {
+      uniqusers[json['results'][u]['from_user']]=1
+    }
+    for (var uu in uniqusers)
+      if (uu !='') {
+        $('#tweets').append("<div><a href='http://twitter.com/"+uu+"'>"+uu+"</a></div>")
+        users.push(uu.toLowerCase())
+        if (debug) console.log(uu.toLowerCase()) 
+      }
+      
+    getConnections(users)
+  })
+}
+//url="http://pipes.yahoo.com/pipes/pipe.run?_id=f21fb52dc7deb31f5fffc400c780c38d&_render=json&distance=1&location="+q+"&_callback=?"
+function getMap(){
+  url="http://pipes.yahoo.com/pipes/pipe.run?_id=f21fb52dc7deb31f5fffc400c780c38d&_render=json&distance="+dist+"&location="+loc+"&q="+q+"&_callback=?"
+  //q= or tag=
+  
+  $.getJSON(url,function(json){
+    console.log(json)
+    users=[]
+    uniqusers={}
+    for (var u in json['value']["items"]) {
+      uniqusers[json['value']['items'][u]['from_user']]=1
+    }
+    for (var uu in uniqusers)
+      if (uu !='') {
+        $('#tweets').append("<div><a href='http://twitter.com/"+uu+"'>"+uu+"</a></div>")
+        users.push(uu.toLowerCase())
+        if (debug) console.log(uu.toLowerCase()) 
+      }
+    //users contains a list of Twitter user names that will be used as basis for plotting social network
+    getConnections(users)
+  })
+}
+ 
+function getConnections(users){
+  followers={} 
+ 
+  if (users.length>50)
+    users=users.slice(0,49)
+ 
+  str=''
+  for (var uic=0; uic<users.length; uic++)
+    str+='http://twitter.com/'+users[uic]+','
+  url='http://socialgraph.apis.google.com/lookup?q='+str+'&edo=1&callback=?';;
+  
+  $.getJSON(url,function(json){
+    graph={}
+    graph['nodes']=[]
+    userLoc={}
+    
+    for (var uic=0; uic<users.length; uic++){
+      if (users[uic] !='') {
+        graph['nodes'].push({nodeName:users[uic].toLowerCase()})
+        userLoc[users[uic].toLowerCase()]=uic
+        if (debug) console.log(users[uic].toLowerCase(),uic)
+     }
+    }
+    graph['links']=[]
+    for (u in json['nodes']) {
+      name=u.replace('http://twitter.com/','')
+      for (var i in json['nodes'][u]['nodes_referenced']){
+        si=i.replace('http://twitter.com/','')
+        if ( si in userLoc ){
+          if (json['nodes'][u]['nodes_referenced'][i]['types'][0]=='contact') {
+            graph['links'].push({source:userLoc[name], target:userLoc[si]})
+            if (debug) console.log(name,userLoc[name],userLoc[si])
+          }
+        }
+      }
+    }
+    followers={nodes:graph['nodes'],links:graph['links']}
+    
+/*    followersx={nodes:[{nodeName:'mweller', group:6},
+    {nodeName:'mhawksey', group:6},
+    {nodeName:'garethm', group:6},
+    {nodeName:'gconole', group:6},
+    {nodeName:'ambrouk', group:6}
+  ],
+  links:[
+    {source:0, target:1, value:1},
+    {source:1, target:2, value:1},
+    {source:1, target:4, value:1},
+    {source:2, target:3, value:1},
+    {source:2, target:4, value:1},
+    {source:3, target:4, value:1}]};
+*/
+  createLayout();
+ 
+  })  
+ 
+}
+ 
+function setNet(ff){
+  alert(ff.nodes[0].nodeName)
+  followers=ff
+  
+}
+ 
+$(document).ready(function() {
+
+  if (!($.getUrlVar('q')) )
+    q=''
+  else
+    q=$.getUrlVar('q')
+  if (!($.getUrlVar('loc')))
+    loc='bristol';
+  else
+    loc=$.getUrlVar('loc')
+
+  if (!($.getUrlVar('dist')))
+    dist='5';
+  else
+    dist=$.getUrlVar('dist')
+
+  getMap()
+})
+
+</script> 
+ 
+</div></div> 
+<!--<div id="banners"></div>
+<div>Usage: <tt>http://ouseful.open.ac.uk/twitter/friendviz.html?q=<strong>YOUR_QUERY</strong>&amp;typ=<strong>TYP</strong></tt> where <tt><strong>TYP</strong></tt> is either <tt><em>q</em></tt> or <tt><em>tag</em></tt>, where <tt><em>q</em></tt> runs a normal Twitter search and <tt><em>tag</em></tt> runs a hashtag search.</div> 
+<div>For more information, see: <a href="http://blog.ouseful.info/2011/04/12/using-protovis-to-visualise-connections-between-people-tweeting-a-particular-term/">OUseful.info: Using Protovis to Visualise Connections Between People Tweeting a Particular Term</a></div> 
+ 
+<div id="socialamp"></div> 
+
+<form action="javascript:newgo()"><span>Try you own search term:</span> <input type="text" width="20" id="qterm"/> <input id="newgo" type="submit" value="Submit"/></form>
+-->
+<!-- <iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fouseful.open.ac.uk%2Ftwitter%2Ffriendviz.html%3Fq%3Dcpd25mash%26typ%3Dtag&amp;layout=standard&amp;show_faces=true&amp;width=450&amp;action=like&amp;font&amp;colorscheme=light&amp;height=80" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:450px; height:80px;" allowTransparency="true"></iframe>--> 
+
+<div><div id="netviz"></div><div id="tweets"></div></div>
+
+</body></html> 

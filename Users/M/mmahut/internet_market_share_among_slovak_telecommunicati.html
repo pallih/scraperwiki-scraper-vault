@@ -41,3 +41,46 @@ Internet market share among Slovak telecommunication providers
     <div id="visualization" style="width: 600px; height: 400px;"></div>
   </body>
 </html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>
+Internet market share among Slovak telecommunication providers
+    </title>
+    <script type="text/javascript" src="http://media.scraperwiki.com/js/jquery-1.5.2.min.js"></script>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ["corechart"]});
+    </script>
+    <script type="text/javascript">        
+      function drawVisualization() {
+        $.getJSON("http://api.scraperwiki.com/api/1.0/datastore/sqlite?callback=?",
+              {"format": "jsondict",
+               "name": "providers_of_networks_and_services",
+               "query": "SELECT internet, count(*) AS cnt FROM swdata GROUP BY internet"
+          },
+          function(recData, textStatus, jqXHR){
+            // Create and populate the data table.
+            var data = new google.visualization.DataTable();
+            data.addColumn('string', 'Internet');
+            data.addColumn('number', 'Count');
+            data.addRows(recData.length);
+            var i = 0;           
+            data.setValue(0, 0, "Other");
+            data.setValue(0, 1, recData[0].cnt);
+            data.setValue(1, 0, "Internet");
+            data.setValue(1, 1, recData[1].cnt);
+      
+            // Create and draw the visualization.
+            new google.visualization.PieChart(document.getElementById('visualization')).
+            draw(data, {title:"Internet market share among Slovak telecommunication providers"});
+          });
+      }
+      google.setOnLoadCallback(drawVisualization);
+    </script>
+  </head>
+  <body style="font-family: Arial;border: 0 none;">
+    <div id="visualization" style="width: 600px; height: 400px;"></div>
+  </body>
+</html>

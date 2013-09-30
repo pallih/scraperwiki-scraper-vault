@@ -219,4 +219,225 @@
         }
     </script>
 </body>
+</html><html>
+<head>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.5.js"></script>
+    <script type="text/javascript" src="http://datejs.googlecode.com/svn/trunk/build/date-tr-TR.js"></script>
+    <script type="text/javascript" src="http://people.iola.dk/olau/flot/jquery.flot.js"></script>
+    <script type="text/javascript" src="http://people.iola.dk/olau/flot/jquery.flot.navigate.js"></script>
+    <script type="text/javascript" src="http://people.iola.dk/olau/flot/jquery.flot.selection.js"></script>
+    <script type="text/javascript" src="http://people.iola.dk/olau/flot/jquery.flot.resize.js"></script>
+    <style type="text/css">
+        body { font-family: arial; font-size: 90%; text-align:center; line-height:150%; }
+        p { font-family: georgia, times; color: #999 }
+        #wrapper { margin: 0 auto; text-align:left; width:90%; padding-top:50px }
+        //h2 { margin-top: 50px; }
+        #placeholder { height: 50%; margin-bottom:70px } 
+        #placeholder .button {
+            position: absolute;
+            cursor: pointer;
+        }
+        #placeholder div.button {
+            font-size: smaller;
+            color: #999;
+            background-color: #eee;
+            padding: 2px;
+        }
+        .message {
+            padding-left: 50px;
+            font-size: smaller;
+        }
+        #bottom {font-family:georgia; color:#333;  }
+        #bottom h2 { font-family:arial;  }
+        #tweet-list { float:left; width:65%; margin-right:40px; }
+        #bottom a.tweet { text-decoration:none; color:#333;   } 
+        .twitter-tweet { min-height:80px; border-top:1px solid #eee; padding:20px 20px 20px 20px}
+        .twitter-tweet:hover { background: #FFFBEB; color:blue }
+        .twitter-tweet img { float:left; display:block; margin-right: 10px; width: 80px }
+        .twitter-tweet p { margin-top: 0px; color: blue }
+        
+        #about { width: 25%; display:inline-block; border-left:1px solid #eee; padding:0 0 20px 40px; }
+        img.loading { visibility:hidden; position:absolute; left:40%; top:40%; z-index:10}
+        
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <h2>7-9 Ocak aralığında Twitter'da 'Cudi' ve 'kimyasal' içeren mesajların grafiği</h2>
+        <p>Farenin sol tuşunu ve tekerini kullanarak görüntü alanını değiştirebilir, imleci noktaların üzerine getirerek detayları görebilirsiniz. Tarihler Greenwich zaman aralığına göre gösteriliyor.</p>
+        <select id='yaxis' onchange='getData(flotIt);' style="visibility:hidden;">
+            <option selected="selected" value="retweet_count">Retweet Sayısı</option>
+            <option value="followers_count">Takipçi Sayısı</option>
+        </select>
+        <span style="float:right; font-size:smaller"><a style="color:#666" href="#" onclick="flotIt([data, data_cudi, data_cudikimyasal]);return false">Grafiği ilk haline getir</a></span>
+        <br /><br />
+        <img class="loading" src='http://1.bp.blogspot.com/-_t1xDItbuWU/Ts536SHgmeI/AAAAAAAAAbc/JRS-gVdAhAg/s1600/loading11.gif' />
+        <div id="placeholder"></div>
+        <div id="bottom">
+        <div id="tweet-list"></div>
+        <div id="about"><h2>Hakkında</h2>
+            <p>
+            8 Ocak 2012 günü Twitter'da, Cudi'de kimyasal bomba kullanıldığını ile ilgili mesajlara ve atışmalara rastladım. 
+            </p><p>
+            Bu mesajların bazıları imzasız gazete yazılarını referans gösteriyor, bazıları da bizzat gazetecilerin
+            Twitter hesaplarından geliyordu. 
+            </p><p>
+            Bir süre sonra bu iddiaların dezenformasyon olabileceği konuşuldu ve nihayetinde tartışma soldu. Aslı belli değil.
+            </p><p>
+            Twitter'da bu iddianın nasıl yayıldığını anlamak için, Ocak 7-9 arası içinde 'Cudi' ve 'kimyasal' geçen mesajları 
+            indeksledim ve burada paylaşıyorum. 
+            </p><p>
+            Bu kapsamlı bir analiz değil, bir yığın veriyi tarama egzersizi. Daha anlamlı sorular sorabilmek için ön çalışma. 
+            </p><p>
+            Fikir ve yorumlar için: (#cudi etiketiyle) <a href="http://twitter.com/erdogan">@erdogan</a>  
+            </p><p>
+            Kullandığım ham veri <a href="https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=basic_twitter_scraper_cudi&query=select%20*%20from%20%60swdata%60%20limit%201500">şurada</a>. 
+            </p>
+        </div>
+     </div>
+     </div>
+    <script>
+        var data;
+        var data_cudi;
+        var data_cudikimyasal;
+        var tweet;
+        function getData(callback) {
+            data = {label:'kimyasal', data:[]};
+            data_cudi = {label:'cudi', data:[]};
+            data_cudikimyasal = {label:'cudikimyasal', data:[]};
+            tweet = { kimyasal:[], cudi:[], cudikimyasal:[] };
+            $('img.loading').css('visibility', 'visible');
+            // jsondict simply returns an array of data objects
+            $.getJSON('https://api.scraperwiki.com/api/1.0/datastore/sqlite?format=jsondict&name=basic_twitter_scraper_cudi&query=select%20*%20from%20%60swdata%60%20limit%201500&callback=?', function(json) {
+                var count = 1;
+                $.each(json, function(key, val) {
+                    time  = new Date(val.time);
+                    id = val.id;
+                    yax = $("#yaxis").val();
+                    data['data'].push([time, val[yax] ]);
+                    tweet['kimyasal'].push(val);
+                    if (val.text.search(/cudikimyasal/i) !== -1) {
+                        data_cudikimyasal['data'].push([time, val[yax]]);
+                        tweet['cudikimyasal'].push(val);
+                    }
+                    else if (val.text.search(/cudi/i) !== -1) {
+                        data_cudi['data'].push([time, val[yax]]);
+                        tweet['cudi'].push(val);
+                    }
+                    count ++;
+                });
+                $('img.loading').css('visibility', 'hidden');
+                $('#yaxis').css('visibility', 'visible');
+
+                callback([data, data_cudi, data_cudikimyasal]);
+                populateTweets();
+            });
+    }
+
+        var placeholder = $("#placeholder");
+        var plot; 
+        var markings = [
+            { color: '#f9f9f9', lineWidth: 1, xaxis: { from: new Date('Sat, 07 Jan 2012 00:00:00 +0000') , to: new Date('Sun, 08 Jan 2012 12:14:02 +0000') } }
+        ]
+        var options = {
+            grid: { hoverable: true, clickable: true, markings: markings, borderColor: '#fff', autoHighlight: true },
+            xaxis: { mode: "time", color: null, min: new Date('Sat, 07 Jan 2012 21:00:00 +0000') },
+            yaxis: { min:0, color: null },
+            series: { points: { show: true }, shadowSize: 0 },
+            //selection: { mode: "x" },
+            zoom: { interactive: true },
+            pan: { interactive: true },
+            legend: { position: "nw" }
+        };
+        
+        function flotIt(data, args) {
+            if (args) { plot = $.plot($("#placeholder"), data, args ); }
+            else plot = $.plot($("#placeholder"), data, options );
+
+            // add zoom out button 
+            $('<div class="button" style="right:30px;top:20px">zoom -</div>').appendTo(placeholder).click(function (e) {
+                e.preventDefault();
+                plot.zoomOut();
+            });
+        
+            // and add panning buttons
+            // little helper for taking the repetitive work out of placing
+            // panning arrows
+            function addArrow(dir, right, top, offset) {
+                $('<img class="button" src="http://people.iola.dk/olau/flot/examples/arrow-' + dir + '.gif" style="right:' + right + 'px;top:' + top + 'px">').appendTo(placeholder).click(function (e) {
+                    e.preventDefault();
+                    plot.pan(offset);
+                });
+            }
+        
+            addArrow('left', 55, 60, { left: -100 });
+            addArrow('right', 25, 60, { left: 100 });
+            addArrow('up', 40, 45, { top: -100 });
+            addArrow('down', 40, 75, { top: 100 });
+
+        }
+
+        function showTooltip(x, y, contents) {
+            $('<div id="tooltip">' + contents + '</div>').css( {
+                'text-align': 'left',
+                'font-family': 'georgia',
+                position: 'absolute',
+                display: 'none',
+                top: y + 5,
+                left: x + 5,
+                'border-right': '1px solid #DFE4E7',
+                'border-bottom': '1px solid #DFE4E7',
+                padding: '10px',
+                'background-color': '#F3F8FB',
+                'max-width': '300px',
+                opacity: 0.90
+            }).appendTo("body").fadeIn(200);
+        }
+        
+        var previousPoint = null;
+        $("#placeholder").bind("plothover", function (event, pos, item) {
+                if (item) {
+                    if (previousPoint != item.dataIndex) {
+                        previousPoint = item.dataIndex;
+                        
+                        $("#tooltip").remove();
+                        var x = item.datapoint[0].toFixed(2),
+                            y = item.datapoint[1].toFixed(2);
+
+                        showTooltip(item.pageX, item.pageY, "<div style='margin-bottom:10px;'><b>" + tweet[item.series.label][item.dataIndex].from_user+"</b><span style='float:right; opacity:0.6'>" +adjustTime( tweet[item.series.label][item.dataIndex].time).toString('MMM d, yyyy hh:mm') + "</span></div>"+tweet[item.series.label][item.dataIndex].text+"<br/>");
+                    }
+                }
+                else {
+                    $("#tooltip").remove();
+                    previousPoint = null;            
+                }
+        });
+
+        placeholder.bind("plotselected", function (event, ranges) {
+ 
+            plot = flotIt([data, data_cudi, data_cudikimyasal], ( 
+                          $.extend(true, {}, options, {
+                              xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to }
+                          })));
+            console.log(plot);
+        });
+
+        getData(flotIt);
+    
+        function adjustTime(timestring) {
+
+             var time = new Date(timestring);
+             localOffset = time.getTimezoneOffset();
+             return time.add(localOffset).minutes();
+        }
+
+        function populateTweets() {
+            for (i=978; i < 1078; i++) {
+                $('#tweet-list').prepend("<a class='tweet' href='https://twitter.com/" + tweet['kimyasal'][i].from_user + "/status/" + tweet['kimyasal'][i].id + "'><div class='twitter-tweet'><img src='http://img.tweetimag.es/i/" + tweet['kimyasal'][i].from_user+"' /><p>" + tweet['kimyasal'][i].from_user + "<span class=tweet-date style='float:right; color:#bbb'>" + adjustTime(tweet['kimyasal'][i].time).toString('MMM d, yyyy hh:mm') + "</span></p>" + tweet['kimyasal'][i].text +"</div></a>");
+            }
+            $('#tweet-list').prepend("<h2>İçinde 'kimyasal' ve 'Cudi' geçen ilk 100 mesaj</h2>");
+            
+        }
+    </script>
+</body>
 </html>
